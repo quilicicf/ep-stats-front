@@ -26,7 +26,7 @@ main =
 -- MODEL
 
 type Model
-  = Failure
+  = LoadingFailure
   | Loading
   | Success String
 
@@ -53,7 +53,7 @@ update msg model =
           (Success fullText, Cmd.none)
 
         Err _ ->
-          (Failure, Cmd.none)
+          (LoadingFailure, Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -70,8 +70,8 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   case model of
-    Failure ->
-      text "I was unable to load your book."
+    LoadingFailure ->
+      text "I was unable to load your sheet."
 
     Loading ->
       text "Loading..."

@@ -1,4 +1,13 @@
-/elm-stuff
+# IntelliJ
+
 /.idea
-index.html
 ep-stats-front.iml
+
+# Elm (app)
+
+/elm-stuff
+index.html
+
+# NodeJS (build)
+
+/node_modules

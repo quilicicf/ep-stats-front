@@ -1,0 +1,40 @@
+{
+  "name": "ep-stats-front",
+  "version": "1.0.0",
+  "description": "Front-end for https://github.com/quilicicf/ep-stats",
+  "scripts": {
+    "lint": "eslint '**/*.js'",
+    "start": "node ./build/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quilicicf/ep-stats-front.git"
+  },
+  "keywords": [
+    "empires",
+    "puzzles",
+    "statistics",
+    "stats",
+    "elm"
+  ],
+  "author": "quilicicf <quilicicf@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/quilicicf/ep-stats-front/issues"
+  },
+  "homepage": "https://github.com/quilicicf/ep-stats-front",
+  "devDependencies": {
+    "@talend/eslint-config": "2.0.1",
+    "babel-eslint": "9.0.0",
+    "chalk": "2.4.2",
+    "chokidar": "2.1.5",
+    "eslint": "5.6.0",
+    "eslint-config-airbnb": "16.1.0",
+    "eslint-plugin-import": "2.14.0",
+    "eslint-plugin-jest": "21.22.0",
+    "http-server": "0.11.1",
+    "lodash": "4.17.11",
+    "node-elm-compiler": "5.0.3",
+    "node-sass": "4.11.0"
+  }
+}

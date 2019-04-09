@@ -3,7 +3,7 @@
 const { watch } = require('chokidar');
 const { resolve: resolvePath } = require('path');
 const { yellow, cyan } = require('chalk');
-const httpServer = require('http-server/lib/http-server');
+const liveServer = require('live-server');
 
 const renderElm = require('./renderElm');
 const renderSass = require('./renderSass');
@@ -39,12 +39,12 @@ const main = async () => {
     // .on('unlink', renderSass) TODO needed?
     .on('ready', renderSass);
 
-  const server = httpServer.createServer({ root: DIR_PATH, open: true });
-
-  server.listen(SERVER_PORT, '127.0.0.1', () => {
-    process.stdout.write((
-      cyan(`Serving your app from:\n\t${yellow(DIR_PATH)}\nOn\n\t${yellow(`http://localhost:${SERVER_PORT}`)} \n`)
-    ));
+  liveServer.start({
+    port: SERVER_PORT,
+    root: DIR_PATH,
+    watch: SRC_PATH,
+    open: false,
+    wait: 500,
   });
 };
 

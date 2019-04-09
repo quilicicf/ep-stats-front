@@ -10,7 +10,6 @@ module.exports = {
   APP_ENTRY_POINT: resolvePath(SRC_PATH, 'Main.elm'),
   STYLE_ENTRY_POINT: resolvePath(SRC_PATH, 'app.scss'),
 
-  DIST_PATH,
   APP_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.js'),
   STYLE_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.css'),
 };

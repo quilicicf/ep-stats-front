@@ -61,12 +61,6 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
 
---main =
---    div [ id "content" ]
---        [ h1 [] [ text "Empires and puzzles - Stats" ]
---        , span [ class "subtitle" ] [ text "A noice stats presenter" ]
---        ]
-
 view : Model -> Html Msg
 view model =
   case model of

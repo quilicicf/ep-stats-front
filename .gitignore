@@ -6,7 +6,7 @@ ep-stats-front.iml
 # Elm (app)
 
 /elm-stuff
-index.html
+/dist
 
 # NodeJS (build)
 

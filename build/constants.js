@@ -6,6 +6,8 @@ const DIST_PATH = resolvePath(DIR_PATH, 'dist');
 
 module.exports = {
   DIR_PATH,
+  APP_HTML_PATH: resolvePath(DIR_PATH, 'index.html'),
+
   SRC_PATH,
   APP_ENTRY_POINT: resolvePath(SRC_PATH, 'Main.elm'),
   STYLE_ENTRY_POINT: resolvePath(SRC_PATH, 'app.scss'),

@@ -1,0 +1,74 @@
+@import 'methods';
+
+$chosen-primary-hue: 252;
+
+$chosen-primary-color: hsl($chosen-primary-hue, 100%, 50%);
+$chosen-secondary-color: complement($chosen-primary-color);
+
+$primary-color: harmonious-mix($chosen-secondary-color, $chosen-primary-color);
+$secondary-color: harmonious-mix($chosen-primary-color, $chosen-secondary-color);
+
+$analogous-primary-color: adjust_hue($secondary-color, -40); // sass-lint:disable-line function-name-format
+$analogous-secondary-color: mix($analogous-primary-color, $secondary-color, 66);
+
+$primary-neutral: mix-neutral($primary-color);
+$primary-neutral-light: lighten($primary-neutral, 33);
+$primary-neutral-dark: darken($primary-neutral, 33);
+
+$primary-light: mix($primary-neutral-light, $primary-color, 45%);
+$primary-dark: mix($primary-neutral-dark, $primary-color, 45%);
+
+$secondary-neutral: mix-neutral($secondary-color);
+$secondary-neutral-light: lighten($secondary-neutral, 33);
+$secondary-neutral-dark: darken($secondary-neutral, 33);
+
+$secondary-light: mix($secondary-neutral-light, $secondary-color, 45%);
+$secondary-dark: mix($secondary-neutral-dark, $secondary-color, 45%);
+
+$white: lighten($primary-neutral-light, 15);
+$black: grayscale($secondary-neutral-dark);
+
+$neutral-gray: grayscale($primary-neutral);
+$primary-gray: mix($primary-color, $secondary-color, 30);
+$secondary-gray: mix($secondary-color, $primary-color, 63);
+
+// TODO: remove the mixin (more info: https://github.com/sasstools/sass-lint/issues/1161)
+@mixin css-var($prop: null, $value: null) {
+  @if ($prop and $value) {
+    #{$prop}: $value;
+  }
+}
+
+:root {
+  @include css-var(--primary-color, $primary-color);
+  @include css-var(--secondary-color, $secondary-color);
+
+  @include css-var(--analogous-primary-color, $analogous-primary-color);
+  @include css-var(--analogous-secondary-color, $analogous-secondary-color);
+
+  @include css-var(--primary-neutral, $primary-neutral);
+  @include css-var(--primary-neutral-light, $primary-neutral-light);
+  @include css-var(--primary-neutral-dark, $primary-neutral-dark);
+
+  @include css-var(--primary-light, $primary-light);
+  @include css-var(--primary-dark, $primary-dark);
+
+  @include css-var(--secondary-neutral, $secondary-neutral);
+  @include css-var(--secondary-neutral-light, $secondary-neutral-light);
+  @include css-var(--secondary-neutral-dark, $secondary-neutral-dark);
+
+  @include css-var(--secondary-light, $secondary-light);
+  @include css-var(--secondary-dark, $secondary-dark);
+
+  @include css-var(--white, $white);
+  @include css-var(--black, $black);
+
+  @include css-var(--neutral-gray, $neutral-gray);
+  @include css-var(--primary-gray, $primary-gray);
+  @include css-var(--secondary-gray, $secondary-gray);
+}
+
+body {
+  background-color: var(--primary-neutral-dark);
+  color: var(--secondary-light);
+}

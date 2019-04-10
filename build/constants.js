@@ -14,4 +14,5 @@ module.exports = {
 
   APP_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.js'),
   STYLE_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.css'),
+  STYLE_SOURCE_MAP_PATH: resolvePath(DIST_PATH, 'app.css.map'),
 };

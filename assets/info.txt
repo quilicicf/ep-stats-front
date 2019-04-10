@@ -1,0 +1,14 @@
+
+Hope you enjoy your new logo, here are the people that
+made your beautiful logo happen :)
+
+font name: Nautilus
+font link: http://nautilustype.com/
+font author: PUNK YOU BRANDS
+font author site: https://punk-you.ru/
+
+icon designer: Icons Producer
+icon designer link: /iconsproducer
+        
+{"bg":"#ffffff","icon-gradient-0":"#006678","icon-gradient-1":"#4FA8FF","font":"#000000"}
+      

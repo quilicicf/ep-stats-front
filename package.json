@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Front-end for https://github.com/quilicicf/ep-stats",
   "scripts": {
-    "lint": "eslint '**/*.js'",
+    "lint": "eslint './build/**/*.js'",
     "start": "node ./build/index.js"
   },
   "repository": {
@@ -26,6 +26,7 @@
   "devDependencies": {
     "@talend/eslint-config": "2.0.1",
     "babel-eslint": "9.0.0",
+    "chalk": "2.4.2",
     "chokidar": "2.1.5",
     "eslint": "5.6.0",
     "eslint-config-airbnb": "16.1.0",
@@ -34,7 +35,7 @@
     "live-server": "1.2.1",
     "lodash": "4.17.11",
     "node-elm-compiler": "5.0.3",
-    "node-sass": "4.11.0",
+    "node-sass": "^4.12.0",
     "sass-lint": "1.12.1"
   }
 }

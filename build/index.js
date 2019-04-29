@@ -8,7 +8,7 @@ const renderElm = require('./renderElm');
 const renderSass = require('./renderSass');
 
 const {
-  SRC_PATH, DIR_PATH, APP_HTML_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT,
+  SRC_PATH, DIR_PATH, APP_HTML_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT, STYLE_OUTPUT_PATH,
 } = require('./constants');
 
 const SERVER_PORT = 5420;
@@ -41,8 +41,7 @@ const main = async () => {
   liveServer.start({
     port: SERVER_PORT,
     root: DIR_PATH,
-    watch: `${SRC_PATH},${APP_HTML_PATH}`,
-    open: false,
+    watch: [ SRC_PATH, APP_HTML_PATH, STYLE_OUTPUT_PATH ],
     wait: 500,
   });
 };

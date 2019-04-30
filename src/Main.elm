@@ -7,6 +7,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import String.Interpolate exposing (interpolate)
 
+import Json.Decode as Decode exposing (Value)
+
+import AppConfigForm exposing (AppConfig, main)
 
 computeRequestUrl : String -> String -> String
 computeRequestUrl range apiKey =
@@ -15,45 +18,50 @@ computeRequestUrl range apiKey =
 -- MAIN
 
 main =
-  Browser.element
+  Browser.document
     { init = init
-    , update = update
     , subscriptions = subscriptions
+    , update = update
     , view = view
     }
 
 
 -- MODEL
 
-type Model
-  = LoadingFailure
-  | Loading
-  | Success String
+type alias Key = String
 
-init : () -> (Model, Cmd Msg)
-init _ =
-  ( Loading
-  , Http.get
-      { url = computeRequestUrl "Titans!A%3AAZ" "tooSensitiveToShare" -- TODO: Variabelize
-      , expect = Http.expectString GotText
-      }
-  )
+type Model
+  = Nothing
+  | AppConfig
+  | Key
+--  | LoadingFailure
+--  | Loading
+--  | Success String
+
+init : Value -> (Model, Cmd msg)
+init flags = (Nothing, Cmd.none)
+
+--load : () -> (Model, Cmd Msg)
+--load _ =
+--  ( Loading
+--  , Http.get
+--      { url = computeRequestUrl "Titans!A%3AAZ" "tooSensitiveToShare" -- TODO: Variabelize
+--      , expect = Http.expectString GotText
+--      }
+--  )
 
 --UPDATE
 
 type Msg
-  = GotText (Result Http.Error String)
+  = ChangedUrl String
+  | ClickedLink String
+--  GotText (Result Http.Error String)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    GotText result ->
-      case result of
-        Ok fullText ->
-          (Success fullText, Cmd.none)
-
-        Err _ ->
-          (LoadingFailure, Cmd.none)
+    ChangedUrl newUrl -> (model , Cmd.none)
+    ClickedLink link -> (model , Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -61,14 +69,39 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
 
-view : Model -> Html Msg
+createAppTitle: String -> Html msg
+createAppTitle title = h1 [ class "app-title" ] [
+    img [ src "/assets/icon.png", alt "ep-stats icon" ] [],
+    text title
+  ]
+
+view : Model -> Browser.Document Msg
 view model =
-  case model of
-    LoadingFailure ->
-      text "I was unable to load your sheet."
+    let
+        appBody: Html msg
+        appBody =  case model of
+          Nothing -> main
 
-    Loading ->
-      text "Loading..."
+          Key -> text "Enter the key"
 
-    Success fullText ->
-      pre [] [ text fullText ]
+          AppConfig -> text "Enter the alliance info"
+
+    in
+      { title = "EP-stats home"
+      , body =
+        [
+          div [] [
+            createAppTitle "EP-stats",
+            appBody
+          ]
+        ]
+      }
+--
+--    LoadingFailure ->
+--      text "I was unable to load your sheet."
+--
+--    Loading ->
+--      text "Loading..."
+--
+--    Success fullText ->
+--      pre [] [ text fullText ]

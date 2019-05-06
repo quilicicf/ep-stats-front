@@ -30,12 +30,13 @@ type Page
 
 type alias Model =
   { appConfig: AppConfig
+  , appKey: String
   , currentPage: Page
   , navigationKey: Key
   }
 
 welcomeScreen : Model -> Html Msg
-welcomeScreen model =
+welcomeScreen _ =
   div []
     [ text "Choose your side"
     , a [ href "/appConfig" ] [ text "I'm the alliance's GOD" ]
@@ -83,6 +84,26 @@ appConfigForm appConfig =
         ]
     ]
 
+appKeyForm : String -> Html Msg
+appKeyForm appKey =
+  Html.form []
+    [ div []
+        [ text "App key"
+        , br [] []
+        , input
+            [ type_ "text"
+            , value appKey
+            ]
+            []
+        ]
+    , br [] []
+    , div []
+        [ button
+            [ type_ "button" ]
+            [ text "See" ]
+        ]
+    ]
+
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init _ url key =
   let
@@ -90,7 +111,7 @@ init _ url key =
       initPage = findPage url
 
       initModel: Model
-      initModel = Model (AppConfig "" "" "") (initPage) key
+      initModel = Model (AppConfig "" "" "") "" initPage key
   in
     ( initModel , Cmd.none )
 
@@ -152,7 +173,7 @@ view model =
       , body = [
           div []
             [ h1 [] [ text "EP stats" ]
-            , appConfigForm model.appConfig
+            , appKeyForm model.appKey
             ]
         ]
       })

@@ -43,6 +43,7 @@ const main = async () => {
     root: DIR_PATH,
     watch: [ SRC_PATH, APP_HTML_PATH, STYLE_OUTPUT_PATH ],
     wait: 500,
+    entryFile: APP_HTML_PATH,
   });
 };
 

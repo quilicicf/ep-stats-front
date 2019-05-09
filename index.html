@@ -12,9 +12,15 @@
 
 <div id="elm"></div>
 <script>
-  Elm.Main.init({
+  const stateKey = 'state';
+  const storedState = localStorage.getItem(stateKey);
+  const startingState = storedState ? JSON.parse(storedState) : null;
+  const app = Elm.Main.init({
+    flags: startingState,
     node: document.getElementById('elm'),
-  })
+  });
+
+  app.ports.setStorage.subscribe(state => localStorage.setItem(stateKey, JSON.stringify(state)));
 </script>
 </body>
 </html>

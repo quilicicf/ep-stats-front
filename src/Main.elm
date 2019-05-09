@@ -10,7 +10,7 @@ import Html.Attributes exposing (..)
 
 import Url exposing (Url)
 
-import Json.Decode as Decode exposing (Value)
+import Json.Decode exposing (Value)
 
 type Msg
   = LinkClicked UrlRequest

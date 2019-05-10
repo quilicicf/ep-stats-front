@@ -13,10 +13,13 @@ import Url exposing (Url)
 
 import Base64 exposing (..)
 
-import Json.Decode exposing (Value)
-import Json.Encode as Encode
+import Result exposing (Result)
 
-port setStorage : AppConfig -> Cmd msg
+import Json.Decode as Decode exposing (Value, Decoder, string, bool)
+import Json.Encode as Encode
+import Json.Decode.Pipeline exposing (required, optional)
+
+port setStorage : AppState -> Cmd msg
 
 type Msg
   = LinkClicked UrlRequest
@@ -25,41 +28,79 @@ type Msg
   | NewSheetId String
   | NewApiKey String
   | CreateAppConfig
+  | CopiedAppKeys String
+  | InputAppKey String
+
+type alias AppState = { appKey: String }
 
 type alias AppConfig =
   { teamName: String
   , sheetId: String
   , apiKey: String
+  , isAdmin: Bool
   }
 
 type Page
   = WelcomePage
   | AppConfigPage
   | AppKeyPage
+  | AppKeyCopierPage
   | StatsPage
   | NotFoundPage
 
 type alias Model =
   { appConfig: AppConfig
-  , appKey: String
   , currentPage: Page
   , navigationKey: Key
   }
 
-
-jsonifyAppConfig : AppConfig -> Value
-jsonifyAppConfig appConfig =
+jsonifyAppConfig : AppConfig -> Bool -> Value
+jsonifyAppConfig appConfig isAdmin =
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
       , ("sheetId", Encode.string appConfig.sheetId)
       , ("apiKey", Encode.string appConfig.apiKey)
+      , ("isAdmin", Encode.bool isAdmin)
       ]
 
-encodeAppConfig : AppConfig -> String
-encodeAppConfig appConfig = appConfig
-  |> jsonifyAppConfig
-  |> Encode.encode 0
-  |> Base64.encode
+encodeAppConfig : AppConfig -> Bool -> String
+encodeAppConfig appConfig isAdmin =
+  jsonifyAppConfig appConfig isAdmin
+    |> Encode.encode 0
+    |> Base64.encode
+
+appConfigDecoder : Decoder AppConfig
+appConfigDecoder =
+  Decode.succeed AppConfig
+    |> required "teamName" string
+    |> required "sheetId" string
+    |> required "apiKey" string
+    |> required "isAdmin" bool
+
+appStateDecoder : Decoder AppState
+appStateDecoder =
+  Decode.succeed AppState
+    |> optional "appKey" string ""
+
+decodeAppState : Value -> AppState
+decodeAppState appKeyAsJson =
+  case Decode.decodeValue appStateDecoder appKeyAsJson of
+    Ok appState -> appState
+    Err _ -> AppState ""
+
+decodeAppConfig : Value -> AppConfig
+decodeAppConfig appKeyAsJson =
+  let
+    appState : AppState
+    appState = decodeAppState appKeyAsJson
+
+  in
+    case Base64.decode appState.appKey of
+      Ok decodedAppKey ->
+        case Decode.decodeString appConfigDecoder decodedAppKey of
+          Ok appConfig -> appConfig
+          Err _ -> AppConfig "" "" "" False
+      Err _ -> AppConfig "" "" "" False
 
 welcomeScreen : Model -> Html Msg
 welcomeScreen _ =
@@ -70,7 +111,6 @@ welcomeScreen _ =
     , br [] []
     , a [ href "/appKey" ] [ text "I'm but a peon" ]
     ]
-
 
 appConfigForm : AppConfig -> Html Msg
 appConfigForm appConfig =
@@ -115,34 +155,69 @@ appConfigForm appConfig =
         ]
     ]
 
-appKeyForm : String -> Html Msg
-appKeyForm appKey =
-  Html.form []
-    [ div []
-        [ text "App key"
-        , br [] []
-        , input
-            [ type_ "text"
-            , value appKey
-            ]
-            []
-        ]
-    , br [] []
-    , div []
-        [ button
-            [ type_ "button" ]
-            [ text "See" ]
-        ]
+appKeyCopierView : AppConfig -> Html Msg
+appKeyCopierView appConfig =
+  let
+    adminAppKey : String
+    adminAppKey = encodeAppConfig appConfig True
+
+    peonAppKey : String
+    peonAppKey = encodeAppConfig appConfig False
+
+  in
+    div [] [
+      h2 [] [ text "Copy the keys and validate" ],
+      div [] [
+        span [] [ text "Admin key" ],
+        pre [] [ text adminAppKey ]
+      ],
+      div [] [
+        span [] [ text "Peon key" ],
+        pre [] [ text peonAppKey ]
+      ],
+      button
+        [ type_ "button", onClick (CopiedAppKeys adminAppKey) ]
+        [ text "I've stored'em away" ]
     ]
 
+appKeyForm : Html Msg
+appKeyForm =
+  let
+    appKey : String
+    appKey = ""
+
+  in
+    Html.form []
+      [ div []
+          [ text "App key"
+          , br [] []
+          , input
+              [ type_ "text"
+              , value appKey
+              ]
+              []
+          ]
+      , br [] []
+      , div []
+          [ button
+              [ type_ "button", onClick (InputAppKey appKey) ]
+              [ text "See" ]
+          ]
+      ]
+
 init : Value -> Url -> Key -> (Model, Cmd Msg)
-init _ url key =
+init flags url key =
   let
       initPage : Page
       initPage = findPage url
 
+      appConfig : AppConfig
+      appConfig = decodeAppConfig flags
+
+      ignored = log "Initialized with" appConfig
+
       initModel: Model
-      initModel = Model (AppConfig "" "" "") "" initPage key
+      initModel = Model appConfig initPage key
   in
     ( initModel , Cmd.none )
 
@@ -154,13 +229,6 @@ findPage url =
     "/appKey" -> AppKeyPage
     "/stats" -> StatsPage
     _ -> NotFoundPage
-
-updateWithStorage : Msg -> Model -> ( Model, Cmd Msg )
-updateWithStorage msg model =
-  let
-    ( ({ appConfig } as newModel), cmds ) = update msg model
-  in
-    ( newModel, Cmd.batch [ setStorage appConfig, cmds ] )
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg ({ appConfig } as model) =
@@ -200,13 +268,22 @@ update msg ({ appConfig } as model) =
       in
         ( { model | appConfig = newAppConfig }, Cmd.none )
 
-    CreateAppConfig ->
-      let
-        toto = log "Toto" appConfig
-        newAppKey : String
-        newAppKey = encodeAppConfig appConfig
-      in
-        ( { model | appKey = newAppKey }, pushUrl model.navigationKey "/stats" )
+    CreateAppConfig -> ( { model | currentPage = AppKeyCopierPage }, Cmd.none)
+
+    CopiedAppKeys appKey -> (
+      model,
+      Cmd.batch [
+        setStorage (AppState appKey),
+        pushUrl model.navigationKey "/stats"
+      ])
+
+    InputAppKey appKey -> (
+      model,
+      Cmd.batch [
+        setStorage (AppState appKey),
+        pushUrl model.navigationKey "/stats"
+      ])
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
@@ -241,7 +318,17 @@ view model =
       , body = [
           div []
             [ h1 [] [ text "EP stats" ]
-            , appKeyForm model.appKey
+            , appKeyForm
+            ]
+        ]
+      })
+
+    AppKeyCopierPage -> (
+      { title = "EP stats"
+      , body = [
+          div []
+            [ h1 [] [ text "EP stats" ]
+            , appKeyCopierView model.appConfig
             ]
         ]
       })
@@ -268,7 +355,7 @@ main : Program Value Model Msg
 main = application
   { init = init
   , view = view
-  , update = updateWithStorage
+  , update = update
   , subscriptions = subscriptions
   , onUrlChange = UrlChanged
   , onUrlRequest = LinkClicked

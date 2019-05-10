@@ -20,7 +20,9 @@
     node: document.getElementById('elm'),
   });
 
-  app.ports.setStorage.subscribe(state => localStorage.setItem(stateKey, JSON.stringify(state)));
+  app.ports.setStorage.subscribe((state) => {
+    localStorage.setItem(stateKey, JSON.stringify(state));
+  });
 </script>
 </body>
 </html>

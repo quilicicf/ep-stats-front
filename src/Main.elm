@@ -19,7 +19,7 @@ import Json.Decode as Decode exposing (Value, Decoder, string, bool)
 import Json.Encode as Encode
 import Json.Decode.Pipeline exposing (required, optional)
 
-port setStorage : AppState -> Cmd msg
+port setStorage : StorageAppState -> Cmd msg
 
 type Msg
   = LinkClicked UrlRequest
@@ -27,11 +27,12 @@ type Msg
   | NewTeamName String
   | NewSheetId String
   | NewApiKey String
+  | NewAppKey String
   | CreateAppConfig
   | CopiedAppKeys String
-  | InputAppKey String
+  | InputAppKey
 
-type alias AppState = { appKey: String }
+type alias StorageAppState = { appKey: String }
 
 type alias AppConfig =
   { teamName: String
@@ -39,6 +40,8 @@ type alias AppConfig =
   , apiKey: String
   , isAdmin: Bool
   }
+
+--type AppState = String
 
 type Page
   = WelcomePage
@@ -50,6 +53,7 @@ type Page
 
 type alias Model =
   { appConfig: AppConfig
+  , appKey: String -- AppState
   , currentPage: Page
   , navigationKey: Key
   }
@@ -77,30 +81,34 @@ appConfigDecoder =
     |> required "apiKey" string
     |> required "isAdmin" bool
 
-appStateDecoder : Decoder AppState
-appStateDecoder =
-  Decode.succeed AppState
+storageAppStateDecoder : Decoder StorageAppState
+storageAppStateDecoder =
+  Decode.succeed StorageAppState
     |> optional "appKey" string ""
 
-decodeAppState : Value -> AppState
-decodeAppState appKeyAsJson =
-  case Decode.decodeValue appStateDecoder appKeyAsJson of
+decodeStorageAppState : Value -> StorageAppState
+decodeStorageAppState appKeyAsJson =
+  case Decode.decodeValue storageAppStateDecoder appKeyAsJson of
     Ok appState -> appState
-    Err _ -> AppState ""
+    Err _ -> StorageAppState ""
 
-decodeAppConfig : Value -> AppConfig
-decodeAppConfig appKeyAsJson =
+decodeAppConfigFromJson : Value -> AppConfig
+decodeAppConfigFromJson appKeyAsJson =
   let
-    appState : AppState
-    appState = decodeAppState appKeyAsJson
+    storageAppState : StorageAppState
+    storageAppState = decodeStorageAppState appKeyAsJson
 
   in
-    case Base64.decode appState.appKey of
-      Ok decodedAppKey ->
-        case Decode.decodeString appConfigDecoder decodedAppKey of
-          Ok appConfig -> appConfig
-          Err _ -> AppConfig "" "" "" False
-      Err _ -> AppConfig "" "" "" False
+    decodeAppConfigFromAppKey storageAppState.appKey
+
+decodeAppConfigFromAppKey : String -> AppConfig
+decodeAppConfigFromAppKey appKeyInBase64 =
+  case Base64.decode appKeyInBase64 of
+    Ok decodedAppKey ->
+      case Decode.decodeString appConfigDecoder decodedAppKey of
+        Ok appConfig -> appConfig
+        Err _ -> AppConfig "" "" "" False
+    Err _ -> AppConfig "" "" "" False
 
 welcomeScreen : Model -> Html Msg
 welcomeScreen _ =
@@ -194,13 +202,14 @@ appKeyForm =
           , input
               [ type_ "text"
               , value appKey
+              , onInput NewAppKey
               ]
               []
           ]
       , br [] []
       , div []
           [ button
-              [ type_ "button", onClick (InputAppKey appKey) ]
+              [ type_ "button", onClick InputAppKey ]
               [ text "See" ]
           ]
       ]
@@ -212,12 +221,12 @@ init flags url key =
       initPage = findPage url
 
       appConfig : AppConfig
-      appConfig = decodeAppConfig flags
+      appConfig = decodeAppConfigFromJson flags
 
       ignored = log "Initialized with" appConfig
 
       initModel: Model
-      initModel = Model appConfig initPage key
+      initModel = Model appConfig "" initPage key
   in
     ( initModel , Cmd.none )
 
@@ -268,19 +277,22 @@ update msg ({ appConfig } as model) =
       in
         ( { model | appConfig = newAppConfig }, Cmd.none )
 
+    NewAppKey newAppKey ->
+      ( { model | appKey = log "New app key" newAppKey }, Cmd.none )
+
     CreateAppConfig -> ( { model | currentPage = AppKeyCopierPage }, Cmd.none)
 
     CopiedAppKeys appKey -> (
       model,
       Cmd.batch [
-        setStorage (AppState appKey),
+        setStorage (StorageAppState appKey),
         pushUrl model.navigationKey "/stats"
       ])
 
-    InputAppKey appKey -> (
-      model,
+    InputAppKey -> (
+      { model | appConfig = decodeAppConfigFromAppKey model.appKey },
       Cmd.batch [
-        setStorage (AppState appKey),
+        setStorage (StorageAppState model.appKey),
         pushUrl model.navigationKey "/stats"
       ])
 

@@ -82,10 +82,6 @@ decodeAppConfigFromAppKey appKeyInBase64 =
         Err _ -> AppConfig "" "" "" False
     Err _ -> AppConfig "" "" "" False
 
-wrapInputMessage : (String -> AppConfigMsg) -> String -> Msg
-wrapInputMessage msg appKey = AppConfigMsg (msg appKey)
-
-
 ----------
 -- VIEW --
 ----------
@@ -99,7 +95,7 @@ appConfigForm appConfig =
         , input
             [ type_ "text"
             , value appConfig.teamName
-            , onInput (wrapInputMessage NewTeamName)
+            , onInput (AppConfigMsg << NewTeamName)
             ]
             []
         ]
@@ -110,7 +106,7 @@ appConfigForm appConfig =
         , input
             [ type_ "text"
             , value appConfig.sheetId
-            , onInput (wrapInputMessage NewSheetId)
+            , onInput (AppConfigMsg << NewSheetId)
             ]
             []
         ]
@@ -121,7 +117,7 @@ appConfigForm appConfig =
         , input
             [ type_ "text"
             , value appConfig.apiKey
-            , onInput (wrapInputMessage NewApiKey)
+            , onInput (AppConfigMsg << NewApiKey)
             ]
             []
         ]
@@ -172,7 +168,7 @@ appKeyForm =
           , input
               [ type_ "text"
               , value appKey
-              , onInput (wrapInputMessage NewAppKey)
+              , onInput (AppConfigMsg << NewAppKey)
               ]
               []
           ]

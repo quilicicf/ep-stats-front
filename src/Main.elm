@@ -57,46 +57,31 @@ update msg ({ appConfig } as model) =
         ( { model | currentPage = newPage }, Cmd.none )
 
     AppConfigMsg appConfigMsg ->
-      case appConfigMsg of
-        NewTeamName newTeamName ->
-          let
-            newAppConfig : AppConfig
-            newAppConfig = { appConfig | teamName = newTeamName }
-          in
-            ( { model | appConfig = newAppConfig }, Cmd.none )
+      let
+        newModel : Model
+        newModel = { model | appConfig = (updateAppConfig appConfigMsg model.appConfig) }
 
-        NewSheetId newSheetId ->
-          let
-            newAppConfig : AppConfig
-            newAppConfig = { appConfig | sheetId = newSheetId }
-          in
-            ( { model | appConfig = newAppConfig }, Cmd.none )
+      in
 
-        NewApiKey newApiKey ->
-          let
-            newAppConfig : AppConfig
-            newAppConfig = { appConfig | apiKey = newApiKey }
-          in
-            ( { model | appConfig = newAppConfig }, Cmd.none )
+        case appConfigMsg of
+          CreateAppConfig -> ( newModel, pushUrl model.navigationKey "/appConfigCopy")
 
-        NewAppKey newAppKey ->
-          ( { model | appKey = log "New app key" newAppKey }, Cmd.none )
+          CopiedAppKeys appKey -> (
+            newModel,
+            Cmd.batch [
+              setStorage (StorageAppState appKey),
+              pushUrl model.navigationKey "/stats"
+            ])
 
-        CreateAppConfig -> ( { model | currentPage = AppKeyCopierPage }, Cmd.none)
+          InputAppKey -> (
+            newModel,
+            Cmd.batch [
+              setStorage (StorageAppState model.appKey),
+              pushUrl model.navigationKey "/stats"
+            ])
 
-        CopiedAppKeys appKey -> (
-          model,
-          Cmd.batch [
-            setStorage (StorageAppState appKey),
-            pushUrl model.navigationKey "/stats"
-          ])
+          _ -> ( newModel, Cmd.none )
 
-        InputAppKey -> (
-          { model | appConfig = decodeAppConfigFromAppKey model.appKey },
-          Cmd.batch [
-            setStorage (StorageAppState model.appKey),
-            pushUrl model.navigationKey "/stats"
-          ])
 
 view : Model -> Document Msg
 view model =

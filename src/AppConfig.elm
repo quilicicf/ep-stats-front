@@ -22,6 +22,7 @@ type alias AppConfig =
   , sheetId: String
   , apiKey: String
   , isAdmin: Bool
+  , appKey: String
   }
 
 type alias StorageAppState = { appKey: String }
@@ -79,8 +80,8 @@ decodeAppConfigFromAppKey appKeyInBase64 =
     Ok decodedAppKey ->
       case Decode.decodeString appConfigDecoder decodedAppKey of
         Ok appConfig -> appConfig
-        Err _ -> AppConfig "" "" "" False
-    Err _ -> AppConfig "" "" "" False
+        Err _ -> AppConfig "" "" "" False appKeyInBase64
+    Err _ -> AppConfig "" "" "" False appKeyInBase64
 
 ----------
 -- VIEW --
@@ -180,3 +181,24 @@ appKeyForm =
           ]
       ]
 
+
+------------
+-- UPDATE --
+------------
+
+updateAppConfig : AppConfigMsg -> AppConfig -> AppConfig
+updateAppConfig msg appConfig =
+  case msg of
+    NewTeamName newTeamName -> { appConfig | teamName = newTeamName }
+
+    NewSheetId newSheetId -> { appConfig | sheetId = newSheetId }
+
+    NewApiKey newApiKey -> { appConfig | apiKey = newApiKey }
+
+    NewAppKey newAppKey -> { appConfig | appKey = newAppKey }
+
+    CreateAppConfig -> appConfig
+
+    CopiedAppKeys copiedAppKey -> { appConfig | appKey = copiedAppKey }
+
+    InputAppKey -> decodeAppConfigFromAppKey appConfig.appKey

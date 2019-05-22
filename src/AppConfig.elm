@@ -25,13 +25,22 @@ type alias AppConfig =
   , appKey: String
   }
 
+type alias AppConfigExtender r =
+  { r
+  | teamName: String
+  , sheetId: String
+  , apiKey: String
+  , isAdmin: Bool
+  , appKey: String
+  }
+
 type alias StorageAppState = { appKey: String }
 
 -----------
 -- UTILS --
 -----------
 
-jsonifyAppConfig : AppConfig -> Bool -> Value
+jsonifyAppConfig : AppConfigExtender r -> Bool -> Value
 jsonifyAppConfig appConfig isAdmin =
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
@@ -40,7 +49,7 @@ jsonifyAppConfig appConfig isAdmin =
       , ("isAdmin", Encode.bool isAdmin)
       ]
 
-encodeAppConfig : AppConfig -> Bool -> String
+encodeAppConfig : AppConfigExtender r -> Bool -> String
 encodeAppConfig appConfig isAdmin =
   jsonifyAppConfig appConfig isAdmin
     |> Encode.encode 0
@@ -53,6 +62,7 @@ appConfigDecoder =
     |> required "sheetId" string
     |> required "apiKey" string
     |> required "isAdmin" bool
+    |> required "appKey" string
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
@@ -87,7 +97,7 @@ decodeAppConfigFromAppKey appKeyInBase64 =
 -- VIEW --
 ----------
 
-appConfigForm : AppConfig -> Html Msg
+appConfigForm : AppConfigExtender r -> Html Msg
 appConfigForm appConfig =
   Html.form []
     [ div []
@@ -130,7 +140,7 @@ appConfigForm appConfig =
         ]
     ]
 
-appKeyCopierView : AppConfig -> Html Msg
+appKeyCopierView : AppConfigExtender r -> Html Msg
 appKeyCopierView appConfig =
   let
     adminAppKey : String
@@ -186,19 +196,31 @@ appKeyForm =
 -- UPDATE --
 ------------
 
-updateAppConfig : AppConfigMsg -> AppConfig -> AppConfig
-updateAppConfig msg appConfig =
+updateAppConfig : AppConfigMsg -> AppConfigExtender r -> AppConfigExtender r
+updateAppConfig msg model =
   case msg of
-    NewTeamName newTeamName -> { appConfig | teamName = newTeamName }
+    NewTeamName newTeamName -> { model | teamName = newTeamName }
 
-    NewSheetId newSheetId -> { appConfig | sheetId = newSheetId }
+    NewSheetId newSheetId -> { model | sheetId = newSheetId }
 
-    NewApiKey newApiKey -> { appConfig | apiKey = newApiKey }
+    NewApiKey newApiKey -> { model | apiKey = newApiKey }
 
-    NewAppKey newAppKey -> { appConfig | appKey = newAppKey }
+    NewAppKey newAppKey -> { model | appKey = newAppKey }
 
-    CreateAppConfig -> appConfig
+    CreateAppConfig -> model
 
-    CopiedAppKeys copiedAppKey -> { appConfig | appKey = copiedAppKey }
+    CopiedAppKeys copiedAppKey -> { model | appKey = copiedAppKey }
 
-    InputAppKey -> decodeAppConfigFromAppKey appConfig.appKey
+    InputAppKey ->
+      -- TODO: No way to avoid that boilerplate? Seriously?
+      let
+        result : AppConfig
+        result = decodeAppConfigFromAppKey model.appKey
+
+      in
+        { model
+        | teamName = result.teamName
+        , sheetId = result.sheetId
+        , apiKey = result.apiKey
+        , isAdmin = result.isAdmin
+        }

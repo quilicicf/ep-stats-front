@@ -19,8 +19,14 @@ import Pagination exposing (..)
 port setStorage : StorageAppState -> Cmd msg
 
 type alias Model =
-  { appConfig: AppConfig
-  , appKey: String -- AppState
+  -- AppConfig
+  { teamName: String
+  , sheetId: String
+  , apiKey: String
+  , isAdmin: Bool
+  , appKey: String
+
+  -- Navigation
   , currentPage: Page
   , navigationKey: Key
   }
@@ -35,12 +41,12 @@ init flags url key =
       appConfig = log "Initialized with" (decodeAppConfigFromJson flags)
 
       initModel: Model
-      initModel = Model appConfig "" initPage key
+      initModel = Model "" "" "" False "" initPage key
   in
     ( initModel , Cmd.none )
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg ({ appConfig } as model) =
+update msg model =
   case msg of
     LinkClicked urlRequest ->
       case urlRequest of
@@ -59,7 +65,7 @@ update msg ({ appConfig } as model) =
     AppConfigMsg appConfigMsg ->
       let
         newModel : Model
-        newModel = { model | appConfig = (updateAppConfig appConfigMsg model.appConfig) }
+        newModel = updateAppConfig appConfigMsg model
 
       in
 
@@ -88,11 +94,11 @@ view model =
   case model.currentPage of
     WelcomePage -> createDocument (welcomeScreen model)
 
-    AppConfigPage -> createDocument (appConfigForm model.appConfig)
+    AppConfigPage -> createDocument (appConfigForm model)
 
     AppKeyPage -> createDocument appKeyForm
 
-    AppKeyCopierPage -> createDocument (appKeyCopierView model.appConfig)
+    AppKeyCopierPage -> createDocument (appKeyCopierView model)
 
     StatsPage -> createDocument (text "Stats should go here")
 

@@ -13,6 +13,7 @@ import Url exposing (Url)
 import Json.Decode exposing (Value, Decoder)
 
 import Msg exposing (..)
+import Stats exposing (..)
 import AppConfig exposing (..)
 import Pagination exposing (..)
 
@@ -26,6 +27,9 @@ type alias Model =
   , isAdmin: Bool
   , appKey: String
 
+  -- Stats
+  , stats: Maybe Stats
+
   -- Navigation
   , currentPage: Page
   , navigationKey: Key
@@ -34,14 +38,14 @@ type alias Model =
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
   let
-      initPage : Page
-      initPage = findPage url
+      initialPage : Page
+      initialPage = findPage url
 
       appConfig : AppConfig
       appConfig = log "Initialized with" (decodeAppConfigFromJson flags)
 
       initModel: Model
-      initModel = Model "" "" "" False "" initPage key
+      initModel = Model "" "" "" False "" Nothing initialPage key
   in
     ( initModel , Cmd.none )
 
@@ -70,12 +74,14 @@ update msg model =
       in
 
         case appConfigMsg of
-          CreateAppConfig -> ( newModel, pushUrl model.navigationKey "/appConfigCopy")
+          CreateAppConfig -> ( newModel, pushUrl model.navigationKey "/appKeyCopy")
 
           CopiedAppKeys appKey -> (
             newModel,
             Cmd.batch [
               setStorage (StorageAppState appKey),
+              fetchTitanStats model.sheetId model.apiKey,
+              fetchWarStats model.sheetId model.apiKey,
               pushUrl model.navigationKey "/stats"
             ])
 
@@ -88,6 +94,10 @@ update msg model =
 
           _ -> ( newModel, Cmd.none )
 
+    StatsMsg statsMsg ->
+      case statsMsg of
+        GotTitanStats _ -> ( (log "Got titan stats" model), Cmd.none )
+        GotWarStats _ -> ( (log "Got war stats" model), Cmd.none )
 
 view : Model -> Document Msg
 view model =
@@ -100,7 +110,7 @@ view model =
 
     AppKeyCopierPage -> createDocument (appKeyCopierView model)
 
-    StatsPage -> createDocument (text "Stats should go here")
+    StatsPage -> createDocument (waitingForStats model.stats)
 
     NotFoundPage -> createDocument (text "Not found")
 

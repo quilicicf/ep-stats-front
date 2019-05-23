@@ -2,13 +2,15 @@ module Msg exposing (..)
 
 import Browser exposing (UrlRequest)
 
-import Url exposing (Url)
+import Http
 
+import Url exposing (Url)
 
 type Msg
   = LinkClicked UrlRequest
   | UrlChanged Url
   | AppConfigMsg AppConfigMsg
+  | StatsMsg StatsMsg
 
 type AppConfigMsg
   = NewTeamName String
@@ -18,3 +20,8 @@ type AppConfigMsg
   | CreateAppConfig
   | CopiedAppKeys String
   | InputAppKey
+
+type StatsMsg
+  = GotTitanStats (Result Http.Error String)
+  | GotWarStats (Result Http.Error String)
+

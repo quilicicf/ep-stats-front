@@ -15,6 +15,7 @@ findPage url =
   case url.path of
     "/" -> WelcomePage
     "/appConfig" -> AppConfigPage
+    "/appKeyCopy" -> AppKeyCopierPage
     "/appKey" -> AppKeyPage
     "/stats" -> StatsPage
     _ -> NotFoundPage

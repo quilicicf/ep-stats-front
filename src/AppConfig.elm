@@ -22,7 +22,6 @@ type alias AppConfig =
   , sheetId: String
   , apiKey: String
   , isAdmin: Bool
-  , appKey: String
   }
 
 type alias AppConfigExtender r =
@@ -32,6 +31,7 @@ type alias AppConfigExtender r =
   , apiKey: String
   , isAdmin: Bool
   , appKey: String
+  , appKeyError: String
   }
 
 type alias StorageAppState = { appKey: String }
@@ -62,7 +62,6 @@ appConfigDecoder =
     |> required "sheetId" string
     |> required "apiKey" string
     |> required "isAdmin" bool
-    |> required "appKey" string
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
@@ -75,30 +74,21 @@ decodeStorageAppState appKeyAsJson =
     Ok appState -> appState
     Err _ -> StorageAppState ""
 
-decodeAppConfigFromJson : Value -> AppConfig
-decodeAppConfigFromJson appKeyAsJson =
-  let
-    storageAppState : StorageAppState
-    storageAppState = decodeStorageAppState appKeyAsJson
-
-  in
-    decodeAppConfigFromAppKey storageAppState.appKey
-
-decodeAppConfigFromAppKey : String -> AppConfig
+decodeAppConfigFromAppKey : String -> Maybe AppConfig
 decodeAppConfigFromAppKey appKeyInBase64 =
   case Base64.decode appKeyInBase64 of
     Ok decodedAppKey ->
       case Decode.decodeString appConfigDecoder decodedAppKey of
-        Ok appConfig -> appConfig
-        Err _ -> AppConfig "" "" "" False appKeyInBase64
-    Err _ -> AppConfig "" "" "" False appKeyInBase64
+        Ok appConfig -> Just appConfig
+        Err _ -> Nothing
+    Err _ -> Nothing
 
 ----------
 -- VIEW --
 ----------
 
-appConfigForm : AppConfigExtender r -> Html Msg
-appConfigForm appConfig =
+viewAppConfig : AppConfigExtender r -> Html Msg
+viewAppConfig appConfig =
   Html.form []
     [ div []
         [ text "Team name"
@@ -140,8 +130,8 @@ appConfigForm appConfig =
         ]
     ]
 
-appKeyCopierView : AppConfigExtender r -> Html Msg
-appKeyCopierView appConfig =
+viewAppKeyCopier : AppConfigExtender r -> Html Msg
+viewAppKeyCopier appConfig =
   let
     adminAppKey : String
     adminAppKey = encodeAppConfig appConfig True
@@ -165,8 +155,8 @@ appKeyCopierView appConfig =
         [ text "I've stored'em away" ]
     ]
 
-appKeyForm : Html Msg
-appKeyForm =
+viewAppKeyInput : AppConfigExtender r -> Html Msg
+viewAppKeyInput { appKeyError } =
   let
     appKey : String
     appKey = ""
@@ -182,6 +172,7 @@ appKeyForm =
               , onInput (AppConfigMsg << NewAppKey)
               ]
               []
+          , span [ class "danger" ] [ text appKeyError ]
           ]
       , br [] []
       , div []
@@ -214,13 +205,17 @@ updateAppConfig msg model =
     InputAppKey ->
       -- TODO: No way to avoid that boilerplate? Seriously?
       let
-        result : AppConfig
-        result = decodeAppConfigFromAppKey model.appKey
+        maybeResult : Maybe AppConfig
+        maybeResult = decodeAppConfigFromAppKey model.appKey
 
       in
-        { model
-        | teamName = result.teamName
-        , sheetId = result.sheetId
-        , apiKey = result.apiKey
-        , isAdmin = result.isAdmin
-        }
+        case maybeResult of
+          Just result ->
+            { model
+            | teamName = result.teamName
+            , sheetId = result.sheetId
+            , apiKey = result.apiKey
+            , isAdmin = result.isAdmin
+            , appKeyError = ""
+            }
+          Nothing -> { model | appKeyError = "Invalid app key!" }

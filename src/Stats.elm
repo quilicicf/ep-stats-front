@@ -13,8 +13,6 @@ import Msg exposing (..)
 -- MODELS --
 ------------
 
-type StatsType = Titan | War
-
 type alias Stats =
   { war : Maybe String
   , titan : Maybe String
@@ -23,9 +21,6 @@ type alias Stats =
 -----------
 -- UTILS --
 -----------
-
-initialStats : Stats
-initialStats = Stats (Just "") (Just "")
 
 computeSheetUrl : String -> String -> String -> String
 computeSheetUrl range sheetId apiKey = interpolate
@@ -47,7 +42,14 @@ fetchWarStats sheetId apiKey = Http.get
 -- VIEW --
 ----------
 
-waitingForStats : Maybe Stats -> Html Msg
-waitingForStats maybeStats = div [ class "" ] [
-    span [] [ text "Spinner yay!" ]
-  ]
+viewStats : Maybe Stats -> Html Msg
+viewStats maybeStats = case maybeStats of
+  Nothing ->
+    div [ class "" ] [
+        span [] [ text "Spinner yay!" ]
+      ]
+
+  Just stats ->
+    div [ class "" ] [
+      span [] [ text "Data received yay!" ]
+    ]

@@ -26,6 +26,7 @@ type alias Model =
   , apiKey: String
   , isAdmin: Bool
   , appKey: String
+  , appKeyError: String
 
   -- Stats
   , stats: Maybe Stats
@@ -35,19 +36,50 @@ type alias Model =
   , navigationKey: Key
   }
 
+createInitialModel : Maybe AppConfig -> String -> Page -> Key -> Model
+createInitialModel maybeAppConfig appKey initialPage key =
+  case maybeAppConfig of
+    Just appConfig -> Model
+      appConfig.teamName
+      appConfig.sheetId
+      appConfig.apiKey
+      appConfig.isAdmin
+      appKey
+      ""
+      Nothing
+      initialPage
+      key
+
+    Nothing -> Model "" "" "" False "" "" Nothing initialPage key
+
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
   let
-      initialPage : Page
-      initialPage = findPage url
+      storageAppState : StorageAppState
+      storageAppState = decodeStorageAppState flags
 
-      appConfig : AppConfig
-      appConfig = log "Initialized with" (decodeAppConfigFromJson flags)
+      maybeAppConfig : Maybe AppConfig
+      maybeAppConfig = log "Initialized with" (decodeAppConfigFromAppKey storageAppState.appKey)
+
+      hasAppConfig : Bool
+      hasAppConfig = if maybeAppConfig == Nothing then False else True
+
+      initialPage : Page
+      initialPage = log "tata" (findInitialPage url hasAppConfig)
 
       initModel: Model
-      initModel = Model "" "" "" False "" Nothing initialPage key
+      initModel = createInitialModel maybeAppConfig storageAppState.appKey initialPage key
+
   in
-    ( initModel , Cmd.none )
+    case initialPage of
+      StatsPage ->
+        ( initModel
+        , Cmd.batch [
+          fetchTitanStats initModel.sheetId initModel.apiKey,
+          fetchWarStats initModel.sheetId initModel.apiKey
+        ])
+      _ -> ( initModel, Cmd.none )
+
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -104,13 +136,13 @@ view model =
   case model.currentPage of
     WelcomePage -> createDocument (welcomeScreen model)
 
-    AppConfigPage -> createDocument (appConfigForm model)
+    AppConfigPage -> createDocument (viewAppConfig model)
 
-    AppKeyPage -> createDocument appKeyForm
+    AppKeyPage -> createDocument (viewAppKeyInput model)
 
-    AppKeyCopierPage -> createDocument (appKeyCopierView model)
+    AppKeyCopierPage -> createDocument (viewAppKeyCopier model)
 
-    StatsPage -> createDocument (waitingForStats model.stats)
+    StatsPage -> createDocument (viewStats model.stats)
 
     NotFoundPage -> createDocument (text "Not found")
 

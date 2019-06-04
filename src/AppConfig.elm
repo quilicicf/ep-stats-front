@@ -182,7 +182,6 @@ viewAppKeyInput { appKeyError } =
           ]
       ]
 
-
 ------------
 -- UPDATE --
 ------------

@@ -14,6 +14,7 @@ import Json.Decode exposing (Value, Decoder)
 
 import Msg exposing (..)
 import Stats exposing (..)
+import TitanStats exposing (..)
 import AppConfig exposing (..)
 import Pagination exposing (..)
 
@@ -127,9 +128,11 @@ update msg model =
           _ -> ( newModel, Cmd.none )
 
     StatsMsg statsMsg ->
-      case statsMsg of
-        GotTitanStats _ -> ( (log "Got titan stats" model), Cmd.none )
-        GotWarStats _ -> ( (log "Got war stats" model), Cmd.none )
+      let
+        newModel : Model
+        newModel = updateStats statsMsg model
+      in
+        ( newModel, Cmd.none )
 
 view : Model -> Document Msg
 view model =

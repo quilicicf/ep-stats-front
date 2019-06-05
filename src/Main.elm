@@ -14,7 +14,6 @@ import Json.Decode exposing (Value, Decoder)
 
 import Msg exposing (..)
 import Stats exposing (..)
-import TitanStats exposing (..)
 import AppConfig exposing (..)
 import Pagination exposing (..)
 

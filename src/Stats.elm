@@ -38,7 +38,7 @@ computeSheetUrl range sheetId apiKey = interpolate
 
 fetchTitanStats : String -> String -> Cmd Msg
 fetchTitanStats sheetId apiKey = Http.get
-  { url = computeSheetUrl "Titans!A%3AAZ" sheetId apiKey
+  { url = computeSheetUrl "Titans!A:AAZ" sheetId apiKey
   , expect = Http.expectString (StatsMsg << GotTitanStats)
   }
 
@@ -120,7 +120,7 @@ viewTitanMemberScore : MemberTitanScore -> Html Msg
 viewTitanMemberScore memberTitanScore =
   let
     value : String
-    value = log "Value" memberTitanScore.value
+    value = memberTitanScore.value
       |> withDefault 0
       |> String.fromInt
 

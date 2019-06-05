@@ -2,14 +2,16 @@ module TitanStats exposing (..)
 
 import Debug exposing (log)
 
+import Json.Decode as Decode exposing(Value, Decoder, string)
+import Json.Decode.Pipeline exposing (required)
+
 import List.Extra exposing (getAt)
 
 import Maybe exposing (withDefault)
 
 import ParseInt exposing (parseInt)
 
-import Json.Decode as Decode exposing(Value, Decoder, string)
-import Json.Decode.Pipeline exposing (required)
+import Regex exposing (..)
 
 import MaybeExtra exposing (hasValue)
 
@@ -108,18 +110,22 @@ extractTitanScoresList rawTitanStats =
     data : List ( List String )
     data = List.drop 1 rawTitanStats.values
 
-    memberData : List ( List String )
-    memberData = List.drop nonMemberRows ( data )
-
   in
     List.drop nonMemberRows headerRow
       |> List.indexedMap ( extractTitanDataForMember data )
 
+noWhiteSpaceRegex : Regex
+noWhiteSpaceRegex = withDefault Regex.never ( Regex.fromString "\\s+" )
+
 safeParseInt : String -> Maybe Int
 safeParseInt intAsString =
-  case parseInt intAsString of
-    Ok int -> Just int
-    Err _ -> Nothing
+  let
+    safeIntAsString : String
+    safeIntAsString = Regex.replace noWhiteSpaceRegex (\_ -> "") intAsString
+  in
+    case parseInt safeIntAsString of
+      Ok int -> Just int
+      Err _ -> Nothing
 
 extractTitanDataForMember : ( List ( List String ) ) -> Int -> String -> MemberTitanScores
 extractTitanDataForMember data index memberPseudo =

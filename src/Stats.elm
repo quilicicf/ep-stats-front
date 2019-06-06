@@ -1,16 +1,16 @@
 module Stats exposing (..)
 
-import Debug exposing (log)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
 import Http
 
 import Maybe exposing (withDefault, map)
+import MaybeExtra exposing (hasValue)
 
 import String.Interpolate exposing (interpolate)
 
+import CustomStyle exposing (customStyle)
 import Msg exposing (..)
 import TitanStats exposing (..)
 
@@ -86,7 +86,7 @@ viewTitanStats titanStats =
 
   in
     div [ class "graph-container" ] [
-      table [ class "chart", style "--titans" titansNumberAsString ] [
+      table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
         caption [] [ text "A table that shows user performance on titans" ],
         thead [] [
           tr [] titanDates
@@ -94,6 +94,9 @@ viewTitanStats titanStats =
         tbody [] titanScores
       ]
     ]
+
+valueAsString : String -> String
+valueAsString value = interpolate "'{0}'" [ value ]
 
 viewTitanMemberScores : MemberTitanScores -> Html Msg
 viewTitanMemberScores memberTitanScores =
@@ -104,9 +107,6 @@ viewTitanMemberScores memberTitanScores =
     maxValue : String
     maxValue = withDefault 0 memberTitanScores.max |> String.fromInt
 
-    maxValueAsString : String
-    maxValueAsString = interpolate "'{0}'" [ maxValue ]
-
     rowHeading : Html Msg
     rowHeading = th [ class "labels" ] [ text memberTitanScores.pseudo ]
 
@@ -114,7 +114,37 @@ viewTitanMemberScores memberTitanScores =
     row = rowHeading :: List.map viewTitanMemberScore memberTitanScores.scores
 
   in
-    tr [ class htmlClass, style "--max" maxValue, style "--max-as-string" maxValueAsString ] row
+    tr [
+      class htmlClass,
+      customStyle [
+        ("--max", maxValue),
+        ("--max-as-string", valueAsString maxValue)
+      ]
+    ] row
+
+getLineStartX : Maybe Int -> String
+getLineStartX maybePreviousScore =
+  case maybePreviousScore of
+    Just _ -> "0%"
+    Nothing -> "50%"
+
+getLineStartY : Maybe Int -> String
+getLineStartY maybePreviousScore =
+  case maybePreviousScore of
+    Just previousScore -> String.fromInt previousScore
+    Nothing -> "var(--value)"
+
+getLineEndX : Maybe Int -> String
+getLineEndX maybeNextScore =
+  case maybeNextScore of
+    Just _ -> "100%"
+    Nothing -> "50%"
+
+getLineEndY : Maybe Int -> String
+getLineEndY maybeNextScore =
+  case maybeNextScore of
+    Just nextScore -> String.fromInt nextScore
+    Nothing -> "var(--value)"
 
 viewTitanMemberScore : MemberTitanScore -> Html Msg
 viewTitanMemberScore memberTitanScore =
@@ -124,10 +154,25 @@ viewTitanMemberScore memberTitanScore =
       |> withDefault 0
       |> String.fromInt
 
+    detailedTitanColor : DetailedColor
+    detailedTitanColor = detailTitanColor memberTitanScore.titanColor
+
   in
-    td [ class "chart-value" ] [
-      span [class "score-presenter"] [ text value ]
-    ]
+    td
+      [ class "chart-value"
+      , customStyle
+        [ ("--value", value)
+        ,("--value-as-string", valueAsString value)
+        ,("--titan-color", valueAsString detailedTitanColor.name)
+        ,("--titan-color-code", detailedTitanColor.code)
+        ,("--line-start-x", getLineStartX memberTitanScore.previousScore)
+        ,("--line-start-y", getLineStartY memberTitanScore.previousScore)
+        ,("--line-end-x", getLineEndX memberTitanScore.nextScore)
+        ,("--line-end-y", getLineEndY memberTitanScore.nextScore)
+        ]
+      ] [
+        span [class "score-presenter"] [ text value ]
+      ]
 
 ------------
 -- UPDATE --

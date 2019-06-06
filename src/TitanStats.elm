@@ -21,6 +21,11 @@ import MaybeExtra exposing (hasValue)
 
 type TitanColor = Red | Green | Blue | Holy | Dark | Unknown
 
+type alias DetailedColor =
+  { name : String -- THe displayable name, i.e. RED
+  , code: String -- The CSS custom property, i.e. var(--red)
+  }
+
 type alias MemberTitanScore =
   { value : Maybe Int
   , titanColor : TitanColor
@@ -55,6 +60,16 @@ colorIndex = 4
 
 starIndex : Int
 starIndex = 3
+
+detailTitanColor : TitanColor -> DetailedColor
+detailTitanColor titanColor =
+  case titanColor of
+    Red -> DetailedColor "RED" "var(--red)"
+    Green -> DetailedColor "GREEN" "var(--green)"
+    Blue -> DetailedColor "BLUE" "var(--blue)"
+    Holy -> DetailedColor "HOLY" "var(--holy)"
+    Dark -> DetailedColor "DARK" "var(--dark)"
+    Unknown -> DetailedColor "UNKNOWN" "var(--black)"
 
 decodeTitanColor : String -> TitanColor
 decodeTitanColor colorAsString =

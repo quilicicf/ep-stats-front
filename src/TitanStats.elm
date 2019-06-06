@@ -93,7 +93,17 @@ decodeRawTitanStats titanStatsAsString =
     decodingResult = Decode.decodeString rawTitanStatsDecoder titanStatsAsString
   in
     case decodingResult of
-      Ok rawTitanStats -> rawTitanStats
+      Ok rawTitanStats ->
+        let
+          truncatedValues: List (List String)
+          truncatedValues = rawTitanStats.values
+            |> List.reverse
+            |> List.take 30
+            |> List.reverse
+
+        in
+          { rawTitanStats | values = truncatedValues }
+
       Err _ -> RawTitanStats []
 
 decodeTitanStats : String -> TitanStats
@@ -163,6 +173,12 @@ extractTitanDataForMember data index memberPseudo =
   in
     MemberTitanScores memberPseudo maxScore ( index == 0 ) memberScores
 
+toIntOrNothing : Maybe String -> Maybe Int
+toIntOrNothing maybeIntAsString =
+  case maybeIntAsString of
+    Just intAsString -> safeParseInt intAsString
+    Nothing -> Nothing
+
 extractMemberTitanScore : Int -> List ( List String ) -> Int -> List String -> MemberTitanScore
 extractMemberTitanScore memberIndex data titanIndex row =
   let
@@ -175,15 +191,13 @@ extractMemberTitanScore memberIndex data titanIndex row =
     previousValue = getAt ( titanIndex - 1 ) data
       |> withDefault []
       |> getAt ( nonMemberRows + memberIndex )
-      |> withDefault ""
-      |> safeParseInt
+      |> toIntOrNothing
 
     nextValue : Maybe Int
     nextValue = getAt ( titanIndex + 1 ) data
       |> withDefault []
       |> getAt ( nonMemberRows + memberIndex )
-      |> withDefault ""
-      |> safeParseInt
+      |> toIntOrNothing
 
     titanColor : TitanColor
     titanColor = getAt colorIndex row

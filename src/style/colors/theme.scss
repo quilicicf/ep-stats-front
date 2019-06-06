@@ -66,6 +66,13 @@ $secondary-gray: mix($secondary-color, $primary-color, 63);
   @include css-var(--neutral-gray, $neutral-gray);
   @include css-var(--primary-gray, $primary-gray);
   @include css-var(--secondary-gray, $secondary-gray);
+
+  // EP colors
+  --red: #C43E31;
+  --green: #42A22C;
+  --blue: #389EE6;
+  --holy: #F3D747;
+  --dark: #782c86;
 }
 
 body {

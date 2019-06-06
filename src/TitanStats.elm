@@ -161,7 +161,7 @@ extractTitanDataForMember data index memberPseudo =
     memberScores = List.indexedMap ( extractMemberTitanScore index data ) data
 
   in
-    MemberTitanScores memberPseudo maxScore False memberScores
+    MemberTitanScores memberPseudo maxScore ( index == 0 ) memberScores
 
 extractMemberTitanScore : Int -> List ( List String ) -> Int -> List String -> MemberTitanScore
 extractMemberTitanScore memberIndex data titanIndex row =

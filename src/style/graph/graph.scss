@@ -1,0 +1,232 @@
+@import '../colors/theme';
+
+@mixin label() {
+  --label-width: 4rem;
+  --label-arrow-width: .5rem;
+  --label-font-size: calc(var(--row-height) * .45);
+  --margin-left: 1rem;
+
+  font-size: var(--label-font-size);
+  line-height: var(--row-height);
+  padding-left: .7em;
+  text-align: left;
+
+  position: absolute;
+
+  color: var(--secondary-color);
+  background-color: var(--primary-neutral-dark);
+
+  left: var(--margin-left);
+  height: var(--row-height);
+  right: 0;
+
+  clip-path: polygon(
+      0 0,
+      var(--label-width) 0,
+      calc(var(--label-width) + var(--label-arrow-width)) calc(50% - 1px),
+      100% calc(50% - 1px),
+      100% calc(50% + 1px),
+      calc(var(--label-width) + var(--label-arrow-width)) calc(50% + 1px),
+      var(--label-width) 100%,
+      0 100%,
+      0 0
+  );
+
+  z-index: 2;
+}
+
+.chart {
+  --circle-size: .7rem;
+  --circle-half-size: calc(var(--circle-size) * .5);
+
+  --graph-height: 500px;
+  --row-height: 2rem;
+  --row-half-height: calc(var(--row-height) / 2);
+
+  border-collapse: collapse;
+  position: relative;
+  caption-side: bottom;
+  width: 80%;
+
+  &::after { // Place-holder for the whole graph
+    position: absolute;
+    content: "";
+    left: 0;
+    width: 100%;
+    background-color: var(--primary-neutral-light);
+    height: calc(var(--graph-height) + (var(--row-height) * 3));
+    z-index: 1;
+  }
+
+  tr {
+    --th-width: 8rem;
+    --td-width: calc(100% - var(--th-width));
+    --tds-width: calc(var(--td-width) * var(--titans));
+
+    th {
+      text-align: center;
+      height: var(--row-height);
+      padding: 0;
+      width: var(--th-width);
+    }
+
+    td {
+      text-align: center;
+      height: var(--row-height);
+      padding: 0;
+      width: var(--td-width);
+    }
+  }
+
+
+  .selected-member { // Selected member's table row
+    .labels {
+      &::before { // Ruler for the scale's max
+        @include label();
+        content: var(--max-as-string);
+        top: calc((2 * var(--row-height)) + var(--row-height));
+      }
+
+      &::after { // Ruler for the scale's 0
+        @include label();
+        content: '0';
+        top: calc(var(--graph-height) + (3 * var(--row-height)));
+      }
+    }
+  }
+
+  .hidden-member {
+    display: none;
+  }
+
+  .chart-value { // One titan score
+    position: relative;
+    --ratio: calc((var(--max) - var(--value)) / var(--max));
+    --top: calc((var(--ratio) * var(--graph-height)) + (2 * var(--row-height)));
+
+    .score-presenter {
+      --stroke-size: .5rem;
+      --half-stroke-size: calc(var(--stroke-size) / 2);
+
+      &::before {
+        --previous-ratio: calc((var(--max) - var(--line-start-y)) / var(--max));
+        --previous-y: calc((var(--previous-ratio) * var(--graph-height)) + (2 * var(--row-height)));
+        --y1: calc((var(--top) + var(--previous-y)) / 2);
+
+        --y2: var(--top);
+
+        position: absolute;
+        content: "";
+        background-color: var(--titan-color-code);
+        left: 0;
+        right: 0;
+        top: 0;
+        height: calc((var(--row-height) * 3) + var(--graph-height));
+
+        clip-path: polygon(
+            var(--line-start-x) calc(var(--y1) + var(--row-half-height) - var(--half-stroke-size)),
+            50% calc(var(--y2) + var(--row-half-height) - var(--half-stroke-size)),
+            50% calc(var(--y2) + var(--row-half-height) + var(--half-stroke-size)),
+            var(--line-start-x) calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size)),
+            var(--line-start-x) calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size))
+        );
+
+        z-index: 3;
+      }
+
+      &::after {
+        --y1: var(--top);
+
+        --next-ratio: calc((var(--max) - var(--line-end-y)) / var(--max));
+        --next-y: calc((var(--next-ratio) * var(--graph-height)) + (2 * var(--row-height)));
+        --y2: calc((var(--top) + var(--next-y)) / 2);
+
+        position: absolute;
+        content: "";
+        background-color: var(--titan-color-code);
+        left: 0;
+        right: 0;
+        top: 0;
+        height: calc((var(--row-height) * 3) + var(--graph-height));
+
+        clip-path: polygon(
+            50% calc(var(--y1) + var(--row-half-height) - var(--half-stroke-size)),
+            var(--line-end-x) calc(var(--y2) + var(--row-half-height) - var(--half-stroke-size)),
+            var(--line-end-x) calc(var(--y2) + var(--row-half-height) + var(--half-stroke-size)),
+            50% calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size)),
+            50% calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size))
+        );
+
+        z-index: 3;
+      }
+    }
+
+    &::before { // Bullet point
+      --side: var(--row-height);
+      --border: calc(var(--circle-size) * .2);
+
+      display: inline-block;
+      position: absolute;
+
+      content: "‎⬤";
+      text-align: center;
+      font-size: var(--circle-size);
+      line-height: var(--side);
+
+      color: var(--titan-color-code);
+      background-color: var(--white);
+
+      clip-path: circle(
+          calc(var(--border) + var(--circle-half-size))
+      );
+      top: var(--top);
+      left: calc(50% - (var(--row-height) / 2));
+      width: var(--side);
+      height: var(--side);
+
+      z-index: 4;
+    }
+
+    &::after { // Tooltip
+      --arrow-size: .25rem;
+      --arrow: calc(100% - var(--arrow-size));
+      --width: 4rem;
+
+      position: absolute;
+      top: calc((var(--ratio) * var(--graph-height)) + (3 * var(--row-height)) - var(--arrow-size) - var(--circle-half-size));
+      left: 50%;
+      width: var(--width);
+
+      clip-path: polygon(
+          0% 0%,
+          100% 0%,
+          100% var(--arrow),
+          calc(50% - .25rem) var(--arrow),
+          50% 100%,
+          calc(50% + .25rem) var(--arrow),
+          0% var(--arrow)
+      );
+
+      opacity: 0;
+      transform-origin: 50% calc(100% + 10px);
+      transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 45deg);
+      transition: opacity .2s cubic-bezier(0, .5, .5, 1),
+      transform .2s cubic-bezier(0, .5, .5, 1);
+      will-change: opacity, transform;
+
+      background-color: var(--primary-color);
+      padding: .5em;
+      content: var(--titan-color) ' ' var(--titan-stars-as-string) '⭐\A' var(--value-as-string);
+      white-space: pre;
+
+      z-index: 4;
+    }
+
+    &:hover::after {
+      opacity: 1;
+      transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 0deg);
+      transition: opacity .2s cubic-bezier(.5, 0, 1, .5),
+      transform .2s cubic-bezier(.5, 0, 1, .5);
+    }
+  }
+}

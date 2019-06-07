@@ -1,4 +1,4 @@
-@import 'colors/theme';
+@import '../colors/theme';
 
 @mixin label() {
   --label-width: 4rem;
@@ -53,7 +53,6 @@
     content: "";
     left: 0;
     width: 100%;
-    background-color: var(--primary-neutral-light);
     height: calc(var(--graph-height) + (var(--row-height) * 3));
     z-index: 1;
   }

@@ -1,4 +1,4 @@
-@import '../colors/theme';
+@import 'colors/theme';
 
 @mixin label() {
   --label-width: 4rem;
@@ -107,6 +107,7 @@
     .score-presenter {
       --stroke-size: .5rem;
       --half-stroke-size: calc(var(--stroke-size) / 2);
+      padding: 0 0.2rem;
 
       &::before {
         --previous-ratio: calc((var(--max) - var(--line-start-y)) / var(--max));

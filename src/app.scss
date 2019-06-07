@@ -1,5 +1,12 @@
 @import './style/colors/theme';
-@import './style/graph/graph';
+
+@import './style/generic/forms';
+@import './style/generic/buttons';
+
+@import './style/graph';
+@import './style/header';
+@import './style/choose-side';
+@import './style/input-app-key';
 
 html {
   box-sizing: border-box;
@@ -9,6 +16,8 @@ html {
 body {
   margin: 0;
   min-height: 100%;
+  background-color: var(--white);
+  color: var(--black);
 }
 
 .app-title {

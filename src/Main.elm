@@ -154,7 +154,7 @@ createDocument body =
   , body = [
       div
         []
-        [ h1 [] [ text "EP stats" ]
+        [ h1 [ class "header" ] [ text "EP stats" ]
         , body
         ]
     ]
@@ -162,12 +162,12 @@ createDocument body =
 
 welcomeScreen : Model -> Html Msg
 welcomeScreen _ =
-  div []
-    [ text "Choose your side"
-    , br [] []
-    , a [ href "/appConfig" ] [ text "I'm the alliance's GOD" ]
-    , br [] []
-    , a [ href "/appKey" ] [ text "I'm but a peon" ]
+  div [ class "choose-your-side" ]
+    [ h2 [] [ text "Choose your side" ]
+    , div [ class "choices" ]
+      [ a [ class "choice", class "choice-left", href "/appConfig" ] [ text "I'm the alliance's GOD" ]
+      , a [ class "choice", class "choice-right", class "choice-main", href "/appKey" ] [ text "I'm but a peon" ]
+      ]
     ]
 
 subscriptions : Model -> Sub Msg

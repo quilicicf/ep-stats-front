@@ -19,14 +19,20 @@ $primary-light: mix($primary-neutral-light, $primary-color, 45%);
 $primary-dark: mix($primary-neutral-dark, $primary-color, 45%);
 
 $secondary-neutral: mix-neutral($secondary-color);
-$secondary-neutral-light: lighten($secondary-neutral, 33);
-$secondary-neutral-dark: darken($secondary-neutral, 33);
+$secondary-neutral-light: lighten($secondary-neutral, 11);
+$secondary-neutral-lighter: lighten($secondary-neutral, 22);
+$secondary-neutral-lightest: lighten($secondary-neutral, 33);
+$secondary-neutral-dark: darken($secondary-neutral, 11);
+$secondary-neutral-darker: darken($secondary-neutral, 22);
+$secondary-neutral-darkest: darken($secondary-neutral, 33);
 
-$secondary-light: mix($secondary-neutral-light, $secondary-color, 45%);
-$secondary-dark: mix($secondary-neutral-dark, $secondary-color, 45%);
+$secondary-light: mix($secondary-neutral-lightest, $secondary-color, 45%);
+$secondary-dark: mix($secondary-neutral-darkest, $secondary-color, 45%);
 
 $white: lighten($primary-neutral-light, 15);
-$black: grayscale($secondary-neutral-dark);
+$black: grayscale($secondary-neutral-darkest);
+
+$light-gray: lighten($primary-neutral-light, 8);
 
 $neutral-gray: grayscale($primary-neutral);
 $primary-gray: mix($primary-color, $secondary-color, 30);
@@ -55,7 +61,11 @@ $secondary-gray: mix($secondary-color, $primary-color, 63);
 
   @include css-var(--secondary-neutral, $secondary-neutral);
   @include css-var(--secondary-neutral-light, $secondary-neutral-light);
+  @include css-var(--secondary-neutral-lighter, $secondary-neutral-lighter);
+  @include css-var(--secondary-neutral-lightest, $secondary-neutral-lightest);
   @include css-var(--secondary-neutral-dark, $secondary-neutral-dark);
+  @include css-var(--secondary-neutral-darker, $secondary-neutral-darker);
+  @include css-var(--secondary-neutral-darkest, $secondary-neutral-darkest);
 
   @include css-var(--secondary-light, $secondary-light);
   @include css-var(--secondary-dark, $secondary-dark);
@@ -63,19 +73,18 @@ $secondary-gray: mix($secondary-color, $primary-color, 63);
   @include css-var(--white, $white);
   @include css-var(--black, $black);
 
+  @include css-var(--light-gray, $light-gray);
+
   @include css-var(--neutral-gray, $neutral-gray);
   @include css-var(--primary-gray, $primary-gray);
   @include css-var(--secondary-gray, $secondary-gray);
 
-  // EP colors
+  /**
+  * EP colors
+  */
   --red: #C43E31;
   --green: #42A22C;
   --blue: #389EE6;
   --holy: #F3D747;
   --dark: #782c86;
-}
-
-body {
-  background-color: var(--primary-neutral-dark);
-  color: var(--secondary-light);
 }

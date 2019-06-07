@@ -1,0 +1,19 @@
+.button {
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--primary-neutral-dark);
+  min-width: 75px;
+  outline: none;
+}
+
+.button-primary {
+  background-color: var(--secondary-neutral);
+
+  &:hover {
+    background-color: var(--secondary-neutral-dark);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0.1rem 1px var(--primary-color);
+  }
+}

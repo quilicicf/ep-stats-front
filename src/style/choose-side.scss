@@ -1,0 +1,41 @@
+.choose-your-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+
+  .choices {
+    display: inline-flex;
+  }
+
+  .choice {
+    padding: 0.7rem;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--primary-neutral-dark);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+
+    &:hover {
+      background-color: var(--light-gray);
+    }
+  }
+
+  $rounding-ratio: 0.5rem;
+
+  .choice-left {
+    border-radius: $rounding-ratio 0 0 $rounding-ratio;
+    border-right: none;
+  }
+
+  .choice-right {
+    border-radius: 0 $rounding-ratio $rounding-ratio 0;
+  }
+
+  .choice.choice-main {
+    background-color: var(--secondary-neutral);
+
+    &:hover {
+      background-color: var(--secondary-neutral-dark);
+    }
+  }
+}

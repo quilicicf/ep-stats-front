@@ -157,30 +157,24 @@ viewAppKeyCopier appConfig =
 
 viewAppKeyInput : AppConfigExtender r -> Html Msg
 viewAppKeyInput { appKeyError } =
-  let
-    appKey : String
-    appKey = ""
-
-  in
-    Html.form []
-      [ div []
-          [ text "App key"
-          , br [] []
-          , input
-              [ type_ "text"
-              , value appKey
-              , onInput (AppConfigMsg << NewAppKey)
-              ]
-              []
-          , span [ class "danger" ] [ text appKeyError ]
-          ]
-      , br [] []
-      , div []
-          [ button
-              [ type_ "button", onClick (AppConfigMsg InputAppKey) ]
-              [ text "See" ]
-          ]
-      ]
+  Html.form [ class "input-app-key" ]
+    [ h2 [] [ text "Paste your app key" ]
+    , div [ class "form-field" ]
+        [ label [ for "appKey" ] [ text "App key" ]
+        , input
+            [ type_ "text"
+            , id "appKey"
+            , onInput (AppConfigMsg << NewAppKey)
+            ]
+            []
+        , span [ class "danger" ] [ text appKeyError ]
+        ]
+    , div []
+        [ button
+            [ type_ "button", class "button", class "button-primary", onClick (AppConfigMsg InputAppKey) ]
+            [ text "See" ]
+        ]
+    ]
 
 ------------
 -- UPDATE --

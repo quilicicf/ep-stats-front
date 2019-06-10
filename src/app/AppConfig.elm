@@ -1,4 +1,8 @@
-module AppConfig exposing (..)
+module AppConfig exposing (
+  AppConfig, AppConfigExtender, StorageAppState,
+  updateAppConfig, viewAppKeyCopier, viewAppKeyInput, viewAppConfig,
+  decodeStorageAppState, decodeAppConfigFromAppKey
+  )
 
 import Base64
 

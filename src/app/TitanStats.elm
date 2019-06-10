@@ -1,6 +1,9 @@
-module TitanStats exposing (..)
+module TitanStats exposing (TitanStats, updateTitanStats, viewTitanStats)
 
 import Debug exposing (log)
+
+import Html exposing (..)
+import Html.Attributes exposing (..)
 
 import Json.Decode as Decode exposing(Value, Decoder, string)
 import Json.Decode.Pipeline exposing (required)
@@ -13,7 +16,11 @@ import ParseInt exposing (parseInt)
 
 import Regex exposing (..)
 
+import Msg exposing (Msg)
+import CustomStyle exposing (customStyle)
+import ValueAsString exposing (valueAsString)
 import MaybeExtra exposing (hasValue)
+import GraphUtils exposing (getLineStartX, getLineEndX, getLineStartY, getLineEndY)
 
 ------------
 -- MODELS --
@@ -94,15 +101,7 @@ decodeRawTitanStats titanStatsAsString =
   in
     case decodingResult of
       Ok rawTitanStats ->
-        let
-          truncatedValues: List (List String)
-          truncatedValues = rawTitanStats.values
-            |> List.reverse
-            |> List.take 30
-            |> List.reverse
-
-        in
-          { rawTitanStats | values = truncatedValues }
+        { rawTitanStats | values = rawTitanStats.values }
 
       Err _ -> RawTitanStats []
 
@@ -211,3 +210,97 @@ extractMemberTitanScore memberIndex data titanIndex row =
       |> withDefault 0
   in
     MemberTitanScore value titanColor titanStars previousValue nextValue
+
+------------
+-- UPDATE --
+------------
+
+updateTitanStats : String -> Maybe TitanStats
+updateTitanStats titanStatsAsString =
+  let
+    titanStats : TitanStats
+    titanStats = decodeTitanStats titanStatsAsString
+
+  in
+    Just titanStats
+
+----------
+-- VIEW --
+----------
+
+viewTitanStats : TitanStats -> Html Msg
+viewTitanStats titanStats =
+  let
+    titansNumberAsString : String
+    titansNumberAsString = List.length titanStats.titanScores |> String.fromInt
+
+    titanDates : List (Html Msg)
+    titanDates = "Titan date" :: titanStats.dates
+      |> List.map ( \date -> th [] [ text date ] )
+
+    titanScores : List (Html Msg)
+    titanScores = List.map ( viewTitanMemberScores ) titanStats.titanScores
+
+  in
+    div [ class "graph-container" ] [
+      table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
+        caption [] [ text "A table that shows user performance on titans" ],
+        thead [] [
+          tr [] titanDates
+        ],
+        tbody [] titanScores
+      ]
+    ]
+
+viewTitanMemberScores : MemberTitanScores -> Html Msg
+viewTitanMemberScores memberTitanScores =
+  let
+    htmlClass : String
+    htmlClass = if memberTitanScores.isSelected then "selected-member" else "hidden-member"
+
+    maxValue : String
+    maxValue = withDefault 0 memberTitanScores.max |> String.fromInt
+
+    rowHeading : Html Msg
+    rowHeading = th [ class "labels" ] [ text memberTitanScores.pseudo ]
+
+    row : List (Html Msg)
+    row = rowHeading :: List.map viewTitanMemberScore memberTitanScores.scores
+
+  in
+    tr [
+      class htmlClass,
+      customStyle [
+        ("--max", maxValue),
+        ("--max-as-string", valueAsString maxValue)
+      ]
+    ] row
+
+viewTitanMemberScore : MemberTitanScore -> Html Msg
+viewTitanMemberScore memberTitanScore =
+  let
+    value : String
+    value = memberTitanScore.value
+      |> withDefault 0
+      |> String.fromInt
+
+    detailedTitanColor : DetailedColor
+    detailedTitanColor = detailTitanColor memberTitanScore.titanColor
+
+  in
+    td
+      [ class "chart-value"
+      , customStyle
+        [ ("--value", value)
+        ,("--value-as-string", valueAsString value)
+        ,("--titan-color", valueAsString detailedTitanColor.name)
+        ,("--titan-color-code", detailedTitanColor.code)
+        ,("--titan-stars-as-string", valueAsString (String.fromInt memberTitanScore.titanStars))
+        ,("--line-start-x", getLineStartX memberTitanScore.previousScore)
+        ,("--line-start-y", getLineStartY memberTitanScore.previousScore)
+        ,("--line-end-x", getLineEndX memberTitanScore.nextScore)
+        ,("--line-end-y", getLineEndY memberTitanScore.nextScore)
+        ]
+      ] [
+        span [class "score-presenter"] [ text value ]
+      ]

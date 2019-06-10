@@ -1,4 +1,4 @@
-module MaybeExtra exposing (..)
+module MaybeExtra exposing (hasValue)
 
 hasValue : Maybe a -> Bool
 hasValue maybe = case maybe of

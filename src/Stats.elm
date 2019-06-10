@@ -18,14 +18,10 @@ import TitanStats exposing (..)
 -- MODELS --
 ------------
 
-type alias Stats =
-  { war : Maybe String
-  , titan : Maybe TitanStats
-  }
-
 type alias StatsExtender r =
   { r
-  | stats: Maybe Stats
+  | titanStats: Maybe TitanStats
+  , warStats: Maybe String
   }
 
 -----------
@@ -52,24 +48,29 @@ fetchWarStats sheetId apiKey = Http.get
 -- VIEW --
 ----------
 
-viewStats : Maybe Stats -> Html Msg
-viewStats maybeStats = case maybeStats of
-  Nothing ->
-    div [ class "" ] [
-        span [] [ text "Spinner yay!" ]
-      ]
+viewStats : StatsExtender r -> Html Msg
+viewStats stats =
+  let
+    maybeTitanStats : Maybe TitanStats
+    maybeTitanStats = stats.titanStats
 
-  Just stats ->
-    let
-      maybeTitanStats : Maybe TitanStats
-      maybeTitanStats = stats.titan
-    in
+    maybeWarStats : Maybe String
+    maybeWarStats = stats.warStats
+
+    hasStats : Bool
+    hasStats = hasValue maybeTitanStats && hasValue maybeWarStats
+  in
+    if hasStats then
       case maybeTitanStats of
         Just titanStats -> viewTitanStats titanStats
         Nothing ->
           div [ class "" ] [
             span [] [ text "Data received yay!" ]
           ]
+    else
+      div [ class "" ] [
+          span [] [ text "Spinner yay!" ]
+        ]
 
 viewTitanStats : TitanStats -> Html Msg
 viewTitanStats titanStats =
@@ -185,34 +186,12 @@ updateStats msg model =
     GotTitanStats httpResult ->
       case httpResult of
         Ok titanStatsAsString ->
-          let
-            newTitanStats : Maybe TitanStats
-            newTitanStats = updateTitanStats titanStatsAsString
-
-            newWarStats : Maybe String
-            newWarStats = Nothing
-
-            newStats : Stats
-            newStats = Stats newWarStats newTitanStats
-
-          in
-            { model | stats = Just newStats }
+          { model | titanStats = updateTitanStats titanStatsAsString }
         Err _ -> model
     GotWarStats httpResult ->
       case httpResult of
         Ok warStatsAsString ->
-          let
-            newTitanStats : Maybe TitanStats
-            newTitanStats = map ( \stats -> withDefault ( TitanStats [] [] ) stats.titan ) model.stats
-
-            newWarStats : Maybe String
-            newWarStats = Just warStatsAsString
-
-            newStats : Stats
-            newStats = Stats newWarStats newTitanStats
-
-          in
-            { model | stats = Just newStats }
+          { model | warStats = Just warStatsAsString }
         Err _ -> model
 
 updateTitanStats : String -> Maybe TitanStats

@@ -14,6 +14,7 @@ import Json.Decode exposing (Value, Decoder)
 
 import Msg exposing (..)
 import Stats exposing (..)
+import TitanStats exposing (..)
 import AppConfig exposing (..)
 import Pagination exposing (..)
 
@@ -29,7 +30,8 @@ type alias Model =
   , appKeyError: String
 
   -- Stats
-  , stats: Maybe Stats
+  , titanStats: Maybe TitanStats
+  , warStats: Maybe String
 
   -- Navigation
   , currentPage: Page
@@ -47,10 +49,11 @@ createInitialModel maybeAppConfig appKey initialPage key =
       appKey
       ""
       Nothing
+      Nothing
       initialPage
       key
 
-    Nothing -> Model "" "" "" False "" "" Nothing initialPage key
+    Nothing -> Model "" "" "" False "" "" Nothing Nothing initialPage key
 
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
@@ -144,7 +147,7 @@ view model =
 
     AppKeyCopierPage -> createDocument (viewAppKeyCopier model)
 
-    StatsPage -> createDocument (viewStats model.stats)
+    StatsPage -> createDocument (viewStats model)
 
     NotFoundPage -> createDocument (text "Not found")
 

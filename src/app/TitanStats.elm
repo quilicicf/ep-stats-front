@@ -2,6 +2,8 @@ module TitanStats exposing (TitanStats, updateTitanStats, viewTitanStats)
 
 import Debug exposing (log)
 
+import Dict exposing (..)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -59,14 +61,15 @@ type alias RawTitanStats = { values: List ( List String ) }
 -- UTILS --
 -----------
 
-nonMemberRows : Int
-nonMemberRows = 6
-
-colorIndex : Int
-colorIndex = 4
-
-starIndex : Int
-starIndex = 3
+fixedIndexes =
+  { number = 6
+  , dateIndex = 0
+  , totalIndex = 1
+  , lifeIndex = 2
+  , starIndex = 3
+  , colorIndex = 4
+  , membersIndex = 4
+  }
 
 detailTitanColor : TitanColor -> DetailedColor
 detailTitanColor titanColor =
@@ -134,9 +137,15 @@ extractTitanScoresList rawTitanStats =
     data : List ( List String )
     data = List.drop 1 rawTitanStats.values
 
+    allianceResults : MemberTitanScores
+    allianceResults = extractTitanDataForMember data 0 fixedIndexes.totalIndex "Alliance"
+
+    membersResults : List MemberTitanScores
+    membersResults = List.drop fixedIndexes.number headerRow
+          |> List.indexedMap ( extractTitanDataForMember data fixedIndexes.number )
+
   in
-    List.drop nonMemberRows headerRow
-      |> List.indexedMap ( extractTitanDataForMember data )
+    log "Toto" allianceResults :: membersResults
 
 noWhiteSpaceRegex : Regex
 noWhiteSpaceRegex = withDefault Regex.never ( Regex.fromString "\\s+" )
@@ -151,11 +160,14 @@ safeParseInt intAsString =
       Ok int -> Just int
       Err _ -> Nothing
 
-extractTitanDataForMember : ( List ( List String ) ) -> Int -> String -> MemberTitanScores
-extractTitanDataForMember data index memberPseudo =
+extractTitanDataForMember : ( List ( List String ) ) -> Int -> Int -> String -> MemberTitanScores
+extractTitanDataForMember data offset index memberPseudo =
   let
+    memberDataIndex : Int
+    memberDataIndex = offset + index
+
     rawValues : List String
-    rawValues = List.map ( getAt ( nonMemberRows + index ) ) data
+    rawValues = List.map ( getAt memberDataIndex ) data
       |> List.map ( withDefault "N/A" )
 
     values : List ( Maybe Int )
@@ -167,7 +179,7 @@ extractTitanDataForMember data index memberPseudo =
       |> List.maximum
 
     memberScores : List MemberTitanScore
-    memberScores = List.indexedMap ( extractMemberTitanScore index data ) data
+    memberScores = List.indexedMap ( extractMemberTitanScore memberDataIndex data ) data
 
   in
     MemberTitanScores memberPseudo maxScore ( index == 0 ) memberScores
@@ -182,29 +194,29 @@ extractMemberTitanScore : Int -> List ( List String ) -> Int -> List String -> M
 extractMemberTitanScore memberIndex data titanIndex row =
   let
     value : Maybe Int
-    value = getAt ( nonMemberRows + memberIndex ) row
+    value = getAt ( memberIndex ) row
       |> withDefault ""
       |> safeParseInt
 
     previousValue : Maybe Int
     previousValue = getAt ( titanIndex - 1 ) data
       |> withDefault []
-      |> getAt ( nonMemberRows + memberIndex )
+      |> getAt ( memberIndex )
       |> toIntOrNothing
 
     nextValue : Maybe Int
     nextValue = getAt ( titanIndex + 1 ) data
       |> withDefault []
-      |> getAt ( nonMemberRows + memberIndex )
+      |> getAt ( memberIndex )
       |> toIntOrNothing
 
     titanColor : TitanColor
-    titanColor = getAt colorIndex row
+    titanColor = getAt fixedIndexes.colorIndex row
       |> withDefault ""
       |> decodeTitanColor
 
     titanStars : Int
-    titanStars = getAt starIndex row
+    titanStars = getAt fixedIndexes.starIndex row
       |> withDefault ""
       |> safeParseInt
       |> withDefault 0

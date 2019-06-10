@@ -190,7 +190,7 @@
     &::after { // Tooltip
       --arrow-size: .25rem;
       --arrow: calc(100% - var(--arrow-size));
-      --width: 4rem;
+      --width: 5rem;
 
       position: absolute;
       top: calc((var(--ratio) * var(--graph-height)) + (3 * var(--row-height)) - var(--arrow-size) - var(--circle-half-size));
@@ -214,19 +214,19 @@
       transform .2s cubic-bezier(0, .5, .5, 1);
       will-change: opacity, transform;
 
-      background-color: var(--primary-color);
+      background-color: var(--titan-color-code);
       padding: .5em;
       content: var(--titan-color) ' ' var(--titan-stars-as-string) '⭐\A' var(--value-as-string);
       white-space: pre;
 
-      z-index: 4;
+      z-index: 5;
     }
 
     &:hover::after {
       opacity: 1;
       transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 0deg);
       transition: opacity .2s cubic-bezier(.5, 0, 1, .5),
-      transform .2s cubic-bezier(.5, 0, 1, .5);
+      transform .1s cubic-bezier(.5, 0, 1, .5);
     }
   }
 }

@@ -165,6 +165,7 @@ viewTitanMemberScore memberTitanScore =
         ,("--value-as-string", valueAsString value)
         ,("--titan-color", valueAsString detailedTitanColor.name)
         ,("--titan-color-code", detailedTitanColor.code)
+        ,("--titan-stars-as-string", valueAsString (String.fromInt memberTitanScore.titanStars))
         ,("--line-start-x", getLineStartX memberTitanScore.previousScore)
         ,("--line-start-y", getLineStartY memberTitanScore.previousScore)
         ,("--line-end-x", getLineEndX memberTitanScore.nextScore)

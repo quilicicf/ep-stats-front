@@ -1,0 +1,16 @@
+select {
+  border-radius: 0.5rem;
+  padding: 0.2rem;
+  border: 1px solid var(--primary-neutral-dark);
+  background-color: var(--white);
+  min-width: 75px;
+  outline: none;
+
+  &:hover {
+    background-color: var(--light-gray);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0.1rem 1px var(--primary-color);
+  }
+}

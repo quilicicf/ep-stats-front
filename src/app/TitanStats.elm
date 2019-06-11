@@ -259,7 +259,7 @@ viewTitanStats genericStatsFilter titanStats =
     div [ class "graph-container" ] [
       table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
         caption [] [ text "A table that shows user performance on titans" ],
-        thead [] ( dateRowHeadingElement :: titanDatesElements ),
+        thead [] [ tr [] ( dateRowHeadingElement :: titanDatesElements ) ],
         tbody [] titanScoresElements
       ]
     ]

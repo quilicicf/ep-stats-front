@@ -238,8 +238,11 @@ wrapTitanStats titanStats = div [ class "titan-stats" ] titanStats
 viewTitanStats : GenericStatsFilterExtender r -> TitanStats -> Html Msg
 viewTitanStats genericStatsFilter titanStats =
   let
+    dateRowHeadingElement : Html Msg
+    dateRowHeadingElement = th [] [ text "Titan date" ]
+
     titanDatesElements : List (Html Msg)
-    titanDatesElements = "Titan date" :: titanStats.dates
+    titanDatesElements = titanStats.dates
       |> List.reverse
       |> List.take genericStatsFilter.filteredPeriod
       |> List.reverse
@@ -256,9 +259,7 @@ viewTitanStats genericStatsFilter titanStats =
     div [ class "graph-container" ] [
       table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
         caption [] [ text "A table that shows user performance on titans" ],
-        thead [] [
-          tr [] titanDatesElements
-        ],
+        thead [] ( dateRowHeadingElement :: titanDatesElements ),
         tbody [] titanScoresElements
       ]
     ]
@@ -268,6 +269,9 @@ viewTitanMemberScores genericStatsFilter memberTitanScores =
   let
     htmlClass : String
     htmlClass = if genericStatsFilter.filteredMember == memberTitanScores.pseudo then "selected-member" else "hidden-member"
+
+    titanScoresRowHeading : Html Msg
+    titanScoresRowHeading = th [ class "labels" ] [ text genericStatsFilter.filteredMember ]
 
     filteredValues : List MemberTitanScore
     filteredValues = List.reverse memberTitanScores.scores
@@ -292,7 +296,7 @@ viewTitanMemberScores genericStatsFilter memberTitanScores =
         ("--max", maxValue),
         ("--max-as-string", valueAsString maxValue)
       ]
-    ] rowElements
+    ] ( titanScoresRowHeading :: rowElements )
 
 viewTitanMemberScore : Int -> Int -> MemberTitanScore -> Html Msg
 viewTitanMemberScore itemsNumber index memberTitanScore =

@@ -24,4 +24,5 @@ type AppConfigMsg
 type StatsMsg
   = GotTitanStats (Result Http.Error String)
   | GotWarStats (Result Http.Error String)
+  | NewMemberSelected String
 

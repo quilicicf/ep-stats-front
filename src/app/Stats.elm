@@ -3,18 +3,21 @@ module Stats exposing (StatsExtender,
   updateStats, viewStats
   )
 
+import Debug exposing (log)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
 import Http
 
+import Maybe exposing (withDefault)
 import MaybeExtra exposing (hasValue)
 
 import String.Interpolate exposing (interpolate)
 
 import Msg exposing (..)
-import TitanStats exposing (..)
-import GenericStatsFilter exposing (GenericStatsFilter)
+import TitanStats exposing (TitanStats, updateTitanStats, viewMaybeTitanStats)
+import GenericStatsFilter exposing (GenericStatsFilter, viewGenericFilterForm)
 
 ------------
 -- MODELS --
@@ -62,14 +65,17 @@ viewStats stats =
 
     hasStats : Bool
     hasStats = hasValue maybeTitanStats && hasValue maybeWarStats
+
+    members : List String
+    members = withDefault (TitanStats [] []) stats.titanStats
+      |> .titanScores
+      |> List.map .pseudo
   in
     if hasStats then
-      case maybeTitanStats of
-        Just titanStats -> viewTitanStats stats.genericStatsFilter titanStats
-        Nothing ->
-          div [ class "" ] [
-            span [] [ text "Data received yay!" ]
-          ]
+      div [ class "stats" ] [
+        viewGenericFilterForm stats.genericStatsFilter members,
+        viewMaybeTitanStats stats.genericStatsFilter maybeTitanStats
+      ]
     else
       div [ class "" ] [
           span [] [ text "Spinner yay!" ]
@@ -92,3 +98,13 @@ updateStats msg model =
         Ok warStatsAsString ->
           { model | warStats = Just warStatsAsString }
         Err _ -> model
+
+    NewMemberSelected newSelectedMember ->
+      let
+        oldGenericStatsFilter : GenericStatsFilter
+        oldGenericStatsFilter = model.genericStatsFilter
+
+        newGenericStatsFilter : GenericStatsFilter
+        newGenericStatsFilter = { oldGenericStatsFilter | user = newSelectedMember }
+      in
+        { model | genericStatsFilter = newGenericStatsFilter }

@@ -1,4 +1,4 @@
-module TitanStats exposing (TitanStats, updateTitanStats, viewTitanStats)
+module TitanStats exposing (TitanStats, updateTitanStats, viewMaybeTitanStats)
 
 import Debug exposing (log)
 
@@ -225,6 +225,15 @@ updateTitanStats titanStatsAsString =
 ----------
 -- VIEW --
 ----------
+
+viewMaybeTitanStats : GenericStatsFilter -> Maybe TitanStats -> Html Msg
+viewMaybeTitanStats genericStatsFilter maybeTitanStats =
+  case maybeTitanStats of
+    Just titanStats -> wrapTitanStats [ viewTitanStats genericStatsFilter titanStats ]
+    Nothing -> wrapTitanStats []
+
+wrapTitanStats : List ( Html Msg ) -> Html Msg
+wrapTitanStats titanStats = div [ class "titan-stats" ] titanStats
 
 viewTitanStats : GenericStatsFilter -> TitanStats -> Html Msg
 viewTitanStats genericStatsFilter titanStats =

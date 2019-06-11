@@ -4,7 +4,7 @@
   --label-width: 4rem;
   --label-arrow-width: .5rem;
   --label-font-size: calc(var(--row-height) * .45);
-  --margin-left: 1rem;
+  --margin-left: 0.1rem;
 
   font-size: var(--label-font-size);
   line-height: var(--row-height);
@@ -42,6 +42,7 @@
   --graph-height: 500px;
   --row-height: 2rem;
   --row-half-height: calc(var(--row-height) / 2);
+  --graph-offset: calc(var(--graph-height) + (var(--row-height) * 3));
 
   border-collapse: collapse;
   position: relative;
@@ -53,27 +54,27 @@
     content: "";
     left: 0;
     width: 100%;
-    height: calc(var(--graph-height) + (var(--row-height) * 3));
+    height: var(--graph-offset);
     z-index: 1;
   }
 
-  tr {
-    --th-width: 8rem;
-    --td-width: calc(100% - var(--th-width));
-    --tds-width: calc(var(--td-width) * var(--titans));
+  caption {
+    position: absolute;
+    top: calc(var(--graph-offset) + var(--row-height));
+    width: 100%;
+  }
 
+  tr {
     th {
       text-align: center;
       height: var(--row-height);
       padding: 0;
-      width: var(--th-width);
     }
 
     td {
       text-align: center;
       height: var(--row-height);
       padding: 0;
-      width: var(--td-width);
     }
   }
 

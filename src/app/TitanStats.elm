@@ -2,8 +2,6 @@ module TitanStats exposing (TitanStats, updateTitanStats, viewTitanStats)
 
 import Debug exposing (log)
 
-import Dict exposing (..)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -22,6 +20,8 @@ import Msg exposing (Msg)
 import CustomStyle exposing (customStyle)
 import ValueAsString exposing (valueAsString)
 import MaybeExtra exposing (hasValue)
+import AllianceName exposing (allianceName)
+import GenericStatsFilter exposing (GenericStatsFilter)
 import GraphUtils exposing (getLineStartX, getLineEndX, getLineStartY, getLineEndY)
 
 ------------
@@ -45,8 +45,6 @@ type alias MemberTitanScore =
 
 type alias MemberTitanScores =
   { pseudo : String
-  , max : Maybe Int
-  , isSelected : Bool
   , scores: List MemberTitanScore
   }
 
@@ -138,7 +136,7 @@ extractTitanScoresList rawTitanStats =
     data = List.drop 1 rawTitanStats.values
 
     allianceResults : MemberTitanScores
-    allianceResults = extractTitanDataForMember data 0 fixedIndexes.totalIndex "Alliance"
+    allianceResults = extractTitanDataForMember data 0 fixedIndexes.totalIndex allianceName
 
     membersResults : List MemberTitanScores
     membersResults = List.drop fixedIndexes.number headerRow
@@ -166,23 +164,11 @@ extractTitanDataForMember data offset index memberPseudo =
     memberDataIndex : Int
     memberDataIndex = offset + index
 
-    rawValues : List String
-    rawValues = List.map ( getAt memberDataIndex ) data
-      |> List.map ( withDefault "N/A" )
-
-    values : List ( Maybe Int )
-    values  = List.map safeParseInt rawValues
-
-    maxScore : Maybe Int
-    maxScore = List.filter hasValue values
-      |> List.map (withDefault 0)
-      |> List.maximum
-
     memberScores : List MemberTitanScore
     memberScores = List.indexedMap ( extractMemberTitanScore memberDataIndex data ) data
 
   in
-    MemberTitanScores memberPseudo maxScore ( index == 0 ) memberScores
+    MemberTitanScores memberPseudo memberScores
 
 toIntOrNothing : Maybe String -> Maybe Int
 toIntOrNothing maybeIntAsString =
@@ -240,44 +226,55 @@ updateTitanStats titanStatsAsString =
 -- VIEW --
 ----------
 
-viewTitanStats : TitanStats -> Html Msg
-viewTitanStats titanStats =
+viewTitanStats : GenericStatsFilter -> TitanStats -> Html Msg
+viewTitanStats genericStatsFilter titanStats =
   let
-    titansNumberAsString : String
-    titansNumberAsString = List.length titanStats.titanScores |> String.fromInt
-
-    titanDates : List (Html Msg)
-    titanDates = "Titan date" :: titanStats.dates
+    titanDatesElements : List (Html Msg)
+    titanDatesElements = "Titan date" :: titanStats.dates
+      |> List.reverse
+      |> List.take genericStatsFilter.period
+      |> List.reverse
       |> List.map ( \date -> th [] [ text date ] )
 
-    titanScores : List (Html Msg)
-    titanScores = List.map ( viewTitanMemberScores ) titanStats.titanScores
+    titansNumberAsString : String
+    titansNumberAsString = List.length titanDatesElements
+      |> String.fromInt
+
+    titanScoresElements : List (Html Msg)
+    titanScoresElements = List.map ( viewTitanMemberScores genericStatsFilter ) titanStats.titanScores
 
   in
     div [ class "graph-container" ] [
       table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
         caption [] [ text "A table that shows user performance on titans" ],
         thead [] [
-          tr [] titanDates
+          tr [] titanDatesElements
         ],
-        tbody [] titanScores
+        tbody [] titanScoresElements
       ]
     ]
 
-viewTitanMemberScores : MemberTitanScores -> Html Msg
-viewTitanMemberScores memberTitanScores =
+viewTitanMemberScores : GenericStatsFilter  -> MemberTitanScores -> Html Msg
+viewTitanMemberScores genericStatsFilter memberTitanScores =
   let
     htmlClass : String
-    htmlClass = if memberTitanScores.isSelected then "selected-member" else "hidden-member"
+    htmlClass = if genericStatsFilter.user == memberTitanScores.pseudo then "selected-member" else "hidden-member"
+
+    filteredValues : List MemberTitanScore
+    filteredValues = List.reverse memberTitanScores.scores
+      |> List.take genericStatsFilter.period
+      |> List.reverse
 
     maxValue : String
-    maxValue = withDefault 0 memberTitanScores.max |> String.fromInt
+    maxValue = List.map .value filteredValues
+      |> List.filter hasValue
+      |> List.map ( withDefault 0 )
+      |> List.maximum
+      |> withDefault 0
+      |> String.fromInt
 
-    rowHeading : Html Msg
-    rowHeading = th [ class "labels" ] [ text memberTitanScores.pseudo ]
-
-    row : List (Html Msg)
-    row = rowHeading :: List.map viewTitanMemberScore memberTitanScores.scores
+    rowElements : List (Html Msg)
+    rowElements = List.indexedMap ( viewTitanMemberScore genericStatsFilter.period ) filteredValues
 
   in
     tr [
@@ -286,15 +283,21 @@ viewTitanMemberScores memberTitanScores =
         ("--max", maxValue),
         ("--max-as-string", valueAsString maxValue)
       ]
-    ] row
+    ] rowElements
 
-viewTitanMemberScore : MemberTitanScore -> Html Msg
-viewTitanMemberScore memberTitanScore =
+viewTitanMemberScore : Int -> Int -> MemberTitanScore -> Html Msg
+viewTitanMemberScore itemsNumber index memberTitanScore =
   let
     value : String
     value = memberTitanScore.value
       |> withDefault 0
       |> String.fromInt
+
+    previousScore : Maybe Int
+    previousScore = if index == 0 then Nothing else memberTitanScore.previousScore
+
+    nextScore : Maybe Int
+    nextScore = if index == itemsNumber - 1 then Nothing else memberTitanScore.nextScore
 
     detailedTitanColor : DetailedColor
     detailedTitanColor = detailTitanColor memberTitanScore.titanColor
@@ -308,10 +311,10 @@ viewTitanMemberScore memberTitanScore =
         ,("--titan-color", valueAsString detailedTitanColor.name)
         ,("--titan-color-code", detailedTitanColor.code)
         ,("--titan-stars-as-string", valueAsString (String.fromInt memberTitanScore.titanStars))
-        ,("--line-start-x", getLineStartX memberTitanScore.previousScore)
-        ,("--line-start-y", getLineStartY memberTitanScore.previousScore)
-        ,("--line-end-x", getLineEndX memberTitanScore.nextScore)
-        ,("--line-end-y", getLineEndY memberTitanScore.nextScore)
+        ,("--line-start-x", getLineStartX previousScore)
+        ,("--line-start-y", getLineStartY previousScore)
+        ,("--line-end-x", getLineEndX nextScore)
+        ,("--line-end-y", getLineEndY nextScore)
         ]
       ] [
         span [class "score-presenter"] [ text value ]

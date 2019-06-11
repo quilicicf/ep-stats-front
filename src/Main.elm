@@ -15,8 +15,10 @@ import Json.Decode exposing (Value, Decoder)
 import Msg exposing (..)
 import Pagination exposing (..)
 
-import Stats exposing (StatsExtender, fetchWarStats, fetchTitanStats, updateStats, viewStats)
+import Stats exposing (StatsExtender,
+  fetchWarStats, fetchTitanStats, updateStats, viewStats)
 import TitanStats exposing (TitanStats)
+import GenericStatsFilter exposing (GenericStatsFilter, defaultGenericStatsFilter)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -34,6 +36,7 @@ type alias Model =
   , appKeyError: String
 
   -- Stats
+  , genericStatsFilter: GenericStatsFilter
   , titanStats: Maybe TitanStats
   , warStats: Maybe String
 
@@ -46,18 +49,25 @@ createInitialModel : Maybe AppConfig -> String -> Page -> Key -> Model
 createInitialModel maybeAppConfig appKey initialPage key =
   case maybeAppConfig of
     Just appConfig -> Model
+      -- App config
       appConfig.teamName
       appConfig.sheetId
       appConfig.apiKey
       appConfig.isAdmin
       appKey
       ""
-      Nothing
-      Nothing
-      initialPage
-      key
+      -- Stats
+      defaultGenericStatsFilter Nothing Nothing
+      -- Navigation
+      initialPage key
 
-    Nothing -> Model "" "" "" False "" "" Nothing Nothing initialPage key
+    Nothing -> Model
+      -- App config
+      "" "" "" False "" ""
+      -- Stats
+      defaultGenericStatsFilter Nothing Nothing
+      -- Navigation
+      initialPage key
 
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =

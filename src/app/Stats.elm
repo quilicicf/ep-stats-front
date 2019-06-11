@@ -14,6 +14,7 @@ import String.Interpolate exposing (interpolate)
 
 import Msg exposing (..)
 import TitanStats exposing (..)
+import GenericStatsFilter exposing (GenericStatsFilter)
 
 ------------
 -- MODELS --
@@ -21,7 +22,8 @@ import TitanStats exposing (..)
 
 type alias StatsExtender r =
   { r
-  | titanStats: Maybe TitanStats
+  | genericStatsFilter: GenericStatsFilter
+  , titanStats: Maybe TitanStats
   , warStats: Maybe String
   }
 
@@ -63,7 +65,7 @@ viewStats stats =
   in
     if hasStats then
       case maybeTitanStats of
-        Just titanStats -> viewTitanStats titanStats
+        Just titanStats -> viewTitanStats stats.genericStatsFilter titanStats
         Nothing ->
           div [ class "" ] [
             span [] [ text "Data received yay!" ]

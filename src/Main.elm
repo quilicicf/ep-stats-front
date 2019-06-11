@@ -18,7 +18,7 @@ import Pagination exposing (..)
 import Stats exposing (StatsExtender,
   fetchWarStats, fetchTitanStats, updateStats, viewStats)
 import TitanStats exposing (TitanStats)
-import GenericStatsFilter exposing (GenericStatsFilter, defaultGenericStatsFilter)
+import AllianceName exposing (allianceName)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -36,7 +36,8 @@ type alias Model =
   , appKeyError: String
 
   -- Stats
-  , genericStatsFilter: GenericStatsFilter
+  , filteredMember : String
+  , filteredPeriod : Int
   , titanStats: Maybe TitanStats
   , warStats: Maybe String
 
@@ -57,7 +58,7 @@ createInitialModel maybeAppConfig appKey initialPage key =
       appKey
       ""
       -- Stats
-      defaultGenericStatsFilter Nothing Nothing
+      allianceName 30 Nothing Nothing
       -- Navigation
       initialPage key
 
@@ -65,7 +66,7 @@ createInitialModel maybeAppConfig appKey initialPage key =
       -- App config
       "" "" "" False "" ""
       -- Stats
-      defaultGenericStatsFilter Nothing Nothing
+      allianceName 30 Nothing Nothing
       -- Navigation
       initialPage key
 

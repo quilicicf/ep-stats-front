@@ -21,7 +21,7 @@ import CustomStyle exposing (customStyle)
 import ValueAsString exposing (valueAsString)
 import MaybeExtra exposing (hasValue)
 import AllianceName exposing (allianceName)
-import GenericStatsFilter exposing (GenericStatsFilter)
+import GenericStatsFilter exposing (GenericStatsFilterExtender)
 import GraphUtils exposing (getLineStartX, getLineEndX, getLineStartY, getLineEndY)
 
 ------------
@@ -226,7 +226,7 @@ updateTitanStats titanStatsAsString =
 -- VIEW --
 ----------
 
-viewMaybeTitanStats : GenericStatsFilter -> Maybe TitanStats -> Html Msg
+viewMaybeTitanStats : GenericStatsFilterExtender r -> Maybe TitanStats -> Html Msg
 viewMaybeTitanStats genericStatsFilter maybeTitanStats =
   case maybeTitanStats of
     Just titanStats -> wrapTitanStats [ viewTitanStats genericStatsFilter titanStats ]
@@ -235,13 +235,13 @@ viewMaybeTitanStats genericStatsFilter maybeTitanStats =
 wrapTitanStats : List ( Html Msg ) -> Html Msg
 wrapTitanStats titanStats = div [ class "titan-stats" ] titanStats
 
-viewTitanStats : GenericStatsFilter -> TitanStats -> Html Msg
+viewTitanStats : GenericStatsFilterExtender r -> TitanStats -> Html Msg
 viewTitanStats genericStatsFilter titanStats =
   let
     titanDatesElements : List (Html Msg)
     titanDatesElements = "Titan date" :: titanStats.dates
       |> List.reverse
-      |> List.take genericStatsFilter.period
+      |> List.take genericStatsFilter.filteredPeriod
       |> List.reverse
       |> List.map ( \date -> th [] [ text date ] )
 
@@ -263,15 +263,15 @@ viewTitanStats genericStatsFilter titanStats =
       ]
     ]
 
-viewTitanMemberScores : GenericStatsFilter  -> MemberTitanScores -> Html Msg
+viewTitanMemberScores : GenericStatsFilterExtender r  -> MemberTitanScores -> Html Msg
 viewTitanMemberScores genericStatsFilter memberTitanScores =
   let
     htmlClass : String
-    htmlClass = if genericStatsFilter.user == memberTitanScores.pseudo then "selected-member" else "hidden-member"
+    htmlClass = if genericStatsFilter.filteredMember == memberTitanScores.pseudo then "selected-member" else "hidden-member"
 
     filteredValues : List MemberTitanScore
     filteredValues = List.reverse memberTitanScores.scores
-      |> List.take genericStatsFilter.period
+      |> List.take genericStatsFilter.filteredPeriod
       |> List.reverse
 
     maxValue : String
@@ -283,7 +283,7 @@ viewTitanMemberScores genericStatsFilter memberTitanScores =
       |> String.fromInt
 
     rowElements : List (Html Msg)
-    rowElements = List.indexedMap ( viewTitanMemberScore genericStatsFilter.period ) filteredValues
+    rowElements = List.indexedMap ( viewTitanMemberScore genericStatsFilter.filteredPeriod ) filteredValues
 
   in
     tr [

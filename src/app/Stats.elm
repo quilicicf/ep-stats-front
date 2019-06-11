@@ -3,8 +3,6 @@ module Stats exposing (StatsExtender,
   updateStats, viewStats
   )
 
-import Debug exposing (log)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -17,7 +15,7 @@ import String.Interpolate exposing (interpolate)
 
 import Msg exposing (..)
 import TitanStats exposing (TitanStats, updateTitanStats, viewMaybeTitanStats)
-import GenericStatsFilter exposing (GenericStatsFilter, viewGenericFilterForm)
+import GenericStatsFilter exposing (GenericStatsFilterExtender, viewGenericFilterForm)
 
 ------------
 -- MODELS --
@@ -25,7 +23,8 @@ import GenericStatsFilter exposing (GenericStatsFilter, viewGenericFilterForm)
 
 type alias StatsExtender r =
   { r
-  | genericStatsFilter: GenericStatsFilter
+  | filteredMember: String
+  , filteredPeriod: Int
   , titanStats: Maybe TitanStats
   , warStats: Maybe String
   }
@@ -73,8 +72,8 @@ viewStats stats =
   in
     if hasStats then
       div [ class "stats" ] [
-        viewGenericFilterForm stats.genericStatsFilter members,
-        viewMaybeTitanStats stats.genericStatsFilter maybeTitanStats
+        viewGenericFilterForm stats members,
+        viewMaybeTitanStats stats maybeTitanStats
       ]
     else
       div [ class "" ] [
@@ -100,11 +99,4 @@ updateStats msg model =
         Err _ -> model
 
     NewMemberSelected newSelectedMember ->
-      let
-        oldGenericStatsFilter : GenericStatsFilter
-        oldGenericStatsFilter = model.genericStatsFilter
-
-        newGenericStatsFilter : GenericStatsFilter
-        newGenericStatsFilter = { oldGenericStatsFilter | user = newSelectedMember }
-      in
-        { model | genericStatsFilter = newGenericStatsFilter }
+      { model | filteredMember = newSelectedMember }

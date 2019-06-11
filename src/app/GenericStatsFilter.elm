@@ -1,5 +1,4 @@
-module GenericStatsFilter exposing (GenericStatsFilter, defaultGenericStatsFilter,
-  viewGenericFilterForm)
+module GenericStatsFilter exposing (GenericStatsFilterExtender, viewGenericFilterForm)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -7,29 +6,22 @@ import Html.Events exposing (..)
 
 import Msg exposing (..)
 import Optionize exposing (optionize)
-import AllianceName exposing (allianceName)
 
 -----------
 -- MODEL --
 -----------
 
-type alias GenericStatsFilter =
-  { user : String
-  , period : Int
+type alias GenericStatsFilterExtender r =
+  { r
+  | filteredMember : String
+  , filteredPeriod : Int
   }
-
------------
--- UTILS --
------------
-
-defaultGenericStatsFilter : GenericStatsFilter
-defaultGenericStatsFilter = GenericStatsFilter allianceName 30
 
 ----------
 -- VIEW --
 ----------
 
-viewGenericFilterForm : GenericStatsFilter -> List String -> Html Msg
+viewGenericFilterForm : GenericStatsFilterExtender r -> List String -> Html Msg
 viewGenericFilterForm genericStatsFilter members =
   Html.form [ class "generic-stat-filters" ]
     [ h2 [] [ text "Filter the stats" ]
@@ -39,6 +31,6 @@ viewGenericFilterForm genericStatsFilter members =
             [ id "member"
             , onInput ( StatsMsg << NewMemberSelected )
             ]
-            ( optionize genericStatsFilter.user members )
+            ( optionize genericStatsFilter.filteredMember members )
         ]
     ]

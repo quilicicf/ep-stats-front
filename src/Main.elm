@@ -130,16 +130,18 @@ update msg model =
             newModel,
             Cmd.batch [
               setStorage (StorageAppState appKey),
+              pushUrl model.navigationKey "/stats",
               fetchTitanStats model.sheetId model.apiKey,
-              fetchWarStats model.sheetId model.apiKey,
-              pushUrl model.navigationKey "/stats"
+              fetchWarStats model.sheetId model.apiKey
             ])
 
           InputAppKey -> (
             newModel,
             Cmd.batch [
               setStorage (StorageAppState model.appKey),
-              pushUrl model.navigationKey "/stats"
+              pushUrl model.navigationKey "/stats",
+              fetchTitanStats model.sheetId model.apiKey,
+              fetchWarStats model.sheetId model.apiKey
             ])
 
           _ -> ( newModel, Cmd.none )

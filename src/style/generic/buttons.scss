@@ -4,6 +4,11 @@
   border: 1px solid var(--primary-neutral-dark);
   min-width: 75px;
   outline: none;
+  cursor: pointer;
+
+  &:focus {
+    box-shadow: 0 0 0.1rem 1px var(--primary-color);
+  }
 }
 
 .button-primary {
@@ -12,8 +17,12 @@
   &:hover {
     background-color: var(--secondary-neutral-dark);
   }
+}
 
-  &:focus {
-    box-shadow: 0 0 0.1rem 1px var(--primary-color);
+.button-secondary {
+  background-color: var(--white);
+
+  &:hover {
+    background-color: var(--light-gray);
   }
 }

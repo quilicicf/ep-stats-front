@@ -1,0 +1,11 @@
+.copy-app-key {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .app-key-container {
+    max-width: 500px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+}

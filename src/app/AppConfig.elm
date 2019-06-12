@@ -93,45 +93,25 @@ decodeAppConfigFromAppKey appKeyInBase64 =
 
 viewAppConfig : AppConfigExtender r -> Html Msg
 viewAppConfig appConfig =
-  Html.form []
-    [ div []
-        [ text "Team name"
-        , br [] []
-        , input
-            [ type_ "text"
-            , value appConfig.teamName
-            , onInput (AppConfigMsg << NewTeamName)
-            ]
-            []
-        ]
-    , br [] []
+  Html.form [ class "configure-alliance" ]
+    [ h2 [] [ text "Configure your Alliance" ]
+    , div [ class "form-field" ]
+      [ label [ for "teamName" ] [ text "Team name" ]
+      , input [ type_ "text", id "teamName", value appConfig.teamName, onInput (AppConfigMsg << NewTeamName) ] []
+      ]
+    , div [ class "form-field" ]
+      [ label [ for "sheetId" ] [ text "Sheet id" ]
+      , input [ type_ "text", id "sheetId", value appConfig.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
+      ]
+    , div [ class "form-field" ]
+      [ label [ for "apiKey" ] [ text "API key" ]
+      , input [ type_ "text", id "apiKey", value appConfig.apiKey, onInput (AppConfigMsg << NewApiKey) ] []
+      ]
     , div []
-        [ text "Sheet id"
-        , br [] []
-        , input
-            [ type_ "text"
-            , value appConfig.sheetId
-            , onInput (AppConfigMsg << NewSheetId)
-            ]
-            []
-        ]
-    , br [] []
-    , div []
-        [ text "API key"
-        , br [] []
-        , input
-            [ type_ "text"
-            , value appConfig.apiKey
-            , onInput (AppConfigMsg << NewApiKey)
-            ]
-            []
-        ]
-    , br [] []
-    , div []
-        [ button
-            [ type_ "button", onClick (AppConfigMsg CreateAppConfig) ]
-            [ text "Create" ]
-        ]
+      [ button
+        [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg CreateAppConfig) ]
+        [ text "Create" ]
+      ]
     ]
 
 viewAppKeyCopier : AppConfigExtender r -> Html Msg
@@ -144,18 +124,22 @@ viewAppKeyCopier appConfig =
     peonAppKey = encodeAppConfig appConfig False
 
   in
-    div [] [
+    div [ class "copy-app-key" ] [
       h2 [] [ text "Copy the keys and validate" ],
-      div [] [
-        span [] [ text "Admin key" ],
-        pre [] [ text adminAppKey ]
+      div [ class "form-field" ] [
+        label [] [ text "Admin key" ],
+        pre [ class "app-key-container" ] [
+          code [] [ text adminAppKey ]
+        ]
       ],
-      div [] [
-        span [] [ text "Peon key" ],
-        pre [] [ text peonAppKey ]
+      div [ class "form-field" ] [
+        label [] [ text "Peon key" ],
+        pre [ class "app-key-container" ] [
+          code [] [ text peonAppKey ]
+        ]
       ],
       button
-        [ type_ "button", onClick (AppConfigMsg (CopiedAppKeys adminAppKey)) ]
+        [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKeys adminAppKey)) ]
         [ text "I've stored'em away" ]
     ]
 

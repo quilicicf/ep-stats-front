@@ -25,7 +25,7 @@ viewGenericFilterForm : GenericStatsFilterExtender r -> List String -> Html Msg
 viewGenericFilterForm genericStatsFilter members =
   Html.form [ class "generic-stat-filters" ]
     [ h2 [] [ text "Filter the stats" ]
-    , div [ class "form-field" ]
+    , div [ class "form-field-inline" ]
         [ label [ for "member" ] [ text "Member" ]
         , select
             [ id "member"

@@ -95,15 +95,15 @@ viewAppConfig : AppConfigExtender r -> Html Msg
 viewAppConfig appConfig =
   Html.form [ class "configure-alliance" ]
     [ h2 [] [ text "Configure your Alliance" ]
-    , div [ class "form-field" ]
+    , div [ class "form-field-inline" ]
       [ label [ for "teamName" ] [ text "Team name" ]
       , input [ type_ "text", id "teamName", value appConfig.teamName, onInput (AppConfigMsg << NewTeamName) ] []
       ]
-    , div [ class "form-field" ]
+    , div [ class "form-field-inline" ]
       [ label [ for "sheetId" ] [ text "Sheet id" ]
       , input [ type_ "text", id "sheetId", value appConfig.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
       ]
-    , div [ class "form-field" ]
+    , div [ class "form-field-inline" ]
       [ label [ for "apiKey" ] [ text "API key" ]
       , input [ type_ "text", id "apiKey", value appConfig.apiKey, onInput (AppConfigMsg << NewApiKey) ] []
       ]
@@ -128,15 +128,17 @@ viewAppKeyCopier appConfig =
       h2 [] [ text "Copy the keys and validate" ],
       div [ class "form-field" ] [
         label [] [ text "Admin key" ],
-        pre [ class "app-key-container" ] [
-          code [] [ text adminAppKey ]
-        ]
+        textarea [ id "admin-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text adminAppKey ],
+        button
+          [ type_ "button", class "button", class "button-secondary", attribute "data-copy-to-clipboard" "#admin-key" ]
+          [ text "Copy!" ]
       ],
       div [ class "form-field" ] [
         label [] [ text "Peon key" ],
-        pre [ class "app-key-container" ] [
-          code [] [ text peonAppKey ]
-        ]
+        textarea [ id "peon-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text peonAppKey ],
+        button
+          [ type_ "button", class "button", class "button-secondary", attribute "data-copy-to-clipboard" "#peon-key" ]
+          [ text "Copy!" ]
       ],
       button
         [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKeys adminAppKey)) ]
@@ -147,7 +149,7 @@ viewAppKeyInput : AppConfigExtender r -> Html Msg
 viewAppKeyInput { appKeyError } =
   Html.form [ class "input-app-key" ]
     [ h2 [] [ text "Paste your app key" ]
-    , div [ class "form-field" ]
+    , div [ class "form-field-inline" ]
         [ label [ for "appKey" ] [ text "App key" ]
         , input
             [ type_ "text"

@@ -119,7 +119,7 @@
         --half-stroke-size: calc(var(--stroke-size) / 2);
         padding: 0 0.2rem;
 
-        &::before {
+        &::before { // Line start
           --previous-ratio: calc((var(--max) - var(--line-start-y)) / var(--max));
           --previous-y: calc((var(--previous-ratio) * var(--graph-height)) + (2 * var(--row-height)));
           --y1: calc((var(--top) + var(--previous-y)) / 2);
@@ -145,7 +145,7 @@
           z-index: 3;
         }
 
-        &::after {
+        &::after { // Line end
           --y1: var(--top);
 
           --next-ratio: calc((var(--max) - var(--line-end-y)) / var(--max));
@@ -225,7 +225,8 @@
         transform .2s cubic-bezier(0, .5, .5, 1);
         will-change: opacity, transform;
 
-        background-color: var(--titan-color-code);
+        color: var(--white);
+        background-color: var(--primary-neutral-dark);
         padding: .5em;
         content: var(--titan-color) ' ' var(--titan-stars-as-string) '⭐\A' var(--value-as-string);
         white-space: pre;

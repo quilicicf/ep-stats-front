@@ -156,29 +156,33 @@ update msg model =
 view : Model -> Document Msg
 view model =
   case model.currentPage of
-    WelcomePage -> createDocument (welcomeScreen model)
+    WelcomePage -> createDocument model (welcomeScreen model)
 
-    AppConfigPage -> createDocument (viewAppConfig model)
+    AppConfigPage -> createDocument model (viewAppConfig model)
 
-    AppKeyPage -> createDocument (viewAppKeyInput model)
+    AppKeyPage -> createDocument model (viewAppKeyInput model)
 
-    AppKeyCopierPage -> createDocument (viewAppKeyCopier model)
+    AppKeyCopierPage -> createDocument model (viewAppKeyCopier model)
 
-    StatsPage -> createDocument (viewStats model)
+    StatsPage -> createDocument model (viewStats model)
 
-    NotFoundPage -> createDocument (text "Not found")
+    NotFoundPage -> createDocument model (text "Not found")
 
-createDocument : Html Msg -> Document Msg
-createDocument body =
-  { title = "EP stats"
-  , body = [
-      div
-        []
-        [ h1 [ class "header" ] [ text "EP stats" ]
-        , body
-        ]
-    ]
-  }
+createDocument : { r | teamName: String } -> Html Msg -> Document Msg
+createDocument { teamName } body =
+  let
+    title: String
+    title = if teamName == "" then "EP stats" else "EP stats - " ++ teamName
+  in
+    { title = title
+    , body = [
+        div
+          []
+          [ h1 [ class "header" ] [ text title ]
+          , body
+          ]
+      ]
+    }
 
 welcomeScreen : Model -> Html Msg
 welcomeScreen _ =

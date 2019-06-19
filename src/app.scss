@@ -1,10 +1,11 @@
-@import './style/colors/theme';
+@import 'style/colors/theme';
 
-@import './style/generic/forms';
-@import './style/generic/inputs';
-@import './style/generic/buttons';
-@import './style/generic/selects';
-@import './style/generic/textarea';
+@import 'style/generic/forms';
+@import 'style/generic/inputs';
+@import 'style/generic/buttons';
+@import 'style/generic/selects';
+@import 'style/generic/spinner';
+@import 'style/generic/textarea';
 
 @import 'style/app/stats';
 @import 'style/app/header';

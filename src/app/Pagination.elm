@@ -19,17 +19,3 @@ findPage url =
     "/appKey" -> AppKeyPage
     "/stats" -> StatsPage
     _ -> NotFoundPage
-
-findInitialPage : Url -> Bool -> Page
-findInitialPage url hasAppConfig =
-  let
-    deductedPage : Page
-    deductedPage = findPage url
-
-  in
-    if hasAppConfig then
-      case deductedPage of
-        StatsPage -> StatsPage
-        _ -> WelcomePage
-    else
-      WelcomePage

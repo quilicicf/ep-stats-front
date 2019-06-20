@@ -15,10 +15,11 @@ import Json.Decode exposing (Value, Decoder)
 import Msg exposing (..)
 import Pagination exposing (..)
 
-import Stats exposing (StatsExtender,
-  fetchWarStats, fetchTitanStats, updateStats, viewStats)
+import MaybeExtra exposing (hasValue)
 import TitanStats exposing (TitanStats)
 import AllianceName exposing (allianceName)
+import Stats exposing (StatsExtender,
+  fetchWarStats, fetchTitanStats, updateStats, viewStats)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -79,11 +80,8 @@ init flags url key =
       maybeAppConfig : Maybe AppConfig
       maybeAppConfig = log "Initialized with" (decodeAppConfigFromAppKey storageAppState.appKey)
 
-      hasAppConfig : Bool
-      hasAppConfig = if maybeAppConfig == Nothing then False else True
-
       initialPage : Page
-      initialPage = log "tata" (findInitialPage url hasAppConfig)
+      initialPage = if hasValue maybeAppConfig then StatsPage else WelcomePage
 
       initModel: Model
       initModel = createInitialModel maybeAppConfig storageAppState.appKey initialPage key

@@ -277,8 +277,8 @@ viewTitanStats genericStatsFilter titanStats =
 viewTitanMemberScores : GenericStatsFilterExtender r  -> ( MemberTitanScore -> Maybe Int ) -> MemberTitanScores -> Html Msg
 viewTitanMemberScores genericStatsFilter scoreExtractor memberTitanScores =
   let
-    htmlClass : String
-    htmlClass = if genericStatsFilter.filteredMember == memberTitanScores.pseudo then "selected-member" else "hidden-member"
+    isSelected : Bool
+    isSelected = genericStatsFilter.filteredMember == memberTitanScores.pseudo
 
     titanScoresRowHeading : Html Msg
     titanScoresRowHeading = th [ class "labels" ] [ text genericStatsFilter.filteredMember ]
@@ -301,7 +301,7 @@ viewTitanMemberScores genericStatsFilter scoreExtractor memberTitanScores =
 
   in
     tr [
-      class htmlClass,
+      hidden (not isSelected),
       customStyle [
         ("--max", maxScore),
         ("--max-as-string", valueAsString maxScore)

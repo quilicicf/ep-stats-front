@@ -93,7 +93,7 @@
     }
 
 
-    .selected-member { // Selected member's table row
+    tr:not(hidden) { // Selected member's table row
       .labels {
         &::before { // Ruler for the scale's max
           @include label();
@@ -107,10 +107,6 @@
           top: calc(var(--graph-height) + (3 * var(--row-height)));
         }
       }
-    }
-
-    .hidden-member {
-      display: none;
     }
 
     .chart-value { // One titan score

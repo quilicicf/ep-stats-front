@@ -72,7 +72,7 @@ createInitialModel maybeAppConfig appKey initialPage key =
       initialPage key
 
 init : Value -> Url -> Key -> (Model, Cmd Msg)
-init flags url key =
+init flags _ key =
   let
       storageAppState : StorageAppState
       storageAppState = decodeStorageAppState flags

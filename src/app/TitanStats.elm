@@ -258,16 +258,16 @@ viewTitanStats genericStatsFilter titanStats =
 
   in
     div [ class "graphs-container" ] [
+      div [ class "chart-title" ] [ text "Titan scores" ],
       div [ class "graph-container" ] [
         table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
-          caption [] [ text "A table that shows user performance on titans" ],
           thead [] [ tr [] ( dateRowHeadingElement :: titanDatesElements ) ],
           tbody [] titanScoresElements
         ]
       ],
+      div [ class "chart-title" ] [ text "Member's team-relative value" ],
       div [ class "graph-container" ] [
         table [ class "chart", customStyle [ ("--titans", titansNumberAsString) ] ] [
-          caption [] [ text "A table that shows user performance on titans" ],
           thead [] [ tr [] ( dateRowHeadingElement :: titanDatesElements ) ],
           tbody [] titanValuesElements
         ]

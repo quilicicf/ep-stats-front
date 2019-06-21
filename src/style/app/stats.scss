@@ -40,15 +40,37 @@
 }
 
 .stats {
-  --graph-height: 24rem;
   --row-height: 2rem;
+  --graph-height: calc(6 * var(--row-height));
   --graph-offset: calc(var(--graph-height) + (var(--row-height) * 3));
 
+  .chart-title {
+    margin-top: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .graphs-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .graph-container {
+    min-width: calc(30 * var(--row-height));
     max-width: 90%;
-    height: calc(var(--graph-offset) + (4 * var(--row-height)));
+    height: calc(var(--graph-offset) + (2 * var(--row-height)));
     overflow-x: auto;
-    margin: 0 auto;
+
+    &::before { // Place-holder for the whole graph
+      position: absolute;
+      content: "";
+      left: 0;
+      width: 100%;
+      height: var(--graph-offset);
+      z-index: 1;
+      background-color: var(--white);
+    }
   }
 
   .chart {
@@ -59,24 +81,9 @@
 
     border-collapse: collapse;
     position: relative;
-    caption-side: bottom;
     width: 80%;
     margin: 0 auto;
-
-    &::after { // Place-holder for the whole graph
-      position: absolute;
-      content: "";
-      left: 0;
-      width: 100%;
-      height: var(--graph-offset);
-      z-index: 1;
-    }
-
-    caption {
-      position: absolute;
-      top: calc(var(--graph-offset) + var(--row-height));
-      width: 100%;
-    }
+    font-size: 1px; // Hack, reduces the width of cells to nothing
 
     tr {
       th {
@@ -98,41 +105,43 @@
         &::before { // Ruler for the scale's max
           @include label();
           content: var(--max-as-string);
-          top: calc((2 * var(--row-height)) + var(--row-height));
+          top: calc(var(--row-height));
         }
 
         &::after { // Ruler for the scale's 0
           @include label();
           content: '0';
-          top: calc(var(--graph-height) + (3 * var(--row-height)));
+          top: calc(var(--graph-height) + (2 * var(--row-height)));
         }
       }
     }
 
-    .chart-value { // One titan score
+    // One titan score
+    .chart-value {
       position: relative;
       --ratio: calc((var(--max) - var(--value)) / var(--max));
-      --top: calc((var(--ratio) * var(--graph-height)) + (2 * var(--row-height)));
+      --top: calc((var(--ratio) * var(--graph-height)));
 
       .score-presenter {
         --stroke-size: .5rem;
         --half-stroke-size: calc(var(--stroke-size) / 2);
         padding: 0 0.2rem;
 
-        &::before { // Line start
+        // Line start
+        &::before {
           --previous-ratio: calc((var(--max) - var(--line-start-y)) / var(--max));
-          --previous-y: calc((var(--previous-ratio) * var(--graph-height)) + (2 * var(--row-height)));
+          --previous-y: calc((var(--previous-ratio) * var(--graph-height)));
           --y1: calc((var(--top) + var(--previous-y)) / 2);
 
           --y2: var(--top);
 
           position: absolute;
           content: "";
-          background-color: var(--titan-color-code);
+          background-color: var(--primary-neutral-dark);
           left: 0;
           right: 0;
           top: 0;
-          height: calc((var(--row-height) * 3) + var(--graph-height));
+          height: calc(var(--row-height) + var(--graph-height));
 
           clip-path: polygon(
               var(--line-start-x) calc(var(--y1) + var(--row-half-height) - var(--half-stroke-size)),
@@ -145,20 +154,21 @@
           z-index: 3;
         }
 
-        &::after { // Line end
+        // Line end
+        &::after {
           --y1: var(--top);
 
           --next-ratio: calc((var(--max) - var(--line-end-y)) / var(--max));
-          --next-y: calc((var(--next-ratio) * var(--graph-height)) + (2 * var(--row-height)));
+          --next-y: calc((var(--next-ratio) * var(--graph-height)));
           --y2: calc((var(--top) + var(--next-y)) / 2);
 
           position: absolute;
           content: "";
-          background-color: var(--titan-color-code);
+          background-color: var(--primary-neutral-dark);
           left: 0;
           right: 0;
           top: 0;
-          height: calc((var(--row-height) * 3) + var(--graph-height));
+          height: calc(var(--row-height) + var(--graph-height));
 
           clip-path: polygon(
               50% calc(var(--y1) + var(--row-half-height) - var(--half-stroke-size)),
@@ -172,8 +182,8 @@
         }
       }
 
-      &::before { // Bullet point
-        --side: var(--row-height);
+      // Bullet point
+      &::before {
         --border: calc(var(--circle-size) * .2);
 
         display: inline-block;
@@ -182,30 +192,32 @@
         content: "‎⬤";
         text-align: center;
         font-size: var(--circle-size);
-        line-height: var(--side);
+        line-height: var(--row-height);
 
         color: var(--titan-color-code);
-        background-color: var(--white);
+        background-color: var(--primary-neutral-dark);
 
         clip-path: circle(
             calc(var(--border) + var(--circle-half-size))
         );
         top: var(--top);
         left: calc(50% - (var(--row-height) / 2));
-        width: var(--side);
-        height: var(--side);
+        width: var(--row-height);
+        height: var(--row-height);
 
         z-index: 4;
       }
 
-      &::after { // Tooltip
+      // Tooltip
+      &::after {
         --arrow-size: .25rem;
         --arrow: calc(100% - var(--arrow-size));
         --width: 5rem;
 
         position: absolute;
-        top: calc((var(--ratio) * var(--graph-height)) + (3 * var(--row-height)) - var(--arrow-size) - var(--circle-half-size));
+        top: calc((var(--ratio) * var(--graph-height)) + var(--row-height) - var(--arrow-size) - var(--circle-half-size));
         left: 50%;
+        font-size: 1rem;
         width: var(--width);
 
         clip-path: polygon(
@@ -220,7 +232,7 @@
 
         opacity: 0;
         transform-origin: 50% calc(100% + 10px);
-        transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 45deg);
+        transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 90deg);
         transition: opacity .2s cubic-bezier(0, .5, .5, 1),
         transform .2s cubic-bezier(0, .5, .5, 1);
         will-change: opacity, transform;

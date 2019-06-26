@@ -1,6 +1,7 @@
 module Stats exposing (StatsExtender,
   fetchAllStats,
-  updateStats, viewStats
+  updateStats, viewStats,
+  defaultFilterPeriod
   )
 
 import Html exposing (..)
@@ -29,6 +30,9 @@ type alias StatsExtender r =
   , titanStats: Maybe TitanStats
   , warStats: Maybe String
   }
+
+defaultFilterPeriod : Int
+defaultFilterPeriod = 30
 
 -----------
 -- UTILS --
@@ -126,3 +130,7 @@ updateStats msg model =
 
     NewMemberSelected newSelectedMember ->
       { model | filteredMember = newSelectedMember }
+
+    NewPeriodSelected newPeriodAsString ->
+      { model | filteredPeriod = withDefault defaultFilterPeriod (String.toInt newPeriodAsString) }
+

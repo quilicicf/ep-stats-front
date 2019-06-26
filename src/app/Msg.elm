@@ -24,4 +24,5 @@ type StatsMsg
   = GotTitanStats (Result Http.Error String)
   | GotWarStats (Result Http.Error String)
   | NewMemberSelected String
+  | NewPeriodSelected String
 

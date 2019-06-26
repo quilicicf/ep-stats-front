@@ -8,9 +8,12 @@ import Debug exposing (log)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
-import Url exposing (Url)
-
 import Json.Decode exposing (Value, Decoder)
+
+import Maybe exposing (withDefault)
+import MaybeExtra exposing (withLoggedDefault)
+
+import Url exposing (Url)
 
 import Msg exposing (..)
 import Pagination exposing (..)
@@ -18,8 +21,8 @@ import Pagination exposing (..)
 import MaybeExtra exposing (hasValue)
 import TitanStats exposing (TitanStats)
 import AllianceName exposing (allianceName)
-import Stats exposing (StatsExtender,
-  fetchWarStats, fetchTitanStats, updateStats, viewStats)
+import Authorization exposing (authorizationUrl, readAccessToken)
+import Stats exposing (StatsExtender, fetchAllStats, updateStats, viewStats)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -31,10 +34,12 @@ type alias Model =
   -- AppConfig
   { teamName: String
   , sheetId: String
-  , apiKey: String
   , isAdmin: Bool
   , appKey: String
   , appKeyError: String
+
+  -- Authorization
+  , accessToken: Maybe String
 
   -- Stats
   , filteredMember : String
@@ -47,54 +52,72 @@ type alias Model =
   , navigationKey: Key
   }
 
-createInitialModel : Maybe AppConfig -> String -> Page -> Key -> Model
-createInitialModel maybeAppConfig appKey initialPage key =
-  case maybeAppConfig of
-    Just appConfig -> Model
+createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Model
+createInitialModel maybeAppConfig appKey maybeAccessToken key =
+  let
+    appConfig : AppConfig
+    appConfig = withDefault (AppConfig "" "" False) maybeAppConfig
+
+  in
+    Model
       -- App config
       appConfig.teamName
       appConfig.sheetId
-      appConfig.apiKey
       appConfig.isAdmin
       appKey
       ""
+      -- Authorization
+      maybeAccessToken
       -- Stats
       allianceName 30 Nothing Nothing
       -- Navigation
-      initialPage key
+      AppKeyPage key
 
-    Nothing -> Model
-      -- App config
-      "" "" "" False "" ""
-      -- Stats
-      allianceName 30 Nothing Nothing
-      -- Navigation
-      initialPage key
+type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated
 
 init : Value -> Url -> Key -> (Model, Cmd Msg)
-init flags _ key =
+init flags url key =
   let
       storageAppState : StorageAppState
-      storageAppState = decodeStorageAppState flags
+      storageAppState = log "Initialized with" (decodeStorageAppState flags)
 
       maybeAppConfig : Maybe AppConfig
-      maybeAppConfig = log "Initialized with" (decodeAppConfigFromAppKey storageAppState.appKey)
+      maybeAppConfig = decodeAppConfigFromAppKey storageAppState.appKey
 
-      initialPage : Page
-      initialPage = if hasValue maybeAppConfig then StatsPage else WelcomePage
+      initialCase : InitCase
+      initialCase = if (url.path == "/authorized") then Authenticating
+        else if (hasValue maybeAppConfig) && (hasValue storageAppState.accessToken) then  Authenticated
+        else if (hasValue maybeAppConfig) then WithAppKey
+        else FirstVisit
+
+      maybeAccessToken : Maybe String
+      maybeAccessToken = log "Access token from URL" (readAccessToken url)
 
       initModel: Model
-      initModel = createInitialModel maybeAppConfig storageAppState.appKey initialPage key
+      initModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key
 
   in
-    case initialPage of
-      StatsPage ->
-        ( initModel
-        , Cmd.batch [
-          fetchTitanStats initModel.sheetId initModel.apiKey,
-          fetchWarStats initModel.sheetId initModel.apiKey
-        ])
-      _ -> ( initModel, Cmd.none )
+    case initialCase of
+      Authenticated -> (
+        { initModel | currentPage = StatsPage },
+        Cmd.batch [
+          fetchAllStats initModel.sheetId (withLoggedDefault "" initModel.accessToken),
+          pushUrl initModel.navigationKey "/stats"
+        ]
+        )
+
+      Authenticating -> (
+        { initModel | currentPage = StatsPage , accessToken = maybeAccessToken },
+        Cmd.batch [
+          setStorage ( StorageAppState initModel.appKey maybeAccessToken ),
+          fetchAllStats initModel.sheetId (withLoggedDefault "" maybeAccessToken),
+          pushUrl initModel.navigationKey "/stats"
+        ]
+        )
+
+      WithAppKey -> ( initModel, load authorizationUrl )
+
+      FirstVisit -> ( initModel, pushUrl initModel.navigationKey "/" )
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -127,19 +150,16 @@ update msg model =
           CopiedAppKeys appKey -> (
             newModel,
             Cmd.batch [
-              setStorage (StorageAppState appKey),
+              setStorage (StorageAppState appKey model.accessToken),
               pushUrl model.navigationKey "/stats",
-              fetchTitanStats model.sheetId model.apiKey,
-              fetchWarStats model.sheetId model.apiKey
+              fetchAllStats model.sheetId (withLoggedDefault "" model.accessToken)
             ])
 
           InputAppKey -> (
             newModel,
             Cmd.batch [
-              setStorage (StorageAppState model.appKey),
-              pushUrl model.navigationKey "/stats",
-              fetchTitanStats model.sheetId model.apiKey,
-              fetchWarStats model.sheetId model.apiKey
+              setStorage (StorageAppState model.appKey model.accessToken),
+              load authorizationUrl
             ])
 
           _ -> ( newModel, Cmd.none )
@@ -154,8 +174,6 @@ update msg model =
 view : Model -> Document Msg
 view model =
   case model.currentPage of
-    WelcomePage -> createDocument model (welcomeScreen model)
-
     AppConfigPage -> createDocument model (viewAppConfig model)
 
     AppKeyPage -> createDocument model (viewAppKeyInput model)
@@ -181,16 +199,6 @@ createDocument { teamName } body =
           ]
       ]
     }
-
-welcomeScreen : Model -> Html Msg
-welcomeScreen _ =
-  div [ class "choose-your-side" ]
-    [ h2 [] [ text "Choose your side" ]
-    , div [ class "choices" ]
-      [ a [ class "choice", class "choice-left", href "/appConfig" ] [ text "I'm the alliance's GOD" ]
-      , a [ class "choice", class "choice-right", class "choice-main", href "/appKey" ] [ text "I'm but a peon" ]
-      ]
-    ]
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none

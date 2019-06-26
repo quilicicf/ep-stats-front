@@ -15,7 +15,6 @@ type Msg
 type AppConfigMsg
   = NewTeamName String
   | NewSheetId String
-  | NewApiKey String
   | NewAppKey String
   | CreateAppConfig
   | CopiedAppKeys String

@@ -19,7 +19,8 @@
             "elm-community/list-extra": "8.2.0",
             "fredcy/elm-parseint": "2.0.1",
             "lukewestby/elm-string-interpolate": "1.0.3",
-            "truqu/elm-base64": "2.0.4"
+            "truqu/elm-base64": "2.0.4",
+            "truqu/elm-oauth2": "5.0.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

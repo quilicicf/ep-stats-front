@@ -1,5 +1,5 @@
 module Stats exposing (StatsExtender,
-  fetchTitanStats, fetchWarStats,
+  fetchAllStats,
   updateStats, viewStats
   )
 
@@ -34,20 +34,36 @@ type alias StatsExtender r =
 -- UTILS --
 -----------
 
-computeSheetUrl : String -> String -> String -> String
-computeSheetUrl range sheetId apiKey = interpolate
-  "https://sheets.googleapis.com/v4/spreadsheets/{0}/values/{1}?key={2}" [ sheetId, range, apiKey ]
+computeSheetUrl : String -> String -> String
+computeSheetUrl range sheetId = interpolate
+  "https://sheets.googleapis.com/v4/spreadsheets/{0}/values/{1}" [ sheetId, range ]
+
+createBearerHeader : String -> Http.Header
+createBearerHeader accessToken = Http.header "Authorization" ( interpolate "Bearer {0}" [ accessToken ] )
+
+fetchAllStats : String -> String -> Cmd Msg
+fetchAllStats sheetId accessToken = Cmd.batch [ fetchTitanStats sheetId accessToken, fetchWarStats sheetId accessToken ]
 
 fetchTitanStats : String -> String -> Cmd Msg
-fetchTitanStats sheetId apiKey = Http.get
-  { url = computeSheetUrl "Titans!A:AAZ" sheetId apiKey
+fetchTitanStats sheetId accessToken = Http.request
+  { method = "GET"
+  , headers = [ createBearerHeader accessToken ]
+  , url = computeSheetUrl "Titans!A:AAZ" sheetId
+  , body = Http.emptyBody
   , expect = Http.expectString (StatsMsg << GotTitanStats)
+  , timeout = Nothing
+  , tracker = Nothing
   }
 
 fetchWarStats : String -> String -> Cmd Msg
-fetchWarStats sheetId apiKey = Http.get
-  { url = computeSheetUrl "Wars!A%3AAZ" sheetId apiKey
+fetchWarStats sheetId accessToken = Http.request
+  { method = "GET"
+  , headers = [ createBearerHeader accessToken ]
+  , url = computeSheetUrl "Wars!A%3AAZ" sheetId
+  , body = Http.emptyBody
   , expect = Http.expectString (StatsMsg << GotWarStats)
+  , timeout = Nothing
+  , tracker = Nothing
   }
 
 ----------

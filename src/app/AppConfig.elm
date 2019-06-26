@@ -10,7 +10,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
-import Json.Decode as Decode exposing(Value, Decoder, string, bool)
+import Json.Decode as Decode exposing(Value, Decoder, maybe, string, bool)
 import Json.Encode as Encode
 
 import Json.Decode.Pipeline exposing (required, optional)
@@ -24,7 +24,6 @@ import Msg exposing (..)
 type alias AppConfig =
   { teamName: String
   , sheetId: String
-  , apiKey: String
   , isAdmin: Bool
   }
 
@@ -32,13 +31,15 @@ type alias AppConfigExtender r =
   { r
   | teamName: String
   , sheetId: String
-  , apiKey: String
   , isAdmin: Bool
   , appKey: String
   , appKeyError: String
   }
 
-type alias StorageAppState = { appKey: String }
+type alias StorageAppState =
+  { appKey: String
+  , accessToken: Maybe String
+  }
 
 -----------
 -- UTILS --
@@ -49,7 +50,6 @@ jsonifyAppConfig appConfig isAdmin =
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
       , ("sheetId", Encode.string appConfig.sheetId)
-      , ("apiKey", Encode.string appConfig.apiKey)
       , ("isAdmin", Encode.bool isAdmin)
       ]
 
@@ -64,19 +64,19 @@ appConfigDecoder =
   Decode.succeed AppConfig
     |> required "teamName" string
     |> required "sheetId" string
-    |> required "apiKey" string
     |> required "isAdmin" bool
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
   Decode.succeed StorageAppState
     |> optional "appKey" string ""
+    |> optional "accessToken" (maybe string) Nothing
 
 decodeStorageAppState : Value -> StorageAppState
 decodeStorageAppState appKeyAsJson =
   case Decode.decodeValue storageAppStateDecoder appKeyAsJson of
     Ok appState -> appState
-    Err _ -> StorageAppState ""
+    Err _ -> StorageAppState "" Nothing
 
 decodeAppConfigFromAppKey : String -> Maybe AppConfig
 decodeAppConfigFromAppKey appKeyInBase64 =
@@ -102,10 +102,6 @@ viewAppConfig appConfig =
     , div [ class "form-field-inline" ]
       [ label [ for "sheetId" ] [ text "Sheet id" ]
       , input [ type_ "text", id "sheetId", value appConfig.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
-      ]
-    , div [ class "form-field-inline" ]
-      [ label [ for "apiKey" ] [ text "API key" ]
-      , input [ type_ "text", id "apiKey", value appConfig.apiKey, onInput (AppConfigMsg << NewApiKey) ] []
       ]
     , div []
       [ button
@@ -177,8 +173,6 @@ updateAppConfig msg model =
 
     NewSheetId newSheetId -> { model | sheetId = newSheetId }
 
-    NewApiKey newApiKey -> { model | apiKey = newApiKey }
-
     NewAppKey newAppKey -> { model | appKey = newAppKey }
 
     CreateAppConfig -> model
@@ -197,7 +191,6 @@ updateAppConfig msg model =
             { model
             | teamName = result.teamName
             , sheetId = result.sheetId
-            , apiKey = result.apiKey
             , isAdmin = result.isAdmin
             , appKeyError = ""
             }

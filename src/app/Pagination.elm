@@ -3,19 +3,31 @@ module Pagination exposing (..)
 import Url exposing (..)
 
 type Page
-  = WelcomePage
+--  Landing page
+  = AppKeyPage
+
+--  App configuration
   | AppConfigPage
-  | AppKeyPage
   | AppKeyCopierPage
+
+--  Stats
   | StatsPage
+
+--  Errors
   | NotFoundPage
 
 findPage : Url -> Page
 findPage url =
   case url.path of
-    "/" -> WelcomePage
+--  Landing page
+    "/" -> AppKeyPage
+
+--  App configuration
     "/appConfig" -> AppConfigPage
     "/appKeyCopy" -> AppKeyCopierPage
-    "/appKey" -> AppKeyPage
+
+--  Stats
     "/stats" -> StatsPage
+
+--  Errors
     _ -> NotFoundPage

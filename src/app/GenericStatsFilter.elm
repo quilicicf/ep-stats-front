@@ -1,7 +1,7 @@
 module GenericStatsFilter exposing (GenericStatsFilterExtender, viewGenericFilterForm)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, for, id, type_, min, max, value)
+import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
 import Html.Events exposing (onInput)
 
 import Msg exposing (..)
@@ -45,6 +45,7 @@ viewGenericFilterForm genericStatsFilter members =
               , type_ "number"
               , min "10"
               , max "120"
+              , step "10"
               , value filteredPeriod
               , onInput ( StatsMsg << NewPeriodSelected )
               ]

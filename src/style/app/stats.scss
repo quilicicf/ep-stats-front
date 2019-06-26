@@ -126,6 +126,8 @@
         --stroke-size: .5rem;
         --half-stroke-size: calc(var(--stroke-size) / 2);
         padding: 0 0.2rem;
+        display: block;
+        min-width: var(--row-half-height);
 
         // Line start
         &::before {

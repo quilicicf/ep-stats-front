@@ -3,15 +3,12 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
-import Debug exposing (log)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
 import Json.Decode exposing (Value, Decoder)
 
 import Maybe exposing (withDefault)
-import MaybeExtra exposing (withLoggedDefault)
 
 import Url exposing (Url)
 
@@ -79,7 +76,7 @@ init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
   let
       storageAppState : StorageAppState
-      storageAppState = log "Initialized with" (decodeStorageAppState flags)
+      storageAppState = decodeStorageAppState flags
 
       maybeAppConfig : Maybe AppConfig
       maybeAppConfig = decodeAppConfigFromAppKey storageAppState.appKey
@@ -91,7 +88,7 @@ init flags url key =
         else FirstVisit
 
       maybeAccessToken : Maybe String
-      maybeAccessToken = log "Access token from URL" (readAccessToken url)
+      maybeAccessToken = readAccessToken url
 
       initModel: Model
       initModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key
@@ -101,7 +98,7 @@ init flags url key =
       Authenticated -> (
         { initModel | currentPage = StatsPage },
         Cmd.batch [
-          fetchAllStats initModel.sheetId (withLoggedDefault "" initModel.accessToken),
+          fetchAllStats initModel.sheetId (withDefault "" initModel.accessToken),
           pushUrl initModel.navigationKey "/stats"
         ]
         )
@@ -110,7 +107,7 @@ init flags url key =
         { initModel | currentPage = StatsPage , accessToken = maybeAccessToken },
         Cmd.batch [
           setStorage ( StorageAppState initModel.appKey maybeAccessToken ),
-          fetchAllStats initModel.sheetId (withLoggedDefault "" maybeAccessToken),
+          fetchAllStats initModel.sheetId (withDefault "" maybeAccessToken),
           pushUrl initModel.navigationKey "/stats"
         ]
         )
@@ -134,7 +131,6 @@ update msg model =
         newPage: Page
         newPage= findPage url
       in
-        log url.path
         ( { model | currentPage = newPage }, Cmd.none )
 
     AppConfigMsg appConfigMsg ->
@@ -152,7 +148,7 @@ update msg model =
             Cmd.batch [
               setStorage (StorageAppState appKey model.accessToken),
               pushUrl model.navigationKey "/stats",
-              fetchAllStats model.sheetId (withLoggedDefault "" model.accessToken)
+              fetchAllStats model.sheetId (withDefault "" model.accessToken)
             ])
 
           InputAppKey -> (

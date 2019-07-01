@@ -4,7 +4,8 @@
   "description": "Front-end for https://github.com/quilicicf/ep-stats",
   "scripts": {
     "lint": "eslint './build/**/*.js'",
-    "start": "node ./build/index.js"
+    "start": "node build/watch.js",
+    "build": "node build/build.js"
   },
   "repository": {
     "type": "git",

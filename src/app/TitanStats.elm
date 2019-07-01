@@ -1,7 +1,5 @@
 module TitanStats exposing (TitanStats, updateTitanStats, viewMaybeTitanStats)
 
-import Debug exposing (log)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -144,7 +142,7 @@ extractTitanScoresList rawTitanStats =
           |> List.indexedMap ( extractTitanDataForMember data fixedIndexes.number )
 
   in
-    log "Toto" allianceResults :: membersResults
+    allianceResults :: membersResults
 
 noWhiteSpaceRegex : Regex
 noWhiteSpaceRegex = withDefault Regex.never ( Regex.fromString "\\s+" )

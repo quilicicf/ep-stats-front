@@ -11,13 +11,11 @@ import OAuth.Implicit exposing (Authorization, makeAuthUrl)
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
 
-import MaybeExtra exposing (withLoggedDefault)
-
 authorization : Authorization
 authorization = Authorization
   "1011659939807-qe1bito30nlfd03lp8tosvgmsgacrns1.apps.googleusercontent.com"
   ( Url Url.Https "accounts.google.com" Nothing "/o/oauth2/v2/auth" Nothing Nothing )
-  ( Url Url.Https "localhost" ( Just 5420 ) "/authorized" Nothing Nothing ) -- TODO: variabelize
+  ( Url Url.Http "localhost" ( Just 5420 ) "/authorized" Nothing Nothing ) -- TODO: variabelize
   [ "https://www.googleapis.com/auth/spreadsheets.readonly" ]
   ( Just "dodelidoo" ) -- TODO: Randomize?
 
@@ -58,7 +56,7 @@ readAccessToken : Url -> Maybe String
 readAccessToken url =
   let
     urlFragment : String
-    urlFragment = withLoggedDefault "" ( parse (Parser.s "authorized" </> fragment parsePotentialFragment) url )
+    urlFragment = withDefault "" ( parse (Parser.s "authorized" </> fragment parsePotentialFragment) url )
 
     parsedFragment : Dict String String
     parsedFragment = parseFragment urlFragment

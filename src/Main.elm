@@ -18,7 +18,7 @@ import Pagination exposing (..)
 import MaybeExtra exposing (hasValue)
 import TitanStats exposing (TitanStats)
 import AllianceName exposing (allianceName)
-import Authorization exposing (authorizationUrl, readAccessToken)
+import Authorization exposing (makeAuthorizationUrl, readAccessToken)
 import Stats exposing (StatsExtender, fetchAllStats, updateStats, viewStats)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
@@ -45,15 +45,19 @@ type alias Model =
   , warStats: Maybe String
 
   -- Navigation
+  , baseUrl: Url
   , currentPage: Page
   , navigationKey: Key
   }
 
-createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Model
-createInitialModel maybeAppConfig appKey maybeAccessToken key =
+createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> Model
+createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl =
   let
     appConfig : AppConfig
     appConfig = withDefault (AppConfig "" "" False) maybeAppConfig
+
+    baseUrl : Url
+    baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
 
   in
     Model
@@ -68,7 +72,7 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key =
       -- Stats
       allianceName 30 Nothing Nothing
       -- Navigation
-      AppKeyPage key
+      baseUrl AppKeyPage key
 
 type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated
 
@@ -91,7 +95,7 @@ init flags url key =
       maybeAccessToken = readAccessToken url
 
       initModel: Model
-      initModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key
+      initModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key url
 
   in
     case initialCase of
@@ -112,7 +116,7 @@ init flags url key =
         ]
         )
 
-      WithAppKey -> ( initModel, load authorizationUrl )
+      WithAppKey -> ( initModel, load ( makeAuthorizationUrl initModel.baseUrl ) )
 
       FirstVisit -> ( initModel, pushUrl initModel.navigationKey "/" )
 
@@ -155,7 +159,7 @@ update msg model =
             newModel,
             Cmd.batch [
               setStorage (StorageAppState model.appKey model.accessToken),
-              load authorizationUrl
+              load ( makeAuthorizationUrl model.baseUrl )
             ])
 
           _ -> ( newModel, Cmd.none )

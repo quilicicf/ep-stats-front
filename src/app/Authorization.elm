@@ -1,4 +1,4 @@
-module Authorization exposing (authorizationUrl, readAccessToken)
+module Authorization exposing (makeAuthorizationUrl, readAccessToken)
 
 import Dict exposing (..)
 
@@ -11,16 +11,21 @@ import OAuth.Implicit exposing (Authorization, makeAuthUrl)
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
 
-authorization : Authorization
-authorization = Authorization
+makeAuthorization : Url -> Authorization
+makeAuthorization baseUrl = Authorization
   "1011659939807-qe1bito30nlfd03lp8tosvgmsgacrns1.apps.googleusercontent.com"
   ( Url Url.Https "accounts.google.com" Nothing "/o/oauth2/v2/auth" Nothing Nothing )
-  ( Url Url.Http "localhost" ( Just 5420 ) "/authorized" Nothing Nothing ) -- TODO: variabelize
+  { baseUrl | path = "/authorized" }
   [ "https://www.googleapis.com/auth/spreadsheets.readonly" ]
   ( Just "dodelidoo" ) -- TODO: Randomize?
 
-authorizationUrl : String
-authorizationUrl = toString ( makeAuthUrl authorization )
+makeAuthorizationUrl : Url -> String
+makeAuthorizationUrl baseUrl =
+  let
+    authorization : Authorization
+    authorization = makeAuthorization baseUrl
+  in
+    toString ( makeAuthUrl authorization )
 
 parseArgument : String -> Dict String String -> Dict String String
 parseArgument parameterAsString seed =

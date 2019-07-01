@@ -9,7 +9,7 @@ const renderSass = require('./renderSass');
 const prepareBuild = require('./prepareBuild');
 
 const {
-  SRC_PATH, DIR_PATH, APP_HTML_NAME, APP_HTML_SOURCE_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT, STYLE_OUTPUT_PATH,
+  SRC_PATH, DIST_PATH, APP_HTML_NAME, APP_HTML_SOURCE_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT, STYLE_OUTPUT_PATH,
 } = require('./constants');
 
 const SERVER_PORT = 5420;
@@ -43,7 +43,7 @@ const main = async () => {
 
   liveServer.start({
     port: SERVER_PORT,
-    root: DIR_PATH,
+    root: DIST_PATH,
     watch: [ SRC_PATH, APP_HTML_SOURCE_PATH, STYLE_OUTPUT_PATH ],
     wait: 500,
     file: APP_HTML_NAME,

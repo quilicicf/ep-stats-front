@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Les Ravageurs</title>
+  </head>
+  <body>
+    <h1 class="title">
+      Les Ravageurs
+    </h1>
+    <div class="navbar">
+      <span class="navitem navitem-left">Alliance</span>
+      <span class="navitem navitem-selected">Titans</span>
+      <span class="navitem navitem-right">Guerres</span>
+    </div>
+    <div class="sidebar">
+      <h2>Filtres</h2>
+      <div class="field">
+        <label for="member">Membre</label>
+        <select id="member" name="member">
+          <option value="Alliance" selected="selected">Alliance</option>
+          <option value="Nappier">Nappier</option>
+        </select>
+      </div>
+    </div>
+    <div class="content">
+
+    </div>
+
+    <style type="text/css">
+      :root {
+        --primary-color: #563bc4;
+        --secondary-color: #bbe31c;
+        --analogous-primary-color: #e3861c;
+        --analogous-secondary-color: #d5a61c;
+        --primary-neutral: #70659a;
+        --primary-neutral-light: #8f87b0;
+        --primary-neutral-lighter: #afa9c6;
+        --primary-neutral-lightest: #cecbdd;
+        --primary-neutral-dark: #574f78;
+        --primary-neutral-darker: #3f3956;
+        --primary-neutral-darkest: #262234;
+        --primary-light: #705dbb;
+        --primary-dark: #5744a2;
+        --secondary-neutral: #acc936;
+        --secondary-neutral-light: #bed562;
+        --secondary-neutral-lighter: #d1e18e;
+        --secondary-neutral-lightest: #e3edbb;
+        --secondary-neutral-dark: #869d2a;
+        --secondary-neutral-darker: #60711e;
+        --secondary-neutral-darkest: #3a4412;
+        --secondary-light: #cde763;
+        --secondary-dark: #819c18;
+        --white: #eeedf3;
+        --black: #2b2b2b;
+        --light-gray: #a6a0c0;
+        --neutral-gray: gray;
+        --primary-gray: #9db14e;
+        --secondary-gray: #96a55a;
+        /**
+        * EP colors
+        */
+        --red: #C43E31;
+        --green: #42A22C;
+        --blue: #389EE6;
+        --holy: #F3D747;
+        --dark: #782c86;
+      }
+
+      select {
+        border-radius: 0.5rem;
+        padding: 0.2rem;
+        border: 1px solid var(--primary-neutral-dark);
+        background-color: var(--white);
+        min-width: 75px;
+        outline: none;
+
+        &:hover {
+          background-color: var(--light-gray);
+        }
+
+        &:focus {
+          box-shadow: 0 0 0.1rem 1px var(--primary-color);
+        }
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        height: 100%;
+        color: var(--black);
+        display: grid;
+        grid-template-columns: [sidebar] minmax(250px, 25%) [rest] minmax(500px, 75%) [end];
+        grid-template-rows: [title] auto [nav] auto [content] 1fr [end];
+        grid-template-areas: "title    title"
+                             "subtitle subtitle"
+                             "sidebar  content";
+      }
+
+      .title {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1rem;
+        color: var(--white);
+        background-color: var(--primary-neutral-dark);
+        grid-column-start: 1;
+        grid-column-end: end;
+      }
+
+      .navbar {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        padding: .7rem;
+        color: var(--black);
+        background-color: var(--primary-neutral-lightest);
+        grid-column-start: 1;
+        grid-column-end: end;
+      }
+
+      .navitem {
+        padding: .3rem;
+        margin: 0;
+        display: block;
+        border: 1px solid var(--primary-neutral-dark);
+      }
+
+      .navitem-selected {
+        background-color: var(--secondary-neutral);
+      }
+
+      .navitem-left {
+        border-radius: 25px 0 0 25px;
+        border-right: none;
+      }
+
+      .navitem-right {
+        border-radius: 0 25px 25px 0;
+        border-left: none;
+      }
+
+      .sidebar {
+        padding-left: 1rem;
+        background-color: var(--primary-neutral-lightest);
+        display: grid;
+        grid-template-columns: [full] 100% [end];
+        grid-template-rows: [title] auto [content] 1fr [end];
+        grid-template-areas: "title"
+                             "content";
+      }
+
+      .content {
+      }
+
+      .field {
+        width: 100%;
+        padding: 0 1rem;
+        display: grid;
+        grid-template-columns: [label] minmax(60px, 50%) [rest] minmax(60px, 50%) [end];
+        grid-template-rows: [title] auto [nav] auto [content] 1fr [end];
+        grid-template-areas: "title    title"
+                             "subtitle subtitle"
+                             "sidebar  content";
+      }
+    </style>
+  </body>
+</html>

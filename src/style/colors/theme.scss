@@ -12,8 +12,12 @@ $analogous-primary-color: adjust_hue($secondary-color, -40); // sass-lint:disabl
 $analogous-secondary-color: mix($analogous-primary-color, $secondary-color, 66);
 
 $primary-neutral: mix-neutral($primary-color);
-$primary-neutral-light: lighten($primary-neutral, 33);
-$primary-neutral-dark: darken($primary-neutral, 33);
+$primary-neutral-light: lighten($primary-neutral, 11);
+$primary-neutral-lighter: lighten($primary-neutral, 22);
+$primary-neutral-lightest: lighten($primary-neutral, 33);
+$primary-neutral-dark: darken($primary-neutral, 11);
+$primary-neutral-darker: darken($primary-neutral, 22);
+$primary-neutral-darkest: darken($primary-neutral, 33);
 
 $primary-light: mix($primary-neutral-light, $primary-color, 45%);
 $primary-dark: mix($primary-neutral-dark, $primary-color, 45%);
@@ -29,7 +33,7 @@ $secondary-neutral-darkest: darken($secondary-neutral, 33);
 $secondary-light: mix($secondary-neutral-lightest, $secondary-color, 45%);
 $secondary-dark: mix($secondary-neutral-darkest, $secondary-color, 45%);
 
-$white: lighten($primary-neutral-light, 15);
+$white: lighten($primary-neutral, 44);
 $black: grayscale($secondary-neutral-darkest);
 
 $light-gray: lighten($primary-neutral-light, 8);
@@ -54,7 +58,11 @@ $secondary-gray: mix($secondary-color, $primary-color, 63);
 
   @include css-var(--primary-neutral, $primary-neutral);
   @include css-var(--primary-neutral-light, $primary-neutral-light);
+  @include css-var(--primary-neutral-lighter, $primary-neutral-lighter);
+  @include css-var(--primary-neutral-lightest, $primary-neutral-lightest);
   @include css-var(--primary-neutral-dark, $primary-neutral-dark);
+  @include css-var(--primary-neutral-darker, $primary-neutral-darker);
+  @include css-var(--primary-neutral-darkest, $primary-neutral-darkest);
 
   @include css-var(--primary-light, $primary-light);
   @include css-var(--primary-dark, $primary-dark);

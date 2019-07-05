@@ -14,7 +14,7 @@
   position: absolute;
 
   color: var(--secondary-light);
-  background-color: var(--primary-neutral-dark);
+  background-color: var(--primary-neutral-darkest);
 
   left: var(--margin-left);
   height: var(--row-height);
@@ -139,7 +139,7 @@
 
           position: absolute;
           content: "";
-          background-color: var(--primary-neutral-dark);
+          background-color: var(--primary-neutral-darkest);
           left: 0;
           right: 0;
           top: 0;
@@ -166,7 +166,7 @@
 
           position: absolute;
           content: "";
-          background-color: var(--primary-neutral-dark);
+          background-color: var(--primary-neutral-darkest);
           left: 0;
           right: 0;
           top: 0;
@@ -197,7 +197,7 @@
         line-height: var(--row-height);
 
         color: var(--titan-color-code);
-        background-color: var(--primary-neutral-dark);
+        background-color: var(--primary-neutral-darkest);
 
         clip-path: circle(
             calc(var(--border) + var(--circle-half-size))
@@ -240,7 +240,7 @@
         will-change: opacity, transform;
 
         color: var(--white);
-        background-color: var(--primary-neutral-dark);
+        background-color: var(--primary-neutral-darkest);
         padding: .5em;
         content: var(--titan-color) ' ' var(--titan-stars-as-string) '⭐\A' var(--value-as-string);
         white-space: pre;

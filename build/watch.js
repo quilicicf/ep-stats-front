@@ -42,6 +42,7 @@ const main = async () => {
     .on('ready', renderSass);
 
   liveServer.start({
+    host: 'localhost',
     port: SERVER_PORT,
     root: DIST_PATH,
     watch: [ SRC_PATH, APP_HTML_SOURCE_PATH, STYLE_OUTPUT_PATH ],

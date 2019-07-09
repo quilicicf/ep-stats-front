@@ -14,9 +14,13 @@ import MaybeExtra exposing (hasValue)
 
 import String.Interpolate exposing (interpolate)
 
+import Url exposing (..)
+
 import Msg exposing (..)
 import CustomStyle exposing (customStyle)
+import CreateQueryString exposing (createQueryString)
 import TitanStats exposing (TitanStats, updateTitanStats, viewMaybeTitanStats)
+import WarStats exposing (WarStats, updateWarStats)
 import GenericStatsFilter exposing (GenericStatsFilterExtender, viewGenericFilterForm)
 
 ------------
@@ -28,7 +32,7 @@ type alias StatsExtender r =
   | filteredMember: String
   , filteredPeriod: Int
   , titanStats: Maybe TitanStats
-  , warStats: Maybe String
+  , warStats: Maybe WarStats
   }
 
 defaultFilterPeriod : Int
@@ -38,34 +42,37 @@ defaultFilterPeriod = 30
 -- UTILS --
 -----------
 
-computeSheetUrl : String -> String -> String
-computeSheetUrl range sheetId = interpolate
-  "https://sheets.googleapis.com/v4/spreadsheets/{0}/values/{1}" [ sheetId, range ]
+batchGetQueryString : List ( String, String )
+batchGetQueryString = [
+    ( "ranges", "Titans!A:AAZ" ),
+    ( "ranges", "Wars!A:AAZ" ),
+    ( "valueRenderOption", "UNFORMATTED_VALUE" )
+  ]
+
+computeSheetDataUrl : String -> String
+computeSheetDataUrl sheetId =
+  let
+    url : Url
+    url = Url
+      Url.Https
+      "sheets.googleapis.com"
+      Nothing -- Port
+      (interpolate "/v4/spreadsheets/{0}/values:batchGet" [ sheetId ] ) -- Path
+      ( Just ( createQueryString batchGetQueryString ) ) -- Query
+      Nothing -- Fragment
+  in
+    Url.toString url
 
 createBearerHeader : String -> Http.Header
 createBearerHeader accessToken = Http.header "Authorization" ( interpolate "Bearer {0}" [ accessToken ] )
 
 fetchAllStats : String -> String -> Cmd Msg
-fetchAllStats sheetId accessToken = Cmd.batch [ fetchTitanStats sheetId accessToken, fetchWarStats sheetId accessToken ]
-
-fetchTitanStats : String -> String -> Cmd Msg
-fetchTitanStats sheetId accessToken = Http.request
+fetchAllStats sheetId accessToken = Http.request
   { method = "GET"
   , headers = [ createBearerHeader accessToken ]
-  , url = computeSheetUrl "Titans!A:AAZ" sheetId
+  , url = computeSheetDataUrl sheetId
   , body = Http.emptyBody
-  , expect = Http.expectString (StatsMsg << GotTitanStats)
-  , timeout = Nothing
-  , tracker = Nothing
-  }
-
-fetchWarStats : String -> String -> Cmd Msg
-fetchWarStats sheetId accessToken = Http.request
-  { method = "GET"
-  , headers = [ createBearerHeader accessToken ]
-  , url = computeSheetUrl "Wars!A%3AAZ" sheetId
-  , body = Http.emptyBody
-  , expect = Http.expectString (StatsMsg << GotWarStats)
+  , expect = Http.expectString (StatsMsg << GotStats)
   , timeout = Nothing
   , tracker = Nothing
   }
@@ -80,7 +87,7 @@ viewStats stats =
     maybeTitanStats : Maybe TitanStats
     maybeTitanStats = stats.titanStats
 
-    maybeWarStats : Maybe String
+    maybeWarStats : Maybe WarStats
     maybeWarStats = stats.warStats
 
     hasStats : Bool
@@ -117,15 +124,13 @@ viewStats stats =
 updateStats : StatsMsg -> StatsExtender r -> StatsExtender r
 updateStats msg model =
   case msg of
-    GotTitanStats httpResult ->
+    GotStats httpResult ->
       case httpResult of
-        Ok titanStatsAsString ->
-          { model | titanStats = updateTitanStats titanStatsAsString }
-        Err _ -> model
-    GotWarStats httpResult ->
-      case httpResult of
-        Ok warStatsAsString ->
-          { model | warStats = Just warStatsAsString }
+        Ok statsAsString ->
+          { model
+          | titanStats = updateTitanStats statsAsString
+          , warStats = updateWarStats statsAsString
+          }
         Err _ -> model
 
     NewMemberSelected newSelectedMember ->

@@ -52,7 +52,9 @@ type alias TitanStats =
   , titanScores : List ( MemberTitanScores )
   }
 
-type alias RawTitanStats = { values: List ( List String ) }
+type alias RawStats = { valueRanges : List RawSheet }
+
+type alias RawSheet = { values: List ( List String ) }
 
 -----------
 -- UTILS --
@@ -88,28 +90,35 @@ decodeTitanColor colorAsString =
     "DARK" -> Dark
     _ -> Unknown
 
-rawTitanStatsDecoder : Decoder RawTitanStats
-rawTitanStatsDecoder =
-  Decode.succeed RawTitanStats
-    |> required "values" ( Decode.list (Decode.list string) )
+rawSheetStatsDecoder : Decoder RawSheet
+rawSheetStatsDecoder =
+  Decode.succeed RawSheet
+   |> required "values" ( Decode.list (Decode.list string) )
 
-decodeRawTitanStats : String -> RawTitanStats
-decodeRawTitanStats titanStatsAsString =
+rawStatsDecoder : Decoder RawStats
+rawStatsDecoder =
+  Decode.succeed RawStats
+    |> required "valueRanges" ( Decode.list rawSheetStatsDecoder )
+
+decodeRawStats : String -> RawStats
+decodeRawStats statsAsString =
   let
-    decodingResult : Result Decode.Error RawTitanStats
-    decodingResult = Decode.decodeString rawTitanStatsDecoder titanStatsAsString
+    decodingResult : Result Decode.Error RawStats
+    decodingResult = Decode.decodeString rawStatsDecoder statsAsString
+
   in
     case decodingResult of
-      Ok rawTitanStats ->
-        { rawTitanStats | values = rawTitanStats.values }
-
-      Err _ -> RawTitanStats []
+      Ok rawStats -> rawStats
+      Err _ -> RawStats []
 
 decodeTitanStats : String -> TitanStats
-decodeTitanStats titanStatsAsString =
+decodeTitanStats statsAsString =
   let
-    rawTitanStats : RawTitanStats
-    rawTitanStats = decodeRawTitanStats titanStatsAsString
+    rawStats : RawStats
+    rawStats = decodeRawStats statsAsString
+
+    rawTitanStats : RawSheet
+    rawTitanStats = withDefault ( RawSheet [] ) ( getAt 0 rawStats.valueRanges )
 
     dates : List String
     dates = extractDates rawTitanStats
@@ -119,13 +128,13 @@ decodeTitanStats titanStatsAsString =
   in
     TitanStats dates scores
 
-extractDates : RawTitanStats -> List String
+extractDates : RawSheet -> List String
 extractDates rawTitanStats =
   List.drop 1 rawTitanStats.values
     |> List.map List.head
     |> List.map ( withDefault "???" )
 
-extractTitanScoresList : RawTitanStats -> List MemberTitanScores
+extractTitanScoresList : RawSheet -> List MemberTitanScores
 extractTitanScoresList rawTitanStats =
   let
     headerRow : List String
@@ -210,13 +219,7 @@ extractMemberTitanScore memberIndex row =
 ------------
 
 updateTitanStats : String -> Maybe TitanStats
-updateTitanStats titanStatsAsString =
-  let
-    titanStats : TitanStats
-    titanStats = decodeTitanStats titanStatsAsString
-
-  in
-    Just titanStats
+updateTitanStats statsAsString = Just ( decodeTitanStats statsAsString )
 
 ----------
 -- VIEW --

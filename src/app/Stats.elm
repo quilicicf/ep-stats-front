@@ -4,6 +4,8 @@ module Stats exposing (StatsExtender,
   defaultFilterPeriod
   )
 
+import Debug exposing (log)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -131,7 +133,11 @@ updateStats msg model =
           | titanStats = updateTitanStats statsAsString
           , warStats = updateWarStats statsAsString
           }
-        Err _ -> model
+        Err httpError ->
+          let
+            logged = log "" httpError
+          in
+            model
 
     NewMemberSelected newSelectedMember ->
       { model | filteredMember = newSelectedMember }

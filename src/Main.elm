@@ -16,6 +16,8 @@ import Msg exposing (..)
 import Pagination exposing (..)
 
 import MaybeExtra exposing (hasValue)
+
+import WarStats exposing (WarStats)
 import TitanStats exposing (TitanStats)
 import AllianceName exposing (allianceName)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
@@ -42,7 +44,7 @@ type alias Model =
   , filteredMember : String
   , filteredPeriod : Int
   , titanStats: Maybe TitanStats
-  , warStats: Maybe String
+  , warStats: Maybe WarStats
 
   -- Navigation
   , baseUrl: Url

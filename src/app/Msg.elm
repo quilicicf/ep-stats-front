@@ -21,8 +21,7 @@ type AppConfigMsg
   | InputAppKey
 
 type StatsMsg
-  = GotTitanStats (Result Http.Error String)
-  | GotWarStats (Result Http.Error String)
+  = GotStats (Result Http.Error String)
   | NewMemberSelected String
   | NewPeriodSelected String
 

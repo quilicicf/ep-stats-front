@@ -4,7 +4,7 @@ module Stats exposing (StatsExtender,
   defaultFilterPeriod
   )
 
-import Debug exposing (log)
+import Dict exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -96,9 +96,9 @@ viewStats stats =
     hasStats = hasValue maybeTitanStats && hasValue maybeWarStats
 
     members : List String
-    members = withDefault (TitanStats [] []) stats.titanStats
+    members = withDefault ( TitanStats [] Dict.empty ) stats.titanStats
       |> .titanScores
-      |> List.map .pseudo
+      |> Dict.keys
   in
     if hasStats then
       div [ class "stats" ] [
@@ -133,11 +133,7 @@ updateStats msg model =
           | titanStats = updateTitanStats statsAsString
           , warStats = updateWarStats statsAsString
           }
-        Err httpError ->
-          let
-            logged = log "" httpError
-          in
-            model
+        Err _ -> model
 
     NewMemberSelected newSelectedMember ->
       { model | filteredMember = newSelectedMember }

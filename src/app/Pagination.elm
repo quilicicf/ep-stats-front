@@ -11,6 +11,7 @@ type Page
   | AppKeyCopierPage
 
 --  Stats
+  | AlliancePage
   | StatsPage
 
 --  Errors
@@ -27,6 +28,7 @@ findPage url =
     "/appKeyCopy" -> AppKeyCopierPage
 
 --  Stats
+    "/alliance" -> AlliancePage
     "/stats" -> StatsPage
 
 --  Errors

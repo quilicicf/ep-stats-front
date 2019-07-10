@@ -20,6 +20,7 @@ import Pagination exposing (..)
 import MaybeExtra exposing (hasValue)
 
 import WarStats exposing (WarStats)
+import Alliance exposing (viewAlliance)
 import TitanStats exposing (TitanStats)
 import AllianceName exposing (allianceName)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
@@ -104,19 +105,19 @@ init flags url key =
   in
     case initialCase of
       Authenticated -> (
-        { initModel | currentPage = StatsPage },
+        { initModel | currentPage = AlliancePage },
         Cmd.batch [
           fetchAllStats initModel.sheetId (withDefault "" initModel.accessToken),
-          pushUrl initModel.navigationKey "/stats"
+          pushUrl initModel.navigationKey "/alliance"
         ]
         )
 
       Authenticating -> (
-        { initModel | currentPage = StatsPage , accessToken = maybeAccessToken },
+        { initModel | currentPage = AlliancePage , accessToken = maybeAccessToken },
         Cmd.batch [
           setStorage ( StorageAppState initModel.appKey maybeAccessToken ),
           fetchAllStats initModel.sheetId (withDefault "" maybeAccessToken),
-          pushUrl initModel.navigationKey "/stats"
+          pushUrl initModel.navigationKey "/alliance"
         ]
         )
 
@@ -193,6 +194,8 @@ view model =
     AppKeyPage -> createDocument model (viewAppKeyInput model)
 
     AppKeyCopierPage -> createDocument model (viewAppKeyCopier model)
+
+    AlliancePage -> createDocument model (viewAlliance model)
 
     StatsPage -> createDocument model (viewStats model)
 

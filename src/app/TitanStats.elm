@@ -1,4 +1,9 @@
-module TitanStats exposing (TitanStats, updateTitanStats, viewMaybeTitanStats)
+module TitanStats exposing (
+  TitanStats, MemberTitanScore, TitanColor,
+  updateTitanStats, viewMaybeTitanStats
+  )
+
+import Dict exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -42,14 +47,9 @@ type alias MemberTitanScore =
   , titanStars : Int
   }
 
-type alias MemberTitanScores =
-  { pseudo : String
-  , scores: List MemberTitanScore
-  }
-
 type alias TitanStats =
   { dates : List String
-  , titanScores : List ( MemberTitanScores )
+  , titanScores : Dict String ( List MemberTitanScore )
   }
 
 type alias RawStats = { valueRanges : List RawSheet }
@@ -123,8 +123,8 @@ decodeTitanStats statsAsString =
     dates : List String
     dates = extractDates rawTitanStats
 
-    scores : List MemberTitanScores
-    scores = extractTitanScoresList rawTitanStats
+    scores : Dict String ( List MemberTitanScore )
+    scores = extractTitanScores rawTitanStats
   in
     TitanStats dates scores
 
@@ -134,8 +134,8 @@ extractDates rawTitanStats =
     |> List.map List.head
     |> List.map ( withDefault "???" )
 
-extractTitanScoresList : RawSheet -> List MemberTitanScores
-extractTitanScoresList rawTitanStats =
+extractTitanScores : RawSheet -> Dict String ( List MemberTitanScore )
+extractTitanScores rawTitanStats =
   let
     headerRow : List String
     headerRow = withDefault [] ( List.head rawTitanStats.values )
@@ -143,15 +143,15 @@ extractTitanScoresList rawTitanStats =
     data : List ( List String )
     data = List.drop 1 rawTitanStats.values
 
-    allianceResults : MemberTitanScores
+    allianceResults : ( String, List MemberTitanScore )
     allianceResults = extractTitanDataForMember data 0 fixedIndexes.totalIndex allianceName
 
-    membersResults : List MemberTitanScores
+    membersResults : List ( String, List MemberTitanScore )
     membersResults = List.drop fixedIndexes.number headerRow
           |> List.indexedMap ( extractTitanDataForMember data fixedIndexes.number )
 
   in
-    allianceResults :: membersResults
+    Dict.fromList ( allianceResults :: membersResults )
 
 noWhiteSpaceRegex : Regex
 noWhiteSpaceRegex = withDefault Regex.never ( Regex.fromString "\\s+" )
@@ -166,7 +166,7 @@ safeParseInt intAsString =
       Ok int -> Just int
       Err _ -> Nothing
 
-extractTitanDataForMember : ( List ( List String ) ) -> Int -> Int -> String -> MemberTitanScores
+extractTitanDataForMember : ( List ( List String ) ) -> Int -> Int -> String -> ( String, List MemberTitanScore )
 extractTitanDataForMember data offset index memberPseudo =
   let
     memberDataIndex : Int
@@ -176,7 +176,7 @@ extractTitanDataForMember data offset index memberPseudo =
     memberScores = List.map ( extractMemberTitanScore memberDataIndex ) data
 
   in
-    MemberTitanScores memberPseudo memberScores
+    ( memberPseudo, memberScores )
 
 extractMemberTitanScore : Int -> List String -> MemberTitanScore
 extractMemberTitanScore memberIndex row =
@@ -252,10 +252,12 @@ viewTitanStats genericStatsFilter titanStats =
       |> String.fromInt
 
     titanScoresElements : List (Html Msg)
-    titanScoresElements = List.map ( viewTitanMemberScores genericStatsFilter .score ) titanStats.titanScores
+    titanScoresElements = Dict.map ( viewTitanMemberScores genericStatsFilter .score ) titanStats.titanScores
+      |> Dict.values
 
     titanValuesElements : List (Html Msg)
-    titanValuesElements = List.map ( viewTitanMemberScores genericStatsFilter .value ) titanStats.titanScores
+    titanValuesElements = Dict.map ( viewTitanMemberScores genericStatsFilter .value ) titanStats.titanScores
+      |> Dict.values
 
   in
     div [ class "graphs-container" ] [
@@ -275,17 +277,17 @@ viewTitanStats genericStatsFilter titanStats =
       ]
     ]
 
-viewTitanMemberScores : GenericStatsFilterExtender r  -> ( MemberTitanScore -> Maybe Int ) -> MemberTitanScores -> Html Msg
-viewTitanMemberScores genericStatsFilter scoreExtractor memberTitanScores =
+viewTitanMemberScores : GenericStatsFilterExtender r  -> ( MemberTitanScore -> Maybe Int ) -> String -> List MemberTitanScore -> Html Msg
+viewTitanMemberScores genericStatsFilter scoreExtractor memberPseudo memberTitanScores =
   let
     isSelected : Bool
-    isSelected = genericStatsFilter.filteredMember == memberTitanScores.pseudo
+    isSelected = genericStatsFilter.filteredMember == memberPseudo
 
     titanScoresRowHeading : Html Msg
     titanScoresRowHeading = th [ class "labels" ] [ text genericStatsFilter.filteredMember ]
 
     filteredValues : List MemberTitanScore
-    filteredValues = List.reverse memberTitanScores.scores
+    filteredValues = List.reverse memberTitanScores
       |> List.take genericStatsFilter.filteredPeriod
       |> List.reverse
 

@@ -6,6 +6,8 @@ import Browser.Navigation exposing (Key, load, pushUrl)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
+import Http exposing (..)
+
 import Json.Decode exposing (Value, Decoder)
 
 import Maybe exposing (withDefault)
@@ -167,11 +169,21 @@ update msg model =
           _ -> ( newModel, Cmd.none )
 
     StatsMsg statsMsg ->
-      let
-        newModel : Model
-        newModel = updateStats statsMsg model
-      in
-        ( newModel, Cmd.none )
+      case statsMsg of
+        GotStats httpResult ->
+          case httpResult of
+            Ok _ -> ( updateStats statsMsg model, Cmd.none )
+            Err error ->
+              case error of
+                BadStatus status ->
+                  case status of
+                    401 -> ( model, load ( makeAuthorizationUrl model.baseUrl ) )
+                    _ -> ( model, Cmd.none )
+
+                _ -> ( model, Cmd.none )
+
+        _ -> ( updateStats statsMsg model, Cmd.none )
+
 
 view : Model -> Document Msg
 view model =

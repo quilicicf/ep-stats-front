@@ -1,5 +1,5 @@
 module TitanStats exposing (
-  TitanStats, MemberTitanScore, TitanColor,
+  TitanStats, TitanMemberStats, TitanColor,
   updateTitanStats, viewMaybeTitanStats
   )
 
@@ -7,9 +7,6 @@ import Dict exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-
-import Json.Decode as Decode exposing(Value, Decoder, string)
-import Json.Decode.Pipeline exposing (required)
 
 import List.Extra exposing (getAt)
 
@@ -32,29 +29,6 @@ import GraphUtils exposing (getLineStartX, getLineEndX, getLineStartY, getLineEn
 ------------
 -- MODELS --
 ------------
-
-type TitanColor = Red | Green | Blue | Holy | Dark | Unknown
-
-type alias DetailedColor =
-  { name : String -- THe displayable name, i.e. RED
-  , code: String -- The CSS custom property, i.e. var(--red)
-  }
-
-type alias MemberTitanScore =
-  { score : Maybe Int
-  , value: Maybe Int
-  , titanColor : TitanColor
-  , titanStars : Int
-  }
-
-type alias TitanStats =
-  { dates : List String
-  , titanScores : Dict String ( List MemberTitanScore )
-  }
-
-type alias RawStats = { valueRanges : List RawSheet }
-
-type alias RawSheet = { values: List ( List String ) }
 
 -----------
 -- UTILS --
@@ -89,27 +63,6 @@ decodeTitanColor colorAsString =
     "HOLY" -> Holy
     "DARK" -> Dark
     _ -> Unknown
-
-rawSheetStatsDecoder : Decoder RawSheet
-rawSheetStatsDecoder =
-  Decode.succeed RawSheet
-   |> required "values" ( Decode.list (Decode.list string) )
-
-rawStatsDecoder : Decoder RawStats
-rawStatsDecoder =
-  Decode.succeed RawStats
-    |> required "valueRanges" ( Decode.list rawSheetStatsDecoder )
-
-decodeRawStats : String -> RawStats
-decodeRawStats statsAsString =
-  let
-    decodingResult : Result Decode.Error RawStats
-    decodingResult = Decode.decodeString rawStatsDecoder statsAsString
-
-  in
-    case decodingResult of
-      Ok rawStats -> rawStats
-      Err _ -> RawStats []
 
 decodeTitanStats : String -> TitanStats
 decodeTitanStats statsAsString =

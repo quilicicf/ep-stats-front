@@ -3,6 +3,8 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
+import Dict exposing (..)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -19,12 +21,10 @@ import Pagination exposing (..)
 
 import MaybeExtra exposing (hasValue)
 
-import WarStats exposing (WarStats)
 import Alliance exposing (viewAlliance)
-import TitanStats exposing (TitanStats)
 import AllianceName exposing (allianceName)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
-import Stats exposing (StatsExtender, fetchAllStats, updateStats, viewStats)
+import Stats exposing (MemberStats, StatsExtender, fetchAllStats, updateStats, viewStats)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -46,8 +46,8 @@ type alias Model =
   -- Stats
   , filteredMember : String
   , filteredPeriod : Int
-  , titanStats: Maybe TitanStats
-  , warStats: Maybe WarStats
+  , stats: Maybe ( Dict String MemberStats )
+  , filteredStats: Maybe ( Dict String MemberStats )
 
   -- Navigation
   , baseUrl: Url

@@ -1,7 +1,7 @@
-module ComputeValue exposing (computeValue)
+module ComputeTeamValue exposing (computeTeamValue)
 
-computeValue : Int -> Int -> Int -> Int
-computeValue allianceScore membersNumber memberScore =
+computeTeamValue : Int -> Int -> Int -> Int
+computeTeamValue allianceScore membersNumber memberScore =
   let
       alliancePercentage : Float
       alliancePercentage = toFloat memberScore / toFloat allianceScore * 100

@@ -1,4 +1,4 @@
-module GenericStatsFilter exposing (GenericStatsFilterExtender, viewGenericFilterForm)
+module StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitanFilterForm)
 
 import Html exposing (..)
 import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
@@ -6,26 +6,51 @@ import Html.Events exposing (onInput)
 
 import Msg exposing (..)
 import Optionize exposing (optionize)
+import AllianceName exposing (allianceName)
+import Titans exposing (DetailedColor)
 
 -----------
 -- MODEL --
 -----------
 
-type alias GenericStatsFilterExtender r =
+type alias StatsFilterExtender r =
   { r
+  -- Generic
   | filteredMember : String
-  , filteredPeriod : Int
+  -- Titans
+  , filteredTitanPeriod : Int
+  , filteredTitanColor : Maybe DetailedColor
+  , filteredTitanStars : Maybe Int
+  -- Wars
+  , filteredWarPeriod : Int
+  , filteredWarBonus : Maybe String
+  }
+
+type alias StatsFilter = StatsFilterExtender {}
+
+-----------
+-- UTILS --
+-----------
+
+defaultStatsFilter : StatsFilter
+defaultStatsFilter =
+  { filteredMember = allianceName
+  , filteredTitanPeriod = 30
+  , filteredTitanColor = Nothing
+  , filteredTitanStars = Nothing
+  , filteredWarPeriod = 30
+  , filteredWarBonus = Nothing
   }
 
 ----------
 -- VIEW --
 ----------
 
-viewGenericFilterForm : GenericStatsFilterExtender r -> List String -> Html Msg
-viewGenericFilterForm genericStatsFilter members =
+viewTitanFilterForm : StatsFilterExtender r -> List String -> Html Msg
+viewTitanFilterForm statsFilter members =
   let
     filteredPeriod : String
-    filteredPeriod = String.fromInt genericStatsFilter.filteredPeriod
+    filteredPeriod = String.fromInt statsFilter.filteredTitanPeriod
 
   in
     Html.form [ class "generic-stat-filters" ]
@@ -36,7 +61,7 @@ viewGenericFilterForm genericStatsFilter members =
               [ id "member"
               , onInput ( StatsMsg << NewMemberSelected )
               ]
-              ( optionize genericStatsFilter.filteredMember members )
+              ( optionize statsFilter.filteredMember members )
           ]
       , div [ class "form-field-inline" ]
           [ label [ for "period" ] [ text "Period" ]

@@ -3,8 +3,6 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
-import Dict exposing (..)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -21,10 +19,9 @@ import Pagination exposing (..)
 
 import MaybeExtra exposing (hasValue)
 
-import Alliance exposing (viewAlliance)
 import AllianceName exposing (allianceName)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
-import Stats exposing (MemberStats, StatsExtender, fetchAllStats, updateStats, viewStats)
+import Stats exposing (Stats, FilteredStats, StatsExtender, fetchAllStats, updateStats, viewAllianceStats)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -46,8 +43,8 @@ type alias Model =
   -- Stats
   , filteredMember : String
   , filteredPeriod : Int
-  , stats: Maybe ( Dict String MemberStats )
-  , filteredStats: Maybe ( Dict String MemberStats )
+  , stats: Maybe Stats
+  , filteredStats: Maybe FilteredStats
 
   -- Navigation
   , baseUrl: Url
@@ -195,9 +192,9 @@ view model =
 
     AppKeyCopierPage -> createDocument model (viewAppKeyCopier model)
 
-    AlliancePage -> createDocument model (viewAlliance model)
+    AlliancePage -> createDocument model (viewAllianceStats model)
 
-    StatsPage -> createDocument model (viewStats model)
+    StatsPage -> createDocument model (viewAllianceStats model)
 
     NotFoundPage -> createDocument model (text "Not found")
 

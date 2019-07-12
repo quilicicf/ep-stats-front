@@ -12,7 +12,7 @@ type Page
 
 --  Stats
   | AlliancePage
-  | StatsPage
+  | StatsPage -- TODO replace with titans page and wars page
 
 --  Errors
   | NotFoundPage

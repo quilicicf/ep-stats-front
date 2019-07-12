@@ -1,10 +1,12 @@
 module Stats exposing (
-  Stats, FilteredStats, StatsExtender,
+  Stats, MemberStats, FilteredStats, StatsExtender,
   fetchAllStats,
   updateStats,
-  viewAllianceStats,
-  defaultFilterPeriod
+  viewAllianceStats
   )
+
+import Debug exposing (log)
+import Dict exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -17,7 +19,6 @@ import Json.Decode.Pipeline exposing (required)
 import List.Extra exposing (getAt)
 
 import Maybe exposing (withDefault)
-import MaybeExtra exposing (hasValue)
 
 import ParseInt exposing (parseInt)
 
@@ -28,9 +29,10 @@ import String.Interpolate exposing (interpolate)
 import Url exposing (..)
 
 import Msg exposing (..)
-import Wars exposing (warBonuses)
 import MemberScore exposing (MemberScore, AverageMemberScore)
 import CustomStyle exposing (customStyle)
+import AreListsEqual exposing (areListsEqual)
+import Wars exposing (sanitizeExternalWarBonus)
 import ComputeTeamValue exposing (computeTeamValue)
 import CreateQueryString exposing (createQueryString)
 import Titans exposing (DetailedColor, titanColorFromString)
@@ -43,9 +45,9 @@ import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 
 type alias StatsExtender r =
   { r
-  | filteredMember: String
-  , filteredPeriod: Int
-  , stats: Maybe Stats
+  | stats: Maybe Stats
+  , statsError : Maybe String
+  , allianceStats: Maybe ( Dict String MemberStats )
   , filteredStats: Maybe FilteredStats
   }
 
@@ -58,6 +60,15 @@ type alias Stats =
   , membersWarScores: List MemberWarScores
   }
 
+type alias MemberStats =
+  { pseudo : String
+  , averageTitanScore : AverageMemberScore
+  , preferredTitanColor : Maybe DetailedColor
+  , averageWarScore : AverageMemberScore
+  , preferredWarBonus : Maybe String
+  , teamValue : Float
+  }
+
 type alias AllianceTitanScore =
   { damage : Int
   , titanColor : DetailedColor
@@ -66,7 +77,7 @@ type alias AllianceTitanScore =
 
 type alias AllianceWarScore =
   { damage : Int
-  , warBonus : WarBonus
+  , warBonus : String
   }
 
 type alias MemberTitanScores =
@@ -87,7 +98,7 @@ type alias MemberWarScores =
 
 type alias MemberWarScore =
   { score : Maybe MemberScore
-  , warBonus : WarBonus
+  , warBonus : String
   }
 
 type alias FilteredStats =
@@ -121,7 +132,7 @@ type alias FilteredMemberTitanScores =
 type alias FilteredMemberWarScores =
   { pseudo : String
   , averageScore : AverageMemberScore
-  , preferredWarBonus : Maybe WarBonus
+  , preferredWarBonus : Maybe String
   , warScores : List MemberWarScore
   }
 
@@ -148,32 +159,11 @@ fixedTitanIndexes =
   , membersIndex = 5
   }
 
--- WARS
-
-type WarBonus = HEAL | ATTACK | ARROWS | UNKNOWN_BONUS
-
-type alias WarScore =
-  { score : Int
-  , teamValue : Int
-  , warBonus: WarBonus
-  }
-
 -----------
 -- UTILS --
 -----------
 
 -- WARS
-
-decodeWarBonus : String -> WarBonus
-decodeWarBonus warBonusAsString =
-  case warBonusAsString of
-    "HEAL" -> HEAL
-    "ATTACK" -> ATTACK
-    "ARROWS" -> ARROWS
-    _ -> UNKNOWN_BONUS
-
-defaultFilterPeriod : Int
-defaultFilterPeriod = 30
 
 batchGetQueryString : List ( String, String )
 batchGetQueryString = [
@@ -251,49 +241,52 @@ statsSpinner =
   ]
 
 viewAllianceStats : StatsExtender r -> Html Msg
-viewAllianceStats { stats } =
-  let
-    hasStats : Bool
-    hasStats = hasValue stats
-  in
-    if hasStats then
-      div [ class "alliance" ] [ text "Alliance stats will go there" ]
-    else
-      statsSpinner
+viewAllianceStats { allianceStats } =
+  case allianceStats of
+    Just validAllianceStats -> viewValidAllianceStats validAllianceStats
+    Nothing -> statsSpinner
 
---viewAlliance : StatsExtender r -> Html Msg
---viewAlliance stats =
---  let
---
---  in
---    div [ class "alliance-members" ] [
---      h2 [] [ text "Alliance members" ],
---      table [] [
---        thead [] [
---          th [] [ text "Pseudo" ],
---          th [] [ text "Average titan score" ],
---          th [] [ text "Preferred titan color" ],
---          th [] [ text "Average war score" ],
---          th [] [ text "Preferred war type" ],
---          th [] [ text "Team value" ]
---        ],
---        tbody [] (
---          List.map viewMember memberRepresentations
---            |> List.drop 1 -- Drop alliance row
---        )
---      ]
---    ]
---
---viewMember : MemberRepresentation -> Html Msg
---viewMember memberRepresentation =
---  tr [ class "member-row" ] [
---    th [ class "member-pseudo" ] [ text memberRepresentation.pseudo ],
---    td [ class "member-value" ] [ text ( String.fromFloat memberRepresentation.averageTitanScore ) ],
---    td [] [],
---    td [] [],
---    td [] [],
---    td [] []
---  ]
+compareMembersStats : MemberStats -> MemberStats -> Order
+compareMembersStats stats1 stats2 =
+  if stats1.teamValue > stats2.teamValue then GT
+  else if stats1.teamValue < stats2.teamValue then LT
+  else compare stats1.pseudo stats2.pseudo
+
+
+viewValidAllianceStats : Dict String MemberStats -> Html Msg
+viewValidAllianceStats allianceStats =
+  div [ class "alliance" ] [
+    div [ class "alliance-members" ] [
+      h2 [] [ text "Alliance members" ],
+      table [] [
+        thead [] [
+          th [] [ text "Pseudo" ],
+          th [] [ text "Average titan score" ],
+          th [] [ text "Preferred titan color" ],
+          th [] [ text "Average war score" ],
+          th [] [ text "Preferred war type" ],
+          th [] [ text "Team value" ]
+        ],
+        tbody [] (
+          Dict.values allianceStats
+            |> List.sortWith compareMembersStats
+            |> List.reverse
+            |> List.map viewMember
+        )
+      ]
+    ]
+  ]
+
+viewMember : MemberStats -> Html Msg
+viewMember memberStats =
+  tr [ class "member-row" ] [
+    th [ class "member-pseudo" ] [ text memberStats.pseudo ],
+    td [ class "member-value" ] [ text ( round memberStats.averageTitanScore.damage |> String.fromInt ) ],
+    td [ class "member-value" ] [ text ( Maybe.map .name memberStats.preferredTitanColor  |> withDefault "N/A") ],
+    td [ class "member-value" ] [ text ( round memberStats.averageWarScore.damage |> String.fromInt ) ],
+    td [ class "member-value" ] [ text ( withDefault "N/A" memberStats.preferredWarBonus ) ],
+    td [ class "member-value" ] [ text ( round memberStats.teamValue |> String.fromInt ) ]
+  ]
 
 ------------
 -- UPDATE --
@@ -327,8 +320,8 @@ getIntFromRow row index default = getAt index row |> Maybe.andThen safeParseInt 
 getTitanColorFromRow : List String -> Int -> DetailedColor
 getTitanColorFromRow row index = getAt index row |> withDefault ""|> titanColorFromString
 
-getWarBonusFromRow : List String -> Int -> WarBonus
-getWarBonusFromRow row index = getAt index row |> withDefault "" |> decodeWarBonus
+getWarBonusFromRow : List String -> Int -> String
+getWarBonusFromRow row index = getAt index row |> withDefault "" |> sanitizeExternalWarBonus
 
 extractDates : RawSheet -> Int -> List String
 extractDates rawSheet fixedIndexes =
@@ -486,16 +479,69 @@ filterStatsForAlliancePage stats = filterStats defaultStatsFilter stats
 decodeStats : String -> Stats
 decodeStats statsAsString = decodeRawStats statsAsString |> parseRawStats
 
+retrieveMemberWarScores : Int -> List ( FilteredMemberWarScores ) -> FilteredMemberWarScores
+retrieveMemberWarScores index memberWarScoresList = Maybe.withDefault
+  ( FilteredMemberWarScores "" ( AverageMemberScore 0 0 ) Nothing [] ) -- Can't fail anyway, checked before that
+  ( getAt index memberWarScoresList )
+
+mergeTeamValues : AverageMemberScore -> AverageMemberScore -> Float
+mergeTeamValues titanAverageScore warAverageScore = titanAverageScore.teamValue + warAverageScore.teamValue / 2
+
+computeMemberStats : (String, FilteredMemberTitanScores, FilteredMemberWarScores) -> ( String, MemberStats )
+computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
+  (
+    pseudo,
+    { pseudo = pseudo
+    , averageTitanScore = memberTitanScores.averageScore
+    , preferredTitanColor = memberTitanScores.preferredTitanColor
+    , averageWarScore = memberWarScores.averageScore
+    , preferredWarBonus = memberWarScores.preferredWarBonus
+    , teamValue = mergeTeamValues memberTitanScores.averageScore memberWarScores.averageScore
+    }
+  )
+
+computeAllianceStats : FilteredStats -> Dict String MemberStats
+computeAllianceStats filteredStats =
+  List.indexedMap (\index titanScores -> ( titanScores.pseudo, titanScores, retrieveMemberWarScores index filteredStats.membersWarScores ) ) filteredStats.membersTitanScores
+    |> List.map computeMemberStats
+    |> Dict.fromList
+
+updateValidStats : Stats -> StatsExtender r -> StatsExtender r
+updateValidStats stats model =
+  let
+    filteredStats : FilteredStats
+    filteredStats = filterStatsForAlliancePage stats
+
+    allianceStats : Dict String MemberStats
+    allianceStats = computeAllianceStats filteredStats
+  in
+    { model
+    | stats = Just stats
+    , allianceStats = Just allianceStats
+    , filteredStats = Just filteredStats
+    }
+
 decodeAndUpdateStats : String -> StatsExtender r -> StatsExtender r
 decodeAndUpdateStats statsAsString model =
   let
     stats : Stats
     stats = decodeStats statsAsString
+
+--    TODO: change when war stats are implemented and not mocked
+--    areMembersListEqual : Bool
+--    areMembersListEqual = areListsEqual
+--      ( List.map .pseudo stats.membersTitanScores )
+--      ( List.map .pseudo stats.membersWarScores )
+--
+--    maybeErrorMessage : Maybe String
+--    maybeErrorMessage = if areMembersListEqual then Nothing else Just "The members lists differ in the Titans and Wars tabs"
+    maybeErrorMessage : Maybe String
+    maybeErrorMessage = Nothing
+
   in
-    { model
-    | stats = Just stats
-    , filteredStats = Just ( filterStatsForAlliancePage stats )
-    }
+    case maybeErrorMessage of
+      Nothing -> updateValidStats stats model
+      Just _ -> { model | statsError = maybeErrorMessage }
 
 updateStats : StatsMsg -> StatsExtender r -> StatsExtender r
 updateStats msg model =
@@ -504,10 +550,4 @@ updateStats msg model =
       case httpResult of
         Ok statsAsString -> decodeAndUpdateStats statsAsString model
         Err _ -> model
-
-    NewMemberSelected newSelectedMember ->
-      { model | filteredMember = newSelectedMember }
-
-    NewPeriodSelected newPeriodAsString ->
-      { model | filteredPeriod = withDefault defaultFilterPeriod (String.toInt newPeriodAsString) }
 

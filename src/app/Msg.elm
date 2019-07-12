@@ -11,6 +11,7 @@ type Msg
   | UrlChanged Url
   | AppConfigMsg AppConfigMsg
   | StatsMsg StatsMsg
+  | StatsFilterMsg StatsFilterMsg
 
 type AppConfigMsg
   = NewTeamName String
@@ -22,6 +23,7 @@ type AppConfigMsg
 
 type StatsMsg
   = GotStats (Result Http.Error String)
-  | NewMemberSelected String
-  | NewPeriodSelected String
 
+type StatsFilterMsg
+  = NewMemberSelected String
+  | NewTitanPeriodSelected String

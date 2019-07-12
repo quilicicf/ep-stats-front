@@ -3,6 +3,8 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
+import Dict exposing (..)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -19,9 +21,10 @@ import Pagination exposing (..)
 
 import MaybeExtra exposing (hasValue)
 
-import AllianceName exposing (allianceName)
+import Titans exposing (DetailedColor)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
-import Stats exposing (Stats, FilteredStats, StatsExtender, fetchAllStats, updateStats, viewAllianceStats)
+import Stats exposing (Stats, MemberStats, FilteredStats, StatsExtender, fetchAllStats, updateStats, viewAllianceStats)
+import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, updateStatsFilters)
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -40,10 +43,18 @@ type alias Model =
   -- Authorization
   , accessToken: Maybe String
 
-  -- Stats
+  -- Filters
   , filteredMember : String
-  , filteredPeriod : Int
+  , filteredTitanPeriod : Int
+  , filteredTitanColor : Maybe DetailedColor
+  , filteredTitanStars : Maybe Int
+  , filteredWarPeriod : Int
+  , filteredWarBonus : Maybe String
+
+  -- Stats
+  , statsError : Maybe String
   , stats: Maybe Stats
+  , allianceStats: Maybe ( Dict String MemberStats )
   , filteredStats: Maybe FilteredStats
 
   -- Navigation
@@ -62,19 +73,32 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl =
     baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
 
   in
-    Model
-      -- App config
-      appConfig.teamName
-      appConfig.sheetId
-      appConfig.isAdmin
-      appKey
-      ""
-      -- Authorization
-      maybeAccessToken
-      -- Stats
-      allianceName 30 Nothing Nothing
-      -- Navigation
-      baseUrl AppKeyPage key
+    { teamName = appConfig.teamName
+    , sheetId = appConfig.sheetId
+    , isAdmin = appConfig.isAdmin
+    , appKey = appKey
+    , appKeyError = ""
+
+    -- Authorization
+    , accessToken = maybeAccessToken
+
+    -- Stats
+    , filteredMember = defaultStatsFilter.filteredMember
+    , filteredTitanPeriod = defaultStatsFilter.filteredTitanPeriod
+    , filteredTitanColor = defaultStatsFilter.filteredTitanColor
+    , filteredTitanStars = defaultStatsFilter.filteredTitanStars
+    , filteredWarPeriod = defaultStatsFilter.filteredWarPeriod
+    , filteredWarBonus = defaultStatsFilter.filteredWarBonus
+    , statsError = Nothing
+    , stats = Nothing
+    , allianceStats  = Nothing
+    , filteredStats = Nothing
+
+    -- Navigation
+    , baseUrl = baseUrl
+    , currentPage = AppKeyPage
+    , navigationKey = key
+    }
 
 type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated
 
@@ -180,8 +204,7 @@ update msg model =
 
                 _ -> ( model, Cmd.none )
 
-        _ -> ( updateStats statsMsg model, Cmd.none )
-
+    StatsFilterMsg statsFilterMsg -> ( updateStatsFilters statsFilterMsg model, Cmd.none )
 
 view : Model -> Document Msg
 view model =

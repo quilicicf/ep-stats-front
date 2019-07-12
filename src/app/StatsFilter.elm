@@ -1,4 +1,4 @@
-module StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitanFilterForm)
+module StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitanFilterForm, updateStatsFilters)
 
 import Html exposing (..)
 import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
@@ -59,7 +59,7 @@ viewTitanFilterForm statsFilter members =
           [ label [ for "member" ] [ text "Member" ]
           , select
               [ id "member"
-              , onInput ( StatsMsg << NewMemberSelected )
+              , onInput ( StatsFilterMsg << NewMemberSelected )
               ]
               ( optionize statsFilter.filteredMember members )
           ]
@@ -72,9 +72,22 @@ viewTitanFilterForm statsFilter members =
               , max "120"
               , step "10"
               , value filteredPeriod
-              , onInput ( StatsMsg << NewPeriodSelected )
+              , onInput ( StatsFilterMsg << NewTitanPeriodSelected )
               ]
               []
           ]
       ]
+
+------------
+-- UPDATE --
+------------
+
+updateStatsFilters : StatsFilterMsg -> StatsFilterExtender r -> StatsFilterExtender r
+updateStatsFilters msg model =
+  case msg of
+    NewMemberSelected newSelectedMember ->
+      { model | filteredMember = newSelectedMember }
+
+    NewTitanPeriodSelected newTitanPeriodAsString ->
+      { model | filteredTitanPeriod = Maybe.withDefault defaultStatsFilter.filteredTitanPeriod (String.toInt newTitanPeriodAsString) }
 

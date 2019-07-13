@@ -159,6 +159,15 @@ fixedTitanIndexes =
   , membersIndex = 5
   }
 
+fixedWarIndexes =
+  { number = 5
+  , dateIndex = 0
+  , totalIndex = 1
+  , enemyScoreIndex = 2
+  , bonusIndex = 3
+  , membersIndex = 4
+  }
+
 -----------
 -- UTILS --
 -----------
@@ -281,12 +290,22 @@ viewMember : MemberStats -> Html Msg
 viewMember memberStats =
   tr [ class "member-row" ] [
     th [ class "member-pseudo" ] [ text memberStats.pseudo ],
-    td [ class "member-value" ] [ text ( round memberStats.averageTitanScore.damage |> String.fromInt ) ],
+    td
+      [ class "member-value", addCompletenessClass memberStats.averageTitanScore.isComplete ]
+      [ text ( round memberStats.averageTitanScore.damage |> String.fromInt ) ],
     td [ class "member-value" ] [ text ( Maybe.map .name memberStats.preferredTitanColor  |> withDefault "N/A") ],
-    td [ class "member-value" ] [ text ( round memberStats.averageWarScore.damage |> String.fromInt ) ],
+    td
+      [ class "member-value", addCompletenessClass memberStats.averageWarScore.isComplete ]
+      [ text ( round memberStats.averageWarScore.damage |> String.fromInt ) ],
     td [ class "member-value" ] [ text ( withDefault "N/A" memberStats.preferredWarBonus ) ],
     td [ class "member-value" ] [ text ( round memberStats.teamValue |> String.fromInt ) ]
   ]
+
+addCompletenessClass : Bool -> Attribute msg
+addCompletenessClass isComplete = class (
+    if isComplete then "value-complete"
+    else "value-incomplete"
+  )
 
 ------------
 -- UPDATE --
@@ -344,8 +363,8 @@ extractWarAllianceScores warSheet =
   List.drop 1 warSheet.values
     |> List.map (\row ->
       AllianceWarScore
-        ( getIntFromRow row fixedTitanIndexes.totalIndex 0 )
-        ( getWarBonusFromRow row fixedTitanIndexes.colorIndex )
+        ( getIntFromRow row fixedWarIndexes.totalIndex 0 )
+        ( getWarBonusFromRow row fixedWarIndexes.bonusIndex )
       )
 
 extractMemberTitanScore : Int -> List String -> MemberTitanScore
@@ -396,6 +415,51 @@ extractTitanMemberScores titanSheet =
     List.drop fixedTitanIndexes.number headerRow
               |> List.indexedMap ( extractTitanDataForMember data fixedTitanIndexes.number )
 
+extractMemberWarScore : Int -> List String -> MemberWarScore
+extractMemberWarScore memberIndex row =
+  let
+    maybeDamage : Maybe Int
+    maybeDamage = getMaybeIntFromRow row memberIndex
+
+    allianceScore : Int
+    allianceScore = getIntFromRow row fixedWarIndexes.totalIndex 0
+
+    membersNumber : Int
+    membersNumber = getIntFromRow row fixedWarIndexes.membersIndex 0
+
+    memberScore : Maybe MemberScore
+    memberScore = computeScore maybeDamage allianceScore membersNumber
+
+    warBonus : String
+    warBonus = getWarBonusFromRow row fixedWarIndexes.bonusIndex
+  in
+    MemberWarScore memberScore warBonus
+
+extractWarDataForMember : ( List ( List String ) ) -> Int -> Int -> String -> MemberWarScores
+extractWarDataForMember data offset index memberPseudo =
+  let
+    memberDataIndex : Int
+    memberDataIndex = offset + index
+
+    memberScores : List MemberWarScore
+    memberScores = List.map ( extractMemberWarScore memberDataIndex ) data
+
+  in
+    MemberWarScores memberPseudo memberScores
+
+extractWarMemberScores : RawSheet -> List MemberWarScores
+extractWarMemberScores warSheet =
+  let
+    headerRow : List String
+    headerRow = withDefault [] ( List.head warSheet.values )
+
+    data : List ( List String )
+    data = List.drop 1 warSheet.values
+
+  in
+    List.drop fixedWarIndexes.number headerRow
+              |> List.indexedMap ( extractWarDataForMember data fixedWarIndexes.number )
+
 parseRawStats : RawStats -> Stats
 parseRawStats rawStats =
   let
@@ -412,7 +476,7 @@ parseRawStats rawStats =
       ( extractTitanAllianceScores titanSheet )
       ( extractWarAllianceScores warSheet )
       ( extractTitanMemberScores titanSheet )
-      ( [] )
+      ( extractWarMemberScores warSheet )
 
 filterByPeriod : Int -> List a -> List a
 filterByPeriod period list = List.reverse list |> List.take period |> List.reverse
@@ -481,7 +545,7 @@ decodeStats statsAsString = decodeRawStats statsAsString |> parseRawStats
 
 retrieveMemberWarScores : Int -> List ( FilteredMemberWarScores ) -> FilteredMemberWarScores
 retrieveMemberWarScores index memberWarScoresList = Maybe.withDefault
-  ( FilteredMemberWarScores "" ( AverageMemberScore 0 0 ) Nothing [] ) -- Can't fail anyway, checked before that
+  ( FilteredMemberWarScores "" ( AverageMemberScore False 0 0 ) Nothing [] ) -- Can't fail anyway, checked before that
   ( getAt index memberWarScoresList )
 
 mergeTeamValues : AverageMemberScore -> AverageMemberScore -> Float
@@ -527,16 +591,13 @@ decodeAndUpdateStats statsAsString model =
     stats : Stats
     stats = decodeStats statsAsString
 
---    TODO: change when war stats are implemented and not mocked
---    areMembersListEqual : Bool
---    areMembersListEqual = areListsEqual
---      ( List.map .pseudo stats.membersTitanScores )
---      ( List.map .pseudo stats.membersWarScores )
---
---    maybeErrorMessage : Maybe String
---    maybeErrorMessage = if areMembersListEqual then Nothing else Just "The members lists differ in the Titans and Wars tabs"
+    areMembersListEqual : Bool
+    areMembersListEqual = areListsEqual
+      ( List.map .pseudo stats.membersTitanScores )
+      ( List.map .pseudo stats.membersWarScores )
+
     maybeErrorMessage : Maybe String
-    maybeErrorMessage = Nothing
+    maybeErrorMessage = if areMembersListEqual then Nothing else Just "The members lists differ in the Titans and Wars tabs"
 
   in
     case maybeErrorMessage of

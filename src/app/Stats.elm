@@ -5,7 +5,6 @@ module Stats exposing (
   viewAllianceStats
   )
 
-import Debug exposing (log)
 import Dict exposing (..)
 
 import Html exposing (..)
@@ -35,6 +34,7 @@ import ComputeTeamValue exposing (computeTeamValue)
 import CreateQueryString exposing (createQueryString)
 import Titans exposing (DetailedColor, titanColorFromString)
 import MemberScore exposing (MemberScore, AverageMemberScore)
+import FindPreferredEventType exposing (findPreferredEventType)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter)
 import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 
@@ -507,35 +507,19 @@ parseRawStats rawStats =
 filterByPeriod : Int -> List a -> List a
 filterByPeriod period list = List.reverse list |> List.take period |> List.reverse
 
-addIfExisting : Int -> Maybe Int -> Maybe Int
-addIfExisting valueToAdd maybeCurrentValue =
-  case maybeCurrentValue of
-    Just currentValue -> Just ( currentValue + valueToAdd )
-    Nothing -> Just valueToAdd
-
-colors2DamageAccumulator : AllianceTitanScore -> Dict String Int -> Dict String Int
-colors2DamageAccumulator titanScore seed =
-  Dict.update titanScore.titanColor.name ( addIfExisting titanScore.damage ) seed
-
-findAlliancePreferredTitanColor : List AllianceTitanScore -> DetailedColor
-findAlliancePreferredTitanColor titanScores =
-  List.foldl colors2DamageAccumulator Dict.empty titanScores
-    |> Dict.toList
-    |> List.sortBy Tuple.second
-    |> List.reverse
-    |> List.head
-    |> withDefault ("", 0)
-    |> Tuple.first
-    |> titanColorFromString
-
 filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> FilteredAllianceTitanScores
 filterAllianceTitanScores statsFilter allianceTitanScores =
   let
     filteredAllianceScores : List AllianceTitanScore
     filteredAllianceScores = filterByPeriod statsFilter.filteredTitanPeriod allianceTitanScores
+
+    preferredTitanColor : DetailedColor
+    preferredTitanColor = findPreferredEventType ( .name << .titanColor ) ( Just << .damage ) filteredAllianceScores
+      |> withDefault ""
+      |> titanColorFromString
   in
     { averageTitanScore = computeAverageDamage filteredAllianceScores
-    , preferredTitanColor = log "Preferred color" (findAlliancePreferredTitanColor filteredAllianceScores)
+    , preferredTitanColor = preferredTitanColor
     , titanScores = filteredAllianceScores
     }
 
@@ -544,9 +528,14 @@ filterAllianceWarScores statsFilter allianceWarScores =
   let
     filteredAllianceScores : List AllianceWarScore
     filteredAllianceScores = filterByPeriod statsFilter.filteredWarPeriod allianceWarScores
+
+    preferredWarBonus : String
+    preferredWarBonus = findPreferredEventType ( .warBonus ) ( Just << .damage ) filteredAllianceScores
+      |> withDefault ""
+      |> sanitizeExternalWarBonus
   in
     { averageWarScore = computeAverageDamage filteredAllianceScores
-    , preferredWarBonus = "ATTACK" -- TODO find the real one
+    , preferredWarBonus = preferredWarBonus
     , warScores = filteredAllianceScores
     }
 
@@ -555,10 +544,14 @@ filterMemberTitanScores statsFilter memberTitanScores =
   let
     filteredMemberScores : List MemberTitanScore
     filteredMemberScores = filterByPeriod statsFilter.filteredTitanPeriod memberTitanScores.titanScores
+
+    preferredTitanColor : Maybe DetailedColor
+    preferredTitanColor = findPreferredEventType ( .name << .titanColor ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
+      |> Maybe.map titanColorFromString
   in
     { pseudo = memberTitanScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
-    , preferredTitanColor = Nothing -- TODO find the real one
+    , preferredTitanColor = preferredTitanColor
     , titanScores = filteredMemberScores
     }
 
@@ -567,10 +560,14 @@ filterMemberWarScores statsFilter memberWarScores =
   let
     filteredMemberScores : List MemberWarScore
     filteredMemberScores = filterByPeriod statsFilter.filteredTitanPeriod memberWarScores.warScores
+
+    preferredWarBonus : Maybe String
+    preferredWarBonus = findPreferredEventType ( .warBonus ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
+      |> Maybe.map sanitizeExternalWarBonus
   in
     { pseudo = memberWarScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
-    , preferredWarBonus = Nothing -- TODO find the real one
+    , preferredWarBonus = preferredWarBonus
     , warScores = filteredMemberScores
     }
 

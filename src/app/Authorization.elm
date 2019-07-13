@@ -2,14 +2,14 @@ module Authorization exposing (makeAuthorizationUrl, readAccessToken)
 
 import Dict exposing (..)
 
-import List.Extra exposing (getAt)
-
 import Maybe exposing (withDefault)
 
 import OAuth.Implicit exposing (Authorization, makeAuthUrl)
 
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
+
+import GetAt exposing (getAt)
 
 makeAuthorization : Url -> Authorization
 makeAuthorization baseUrl = Authorization
@@ -20,12 +20,7 @@ makeAuthorization baseUrl = Authorization
   ( Just "dodelidoo" ) -- TODO: Randomize?
 
 makeAuthorizationUrl : Url -> String
-makeAuthorizationUrl baseUrl =
-  let
-    authorization : Authorization
-    authorization = makeAuthorization baseUrl
-  in
-    toString ( makeAuthUrl authorization )
+makeAuthorizationUrl baseUrl = toString ( makeAuthUrl ( makeAuthorization baseUrl ) )
 
 parseArgument : String -> Dict String String -> Dict String String
 parseArgument parameterAsString seed =

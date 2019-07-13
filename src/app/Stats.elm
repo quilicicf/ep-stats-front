@@ -1,5 +1,5 @@
 module Stats exposing (
-  Stats, MemberStats, FilteredStats, StatsExtender,
+  Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
   fetchAllStats,
   updateStats,
   viewAllianceStats
@@ -47,7 +47,7 @@ type alias StatsExtender r =
   { r
   | stats: Maybe Stats
   , statsError : Maybe String
-  , allianceStats: Maybe ( Dict String MemberStats )
+  , allianceStats: Maybe AllianceStats
   , filteredStats: Maybe FilteredStats
   }
 
@@ -58,6 +58,14 @@ type alias Stats =
   , allianceWarScores: List AllianceWarScore
   , membersTitanScores: List MemberTitanScores
   , membersWarScores: List MemberWarScores
+  }
+
+type alias AllianceStats =
+  { averageTitanScore : Float
+  , preferredTitanColor : DetailedColor
+  , averageWarScore : Float
+  , preferredWarBonus : String
+  , memberStats : Dict String MemberStats
   }
 
 type alias MemberStats =
@@ -262,10 +270,29 @@ compareMembersStats stats1 stats2 =
   else compare stats1.pseudo stats2.pseudo
 
 
-viewValidAllianceStats : Dict String MemberStats -> Html Msg
+viewValidAllianceStats : AllianceStats -> Html Msg
 viewValidAllianceStats allianceStats =
   div [ class "alliance" ] [
     div [ class "alliance-members" ] [
+      h2 [] [ text "Alliance" ],
+      div [ class "alliance-stats" ] [
+        div [ class "alliance-stat" ] [
+          span [ class "alliance-stat-name" ] [ text "Average titan score" ],
+          span [ class "alliance-stat-value" ] [ text ( round allianceStats.averageTitanScore |> String.fromInt ) ]
+        ],
+        div [ class "alliance-stat" ] [
+          span [ class "alliance-stat-name" ] [ text "Preferred titan color" ],
+          span [ class "alliance-stat-value" ] [ text allianceStats.preferredTitanColor.name ]
+        ],
+        div [ class "alliance-stat" ] [
+          span [ class "alliance-stat-name" ] [ text "Average war score" ],
+          span [ class "alliance-stat-value" ] [ text ( round allianceStats.averageWarScore |> String.fromInt ) ]
+        ],
+        div [ class "alliance-stat" ] [
+          span [ class "alliance-stat-name" ] [ text "Preferred war bonus" ],
+          span [ class "alliance-stat-value" ] [ text allianceStats.preferredWarBonus ]
+        ]
+      ],
       h2 [] [ text "Alliance members" ],
       table [] [
         thead [] [
@@ -277,7 +304,7 @@ viewValidAllianceStats allianceStats =
           th [] [ text "Team value" ]
         ],
         tbody [] (
-          Dict.values allianceStats
+          Dict.values allianceStats.memberStats
             |> List.sortWith compareMembersStats
             |> List.reverse
             |> List.map viewMember
@@ -481,6 +508,27 @@ parseRawStats rawStats =
 filterByPeriod : Int -> List a -> List a
 filterByPeriod period list = List.reverse list |> List.take period |> List.reverse
 
+addIfExisting : Int -> Maybe Int -> Maybe Int
+addIfExisting valueToAdd maybeCurrentValue =
+  case maybeCurrentValue of
+    Just currentValue -> Just ( currentValue + valueToAdd )
+    Nothing -> Just valueToAdd
+
+colors2DamageAccumulator : AllianceTitanScore -> Dict String Int -> Dict String Int
+colors2DamageAccumulator titanScore seed =
+  Dict.update titanScore.titanColor.name ( addIfExisting titanScore.damage ) seed
+
+findAlliancePreferredTitanColor : List AllianceTitanScore -> DetailedColor
+findAlliancePreferredTitanColor titanScores =
+  List.foldl colors2DamageAccumulator Dict.empty titanScores
+    |> Dict.toList
+    |> List.sortBy Tuple.second
+    |> List.reverse
+    |> List.head
+    |> withDefault ("", 0)
+    |> Tuple.first
+    |> titanColorFromString
+
 filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> FilteredAllianceTitanScores
 filterAllianceTitanScores statsFilter allianceTitanScores =
   let
@@ -488,7 +536,7 @@ filterAllianceTitanScores statsFilter allianceTitanScores =
     filteredAllianceScores = filterByPeriod statsFilter.filteredTitanPeriod allianceTitanScores
   in
     { averageTitanScore = computeAverageDamage filteredAllianceScores
-    , preferredTitanColor = DetailedColor "RED" "var(--red)" -- TODO find the real one
+    , preferredTitanColor = log "Preferred color" (findAlliancePreferredTitanColor filteredAllianceScores)
     , titanScores = filteredAllianceScores
     }
 
@@ -564,11 +612,17 @@ computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
     }
   )
 
-computeAllianceStats : FilteredStats -> Dict String MemberStats
+computeAllianceStats : FilteredStats -> AllianceStats
 computeAllianceStats filteredStats =
-  List.indexedMap (\index titanScores -> ( titanScores.pseudo, titanScores, retrieveMemberWarScores index filteredStats.membersWarScores ) ) filteredStats.membersTitanScores
-    |> List.map computeMemberStats
-    |> Dict.fromList
+  { averageTitanScore = filteredStats.allianceTitanScores.averageTitanScore
+  , preferredTitanColor = filteredStats.allianceTitanScores.preferredTitanColor
+  , averageWarScore = filteredStats.allianceWarScores.averageWarScore
+  , preferredWarBonus = filteredStats.allianceWarScores.preferredWarBonus
+  , memberStats = List.indexedMap
+      (\index titanScores -> ( titanScores.pseudo, titanScores, retrieveMemberWarScores index filteredStats.membersWarScores ) ) filteredStats.membersTitanScores
+      |> List.map computeMemberStats
+      |> Dict.fromList
+  }
 
 updateValidStats : Stats -> StatsExtender r -> StatsExtender r
 updateValidStats stats model =
@@ -576,7 +630,7 @@ updateValidStats stats model =
     filteredStats : FilteredStats
     filteredStats = filterStatsForAlliancePage stats
 
-    allianceStats : Dict String MemberStats
+    allianceStats : AllianceStats
     allianceStats = computeAllianceStats filteredStats
   in
     { model

@@ -3,6 +3,30 @@
   flex-direction: column;
   align-items: center;
 
+  .alliance-stats {
+    width: 30%;
+    min-width: 400px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .alliance-stat {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .alliance-stat:nth-child(odd) {
+    background-color: var(--primary-neutral-lightest);
+  }
+
+  .alliance-stat-name {
+    font-weight: bold;
+  }
+
   table {
     border-collapse: collapse;
   }

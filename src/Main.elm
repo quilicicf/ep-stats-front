@@ -3,8 +3,6 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
-import Dict exposing (..)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -23,8 +21,11 @@ import MaybeExtra exposing (hasValue)
 
 import Titans exposing (DetailedColor)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
-import Stats exposing (Stats, MemberStats, FilteredStats, StatsExtender, fetchAllStats, updateStats, viewAllianceStats)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, updateStatsFilters)
+import Stats exposing (
+  Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
+  fetchAllStats, updateStats, viewAllianceStats
+  )
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
   updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
@@ -54,7 +55,7 @@ type alias Model =
   -- Stats
   , statsError : Maybe String
   , stats: Maybe Stats
-  , allianceStats: Maybe ( Dict String MemberStats )
+  , allianceStats: Maybe AllianceStats
   , filteredStats: Maybe FilteredStats
 
   -- Navigation

@@ -16,8 +16,6 @@ import Http exposing (..)
 import Json.Decode as Decode exposing(Value, Decoder, string)
 import Json.Decode.Pipeline exposing (required)
 
-import List.Extra exposing (getAt)
-
 import Maybe exposing (withDefault)
 
 import ParseInt exposing (parseInt)
@@ -29,13 +27,14 @@ import String.Interpolate exposing (interpolate)
 import Url exposing (..)
 
 import Msg exposing (..)
-import MemberScore exposing (MemberScore, AverageMemberScore)
+import GetAt exposing (getAt)
 import CustomStyle exposing (customStyle)
 import AreListsEqual exposing (areListsEqual)
 import Wars exposing (sanitizeExternalWarBonus)
 import ComputeTeamValue exposing (computeTeamValue)
 import CreateQueryString exposing (createQueryString)
 import Titans exposing (DetailedColor, titanColorFromString)
+import MemberScore exposing (MemberScore, AverageMemberScore)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter)
 import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 

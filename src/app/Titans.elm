@@ -11,19 +11,19 @@ equals colorAsString titanColor = colorAsString == titanColor.name
 titanColorFromString : String -> DetailedColor
 titanColorFromString colorAsString = List.filter ( equals colorAsString ) titanColors
   |> List.head
-  |> Maybe.withDefault defaultColor
+  |> Maybe.withDefault defaultTitanColor
 
-defaultColor : DetailedColor
-defaultColor = DetailedColor "DARK" "var(--black)"
+defaultTitanColor : DetailedColor
+defaultTitanColor = DetailedColor "DARK" "var(--black)"
 
 titanColors : List DetailedColor
 titanColors =
   [ DetailedColor "RED" "var(--red)"
   , DetailedColor "GREEN" "var(--green)"
   , DetailedColor "BLUE" "var(--blue)"
-  , DetailedColor "GREEN" "var(--holy)"
-  , DetailedColor "HOLY" "var(--dark)"
-  , defaultColor
+  , DetailedColor "HOLY" "var(--holy)"
+  , DetailedColor "DARK" "var(--dark)"
+  , defaultTitanColor
   ]
 
 

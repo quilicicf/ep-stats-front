@@ -1,5 +1,6 @@
 module ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 
+import MaybeExtra exposing (hasValue)
 import MemberScore exposing (MemberScore, AverageMemberScore)
 
 type alias HasDamage r = { r | damage : Int }
@@ -27,9 +28,13 @@ computeAverageScore list =
     sum : MemberScore
     sum = List.foldl scoreAccumulator { damage = 0, teamValue = 0 } list
 
+    isComplete : Bool
+    isComplete = ( List.filter hasValue list |> List.length ) == List.length list
+
     size : Float
     size = toFloat ( List.length list )
   in
-    { damage = ( toFloat sum.damage ) / size,
+    { isComplete = isComplete
+    , damage = ( toFloat sum.damage ) / size,
       teamValue = ( toFloat sum.teamValue ) / size
     }

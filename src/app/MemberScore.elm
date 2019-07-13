@@ -6,6 +6,7 @@ type alias MemberScore =
   }
 
 type alias AverageMemberScore =
-  { damage : Float
+  { isComplete : Bool
+  , damage : Float
   , teamValue : Float
   }

@@ -27,7 +27,7 @@ import Url exposing (..)
 
 import Msg exposing (..)
 import GetAt exposing (getAt)
-import CustomStyle exposing (customStyle)
+import Spinner exposing (viewSpinner)
 import AreListsEqual exposing (areListsEqual)
 import Wars exposing (sanitizeExternalWarBonus)
 import ComputeTeamValue exposing (computeTeamValue)
@@ -241,26 +241,11 @@ decodeRawStats statsAsString =
 -- VIEW --
 ----------
 
-statsSpinner : Html Msg
-statsSpinner =
-  div [ class "stats-spinner" ] [
-    div [ class "spinner-container" ] [
-      span [ class "spinner-text" ] [ text "Fetching the data" ],
-      div [ class "spinner" ] [
-        div [ class "bar", customStyle [ ("--bar-index", "0"), ("--bar-color", "var(--red") ] ] [],
-        div [ class "bar", customStyle [ ("--bar-index", "1"), ("--bar-color", "var(--green") ] ] [],
-        div [ class "bar", customStyle [ ("--bar-index", "2"), ("--bar-color", "var(--blue") ] ] [],
-        div [ class "bar", customStyle [ ("--bar-index", "3"), ("--bar-color", "var(--holy") ] ] [],
-        div [ class "bar", customStyle [ ("--bar-index", "4"), ("--bar-color", "var(--dark") ] ] []
-      ]
-    ]
-  ]
-
 viewAllianceStats : StatsExtender r -> Html Msg
 viewAllianceStats { allianceStats } =
   case allianceStats of
     Just validAllianceStats -> viewValidAllianceStats validAllianceStats
-    Nothing -> statsSpinner
+    Nothing -> viewSpinner "Fetching the data"
 
 compareMembersStats : MemberStats -> MemberStats -> Order
 compareMembersStats stats1 stats2 =

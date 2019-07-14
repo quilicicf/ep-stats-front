@@ -44,6 +44,10 @@
     background-color: var(--primary-neutral-lightest);
   }
 
+  .member-row:hover {
+    background-color: var(--secondary-neutral-lighter);
+  }
+
   th {
     padding: .2rem .8rem;
   }

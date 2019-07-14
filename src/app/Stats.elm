@@ -6,37 +6,27 @@ module Stats exposing (
   )
 
 import Dict exposing (..)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
-
 import Http exposing (..)
-
-import Json.Decode as Decode exposing(Value, Decoder, string)
-import Json.Decode.Pipeline exposing (required)
-
 import Maybe exposing (withDefault)
-
 import ParseInt exposing (parseInt)
-
-import Regex exposing (..)
-
-import String.Interpolate exposing (interpolate)
-
-import Url exposing (..)
 
 import Msg exposing (..)
 import GetAt exposing (getAt)
+import TakeLast exposing (takeLast)
 import Spinner exposing (viewSpinner)
+import Gsheet exposing (computeSheetDataUrl)
 import AreListsEqual exposing (areListsEqual)
 import Wars exposing (sanitizeExternalWarBonus)
 import ComputeTeamValue exposing (computeTeamValue)
-import CreateQueryString exposing (createQueryString)
+import CreateBearerHeader exposing (createBearerHeader)
 import Titans exposing (DetailedColor, titanColorFromString)
 import MemberScore exposing (MemberScore, AverageMemberScore)
 import FindPreferredEventType exposing (findPreferredEventType)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter)
 import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
+import Gsheet exposing (RawStats, RawSheet, computeSheetDataUrl, decodeRawStats, fixedTitanIndexes, fixedWarIndexes)
 
 ------------
 -- MODELS --
@@ -143,12 +133,6 @@ type alias FilteredMemberWarScores =
   , warScores : List MemberWarScore
   }
 
-type alias RawStats = { valueRanges : List RawSheet }
-
-type alias RawSheet = { values: List ( List String ) }
-
--- TITANS
-
 type alias TitanScore =
   { score : Int
   , teamValue : Int
@@ -156,54 +140,9 @@ type alias TitanScore =
   , titanStars : Int
   }
 
-fixedTitanIndexes =
-  { number = 6
-  , dateIndex = 0
-  , totalIndex = 1
-  , lifeIndex = 2
-  , starIndex = 3
-  , colorIndex = 4
-  , membersIndex = 5
-  }
-
-fixedWarIndexes =
-  { number = 5
-  , dateIndex = 0
-  , totalIndex = 1
-  , enemyScoreIndex = 2
-  , bonusIndex = 3
-  , membersIndex = 4
-  }
-
------------
--- UTILS --
------------
-
--- WARS
-
-batchGetQueryString : List ( String, String )
-batchGetQueryString = [
-    ( "ranges", "Titans!A:AAZ" ),
-    ( "ranges", "Wars!A:AAZ" ),
-    ( "valueRenderOption", "UNFORMATTED_VALUE" )
-  ]
-
-computeSheetDataUrl : String -> String
-computeSheetDataUrl sheetId =
-  let
-    url : Url
-    url = Url
-      Url.Https
-      "sheets.googleapis.com"
-      Nothing -- Port
-      (interpolate "/v4/spreadsheets/{0}/values:batchGet" [ sheetId ] ) -- Path
-      ( Just ( createQueryString batchGetQueryString ) ) -- Query
-      Nothing -- Fragment
-  in
-    Url.toString url
-
-createBearerHeader : String -> Http.Header
-createBearerHeader accessToken = Http.header "Authorization" ( interpolate "Bearer {0}" [ accessToken ] )
+----------
+-- VIEW --
+----------
 
 fetchAllStats : String -> String -> Cmd Msg
 fetchAllStats sheetId accessToken = Http.request
@@ -215,31 +154,6 @@ fetchAllStats sheetId accessToken = Http.request
   , timeout = Nothing
   , tracker = Nothing
   }
-
-rawSheetStatsDecoder : Decoder RawSheet
-rawSheetStatsDecoder =
-  Decode.succeed RawSheet
-   |> required "values" ( Decode.list (Decode.list string) )
-
-rawStatsDecoder : Decoder RawStats
-rawStatsDecoder =
-  Decode.succeed RawStats
-    |> required "valueRanges" ( Decode.list rawSheetStatsDecoder )
-
-decodeRawStats : String -> RawStats
-decodeRawStats statsAsString =
-  let
-    decodingResult : Result Decode.Error RawStats
-    decodingResult = Decode.decodeString rawStatsDecoder statsAsString
-
-  in
-    case decodingResult of
-      Ok rawStats -> rawStats
-      Err _ -> RawStats []
-
-----------
--- VIEW --
-----------
 
 viewAllianceStats : StatsExtender r -> Html Msg
 viewAllianceStats { allianceStats } =
@@ -322,18 +236,11 @@ addCompletenessClass isComplete = class (
 -- UPDATE --
 ------------
 
-noWhiteSpaceRegex : Regex
-noWhiteSpaceRegex = withDefault Regex.never ( Regex.fromString "\\s+" )
-
 safeParseInt : String -> Maybe Int
 safeParseInt intAsString =
-  let
-    safeIntAsString : String
-    safeIntAsString = Regex.replace noWhiteSpaceRegex (\_ -> "") intAsString
-  in
-    case parseInt safeIntAsString of
-      Ok int -> Just int
-      Err _ -> Nothing
+  case parseInt intAsString of
+    Ok int -> Just int
+    Err _ -> Nothing
 
 computeScore : Maybe Int -> Int -> Int -> Maybe MemberScore
 computeScore maybeDamage allianceScore membersNumber =
@@ -489,14 +396,12 @@ parseRawStats rawStats =
       ( extractTitanMemberScores titanSheet )
       ( extractWarMemberScores warSheet )
 
-filterByPeriod : Int -> List a -> List a
-filterByPeriod period list = List.reverse list |> List.take period |> List.reverse
 
 filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> FilteredAllianceTitanScores
 filterAllianceTitanScores statsFilter allianceTitanScores =
   let
     filteredAllianceScores : List AllianceTitanScore
-    filteredAllianceScores = filterByPeriod statsFilter.filteredTitanPeriod allianceTitanScores
+    filteredAllianceScores = takeLast statsFilter.filteredTitanPeriod allianceTitanScores
 
     preferredTitanColor : DetailedColor
     preferredTitanColor = findPreferredEventType ( .name << .titanColor ) ( Just << .damage ) filteredAllianceScores
@@ -512,7 +417,7 @@ filterAllianceWarScores : StatsFilterExtender r -> List AllianceWarScore -> Filt
 filterAllianceWarScores statsFilter allianceWarScores =
   let
     filteredAllianceScores : List AllianceWarScore
-    filteredAllianceScores = filterByPeriod statsFilter.filteredWarPeriod allianceWarScores
+    filteredAllianceScores = takeLast statsFilter.filteredWarPeriod allianceWarScores
 
     preferredWarBonus : String
     preferredWarBonus = findPreferredEventType ( .warBonus ) ( Just << .damage ) filteredAllianceScores
@@ -528,7 +433,7 @@ filterMemberTitanScores : StatsFilterExtender r -> MemberTitanScores -> Filtered
 filterMemberTitanScores statsFilter memberTitanScores =
   let
     filteredMemberScores : List MemberTitanScore
-    filteredMemberScores = filterByPeriod statsFilter.filteredTitanPeriod memberTitanScores.titanScores
+    filteredMemberScores = takeLast statsFilter.filteredTitanPeriod memberTitanScores.titanScores
 
     preferredTitanColor : Maybe DetailedColor
     preferredTitanColor = findPreferredEventType ( .name << .titanColor ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
@@ -544,7 +449,7 @@ filterMemberWarScores : StatsFilterExtender r -> MemberWarScores -> FilteredMemb
 filterMemberWarScores statsFilter memberWarScores =
   let
     filteredMemberScores : List MemberWarScore
-    filteredMemberScores = filterByPeriod statsFilter.filteredTitanPeriod memberWarScores.warScores
+    filteredMemberScores = takeLast statsFilter.filteredTitanPeriod memberWarScores.warScores
 
     preferredWarBonus : Maybe String
     preferredWarBonus = findPreferredEventType ( .warBonus ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
@@ -558,8 +463,8 @@ filterMemberWarScores statsFilter memberWarScores =
 
 filterStats : StatsFilterExtender r -> Stats -> FilteredStats
 filterStats statsFilter stats =
-  { titanDates = filterByPeriod statsFilter.filteredTitanPeriod stats.titanDates
-  , warDates = filterByPeriod statsFilter.filteredWarPeriod stats.warDates
+  { titanDates = takeLast statsFilter.filteredTitanPeriod stats.titanDates
+  , warDates = takeLast statsFilter.filteredWarPeriod stats.warDates
   , allianceTitanScores = filterAllianceTitanScores statsFilter stats.allianceTitanScores
   , allianceWarScores = filterAllianceWarScores statsFilter stats.allianceWarScores
   , membersTitanScores = List.map ( filterMemberTitanScores statsFilter ) stats.membersTitanScores

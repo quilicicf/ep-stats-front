@@ -3,6 +3,8 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
+import Debug exposing (log)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -16,15 +18,14 @@ import Url exposing (Url)
 
 import Msg exposing (..)
 import Pagination exposing (..)
-
 import MaybeExtra exposing (hasValue)
-
+import Spinner exposing (viewSpinner)
 import Titans exposing (DetailedColor)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, updateStatsFilters)
 import Stats exposing (
   Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
-  fetchAllStats, updateStats, viewAllianceStats
+  fetchAllStats, updateStats, viewAllianceStats, viewTitansStats, viewWarsStats
   )
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
@@ -112,8 +113,11 @@ init flags url key =
       maybeAppConfig : Maybe AppConfig
       maybeAppConfig = decodeAppConfigFromAppKey storageAppState.appKey
 
+      loadingPage : Maybe Page
+      loadingPage = findPage url
+
       initialCase : InitCase
-      initialCase = if (url.path == "/authorized") then Authenticating
+      initialCase = if ( loadingPage == Just AuthorizedPage ) then Authenticating
         else if (hasValue maybeAppConfig) && (hasValue storageAppState.accessToken) then  Authenticated
         else if (hasValue maybeAppConfig) then WithAppKey
         else FirstVisit
@@ -124,28 +128,31 @@ init flags url key =
       initModel: Model
       initModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key url
 
+      initialPage : Page
+      initialPage = withDefault AppKeyPage loadingPage
+
   in
     case initialCase of
       Authenticated -> (
-        { initModel | currentPage = AlliancePage },
+        { initModel | currentPage = initialPage },
         Cmd.batch [
           fetchAllStats initModel.sheetId (withDefault "" initModel.accessToken),
-          pushUrl initModel.navigationKey "/alliance"
+          pushPage initModel.navigationKey initialPage
         ]
         )
 
       Authenticating -> (
-        { initModel | currentPage = AlliancePage , accessToken = maybeAccessToken },
+        { initModel | currentPage = initialPage , accessToken = maybeAccessToken },
         Cmd.batch [
           setStorage ( StorageAppState initModel.appKey maybeAccessToken ),
           fetchAllStats initModel.sheetId (withDefault "" maybeAccessToken),
-          pushUrl initModel.navigationKey "/alliance"
+          pushPage initModel.navigationKey initialPage
         ]
         )
 
       WithAppKey -> ( initModel, load ( makeAuthorizationUrl initModel.baseUrl ) )
 
-      FirstVisit -> ( initModel, pushUrl initModel.navigationKey "/" )
+      FirstVisit -> ( initModel, pushPage initModel.navigationKey AppKeyPage )
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -159,8 +166,8 @@ update msg model =
 
     UrlChanged url ->
       let
-        newPage: Page
-        newPage= findPage url
+        newPage : Page
+        newPage = findPage url |> withDefault NotFoundPage
       in
         ( { model | currentPage = newPage }, Cmd.none )
 
@@ -172,13 +179,13 @@ update msg model =
       in
 
         case appConfigMsg of
-          CreateAppConfig -> ( newModel, pushUrl model.navigationKey "/appKeyCopy")
+          CreateAppConfig -> ( newModel, pushPage model.navigationKey AppKeyCopierPage )
 
           CopiedAppKeys appKey -> (
             newModel,
             Cmd.batch [
               setStorage (StorageAppState appKey model.accessToken),
-              pushUrl model.navigationKey "/stats",
+              pushPage model.navigationKey AlliancePage,
               fetchAllStats model.sheetId (withDefault "" model.accessToken)
             ])
 
@@ -218,9 +225,14 @@ view model =
 
     AlliancePage -> createDocument model (viewAllianceStats model)
 
-    StatsPage -> createDocument model (viewAllianceStats model)
+    TitansPage -> createDocument model (viewTitansStats model)
+
+    WarsPage -> createDocument model (viewWarsStats model)
 
     NotFoundPage -> createDocument model (text "Not found")
+
+    AuthorizedPage -> createDocument model ( viewSpinner "Authenticating..." )
+
 
 createDocument : { r | teamName: String } -> Html Msg -> Document Msg
 createDocument { teamName } body =

@@ -2,7 +2,7 @@ module Stats exposing (
   Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
   fetchAllStats,
   updateStats,
-  viewAllianceStats
+  viewAllianceStats, viewTitansStats, viewWarsStats
   )
 
 import Dict exposing (..)
@@ -14,8 +14,11 @@ import ParseInt exposing (parseInt)
 
 import Msg exposing (..)
 import GetAt exposing (getAt)
+import Quote exposing (quote)
 import TakeLast exposing (takeLast)
 import Spinner exposing (viewSpinner)
+import CustomStyle exposing (customStyle)
+import AllianceName exposing (allianceName)
 import Gsheet exposing (computeSheetDataUrl)
 import AreListsEqual exposing (areListsEqual)
 import Wars exposing (sanitizeExternalWarBonus)
@@ -23,9 +26,11 @@ import ComputeTeamValue exposing (computeTeamValue)
 import CreateBearerHeader exposing (createBearerHeader)
 import Titans exposing (DetailedColor, titanColorFromString)
 import MemberScore exposing (MemberScore, AverageMemberScore)
+import MapWithPreviousAndNext exposing (mapWithPreviousAndNext)
 import FindPreferredEventType exposing (findPreferredEventType)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter)
 import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
+import GraphUtils exposing (getLineEndX, getLineEndY, getLineStartX, getLineStartY)
 import Gsheet exposing (RawStats, RawSheet, computeSheetDataUrl, decodeRawStats, fixedTitanIndexes, fixedWarIndexes)
 
 ------------
@@ -161,12 +166,99 @@ viewAllianceStats { allianceStats } =
     Just validAllianceStats -> viewValidAllianceStats validAllianceStats
     Nothing -> viewSpinner "Fetching the data"
 
+viewTitansStats : StatsFilterExtender (StatsExtender r) -> Html Msg
+viewTitansStats model =
+  case model.filteredStats of
+    Just validFilteredStats -> viewValidTitansStats model validFilteredStats
+    Nothing -> viewSpinner "Fetching the data"
+
+viewWarsStats : StatsFilterExtender (StatsExtender r) -> Html Msg
+viewWarsStats model = div [] [ text "War stats coming soon" ] -- TODO
+
 compareMembersStats : MemberStats -> MemberStats -> Order
 compareMembersStats stats1 stats2 =
   if stats1.teamValue > stats2.teamValue then GT
   else if stats1.teamValue < stats2.teamValue then LT
   else compare stats1.pseudo stats2.pseudo
 
+viewValidTitansStats : StatsFilterExtender r -> FilteredStats -> Html Msg
+viewValidTitansStats statsFilter filteredStats =
+  let
+    dateRowHeadingElement : Html Msg
+    dateRowHeadingElement = th [] [ text "Titan date" ]
+
+    titanDatesElements : List (Html Msg)
+    titanDatesElements = filteredStats.titanDates |> List.map ( \date -> th [] [ text date ] )
+
+  in
+    div [ class "stats" ] [
+      viewTitansFilterForm statsFilter,
+      div [ class "titan-stats" ] [
+        div [ class "graphs-container" ] [
+          div [ class "chart-title" ] [ text "Titan scores" ],
+          div [ class "graph-container" ] [
+            table [ class "chart", customStyle [ ("--titans", String.fromInt statsFilter.filteredTitanPeriod) ] ] [
+              thead [] [ tr [] ( dateRowHeadingElement :: titanDatesElements ) ],
+              tbody [] ( viewTitanScores statsFilter filteredStats )
+            ]
+          ]
+        ]
+      ]
+    ]
+
+generifyAllianceTitanScore : AllianceTitanScore -> MemberTitanScore
+generifyAllianceTitanScore allianceTitanScore =
+  { score = Just ( MemberScore allianceTitanScore.damage 0 )
+  , titanColor = allianceTitanScore.titanColor
+  , titanStars = allianceTitanScore.titanStars
+  }
+
+viewTitanScores : StatsFilterExtender r -> FilteredStats -> List ( Html Msg )
+viewTitanScores statsFilter filteredStats =
+  let
+    allianceScores : Html Msg
+    allianceScores = tr [ hidden ( statsFilter.filteredMember /= allianceName ) ] (
+      List.map generifyAllianceTitanScore filteredStats.allianceTitanScores.titanScores
+        |> mapWithPreviousAndNext viewTitanScore
+      )
+
+  in
+    [ allianceScores ]
+
+viewTitanScore : ( Maybe MemberTitanScore, MemberTitanScore, Maybe MemberTitanScore ) -> Html Msg
+viewTitanScore ( maybePreviousScore, currentScore, maybeNextScore ) =
+  let
+    scoreExtractor : MemberTitanScore -> Int
+    scoreExtractor titanScore = titanScore.score |> withDefault { damage = 0, teamValue = 0 } |> .damage
+
+    damage : Int
+    damage = scoreExtractor currentScore
+
+    maybePreviousDamage : Maybe Int
+    maybePreviousDamage = Maybe.map scoreExtractor maybePreviousScore
+
+    maybeNextDamage : Maybe Int
+    maybeNextDamage = Maybe.map scoreExtractor maybeNextScore
+  in
+    td
+      [ class "chart-value"
+      , customStyle
+        [ ("--value", String.fromInt damage)
+        , ("--value-as-string", String.fromInt damage |> quote)
+        , ("--titan-color", quote currentScore.titanColor.name)
+        , ("--titan-color-code", currentScore.titanColor.code)
+        , ("--titan-stars-as-string", String.fromInt currentScore.titanStars |> quote)
+        , ("--line-start-x", getLineStartX maybePreviousDamage)
+        , ("--line-start-y", getLineStartY maybePreviousDamage)
+        , ("--line-end-x", getLineEndX maybeNextDamage)
+        , ("--line-end-y", getLineEndY maybeNextDamage)
+        ]
+      ]
+      [ span [class "score-presenter"] [ String.fromInt damage |> text ] ]
+
+
+viewTitansFilterForm : StatsFilterExtender r -> Html Msg
+viewTitansFilterForm statsFilter = Html.form [] [ text "Filters coming soon" ] -- TODO
 
 viewValidAllianceStats : AllianceStats -> Html Msg
 viewValidAllianceStats allianceStats =

@@ -17,6 +17,7 @@ import GetAt exposing (getAt)
 import Quote exposing (quote)
 import TakeLast exposing (takeLast)
 import Spinner exposing (viewSpinner)
+import MaybeExtra exposing (hasValue)
 import CustomStyle exposing (customStyle)
 import AllianceName exposing (allianceName)
 import Gsheet exposing (computeSheetDataUrl)
@@ -56,6 +57,7 @@ type alias Stats =
 
 type alias AllianceStats =
   { averageTitanScore : Float
+  , maxTitanScore : Int
   , preferredTitanColor : DetailedColor
   , averageWarScore : Float
   , preferredWarBonus : String
@@ -65,6 +67,7 @@ type alias AllianceStats =
 type alias MemberStats =
   { pseudo : String
   , averageTitanScore : AverageMemberScore
+  , maxTitanScore : Maybe Int
   , preferredTitanColor : Maybe DetailedColor
   , averageWarScore : AverageMemberScore
   , preferredWarBonus : Maybe String
@@ -114,6 +117,7 @@ type alias FilteredStats =
 
 type alias FilteredAllianceTitanScores =
   { averageTitanScore : Float
+  , maxTitanScore : Int
   , preferredTitanColor : DetailedColor
   , titanScores : List AllianceTitanScore
   }
@@ -127,6 +131,7 @@ type alias FilteredAllianceWarScores =
 type alias FilteredMemberTitanScores =
   { pseudo : String
   , averageScore : AverageMemberScore
+  , maxScore : Maybe Int
   , preferredTitanColor : Maybe DetailedColor
   , titanScores : List MemberTitanScore
   }
@@ -216,12 +221,21 @@ generifyAllianceTitanScore allianceTitanScore =
 viewTitanScores : StatsFilterExtender r -> FilteredStats -> List ( Html Msg )
 viewTitanScores statsFilter filteredStats =
   let
-    allianceScores : Html Msg
-    allianceScores = tr [ hidden ( statsFilter.filteredMember /= allianceName ) ] (
-      List.map generifyAllianceTitanScore filteredStats.allianceTitanScores.titanScores
-        |> mapWithPreviousAndNext viewTitanScore
-      )
+    allianceRowStyles : Attribute msg
+    allianceRowStyles = customStyle [
+        ( "--max", String.fromInt filteredStats.allianceTitanScores.maxTitanScore ),
+        ( "--max-as-string", String.fromInt filteredStats.allianceTitanScores.maxTitanScore |> quote )
+      ]
 
+    allianceScores : Html Msg
+    allianceScores = tr [ hidden ( statsFilter.filteredMember /= allianceName ), allianceRowStyles ]
+      (
+        ( th [ class "labels" ] [ text allianceName ] ) ::
+        (
+        List.map generifyAllianceTitanScore filteredStats.allianceTitanScores.titanScores
+          |> mapWithPreviousAndNext viewTitanScore
+        )
+      )
   in
     [ allianceScores ]
 
@@ -347,7 +361,7 @@ getIntFromRow : List String -> Int -> Int -> Int
 getIntFromRow row index default = getAt index row |> Maybe.andThen safeParseInt |> withDefault default
 
 getTitanColorFromRow : List String -> Int -> DetailedColor
-getTitanColorFromRow row index = getAt index row |> withDefault ""|> titanColorFromString
+getTitanColorFromRow row index = getAt index row |> withDefault "" |> titanColorFromString
 
 getWarBonusFromRow : List String -> Int -> String
 getWarBonusFromRow row index = getAt index row |> withDefault "" |> sanitizeExternalWarBonus
@@ -365,7 +379,7 @@ extractTitanAllianceScores titanSheet =
       AllianceTitanScore
         ( getIntFromRow row fixedTitanIndexes.totalIndex 0 )
         ( getTitanColorFromRow row fixedTitanIndexes.colorIndex )
-        ( getIntFromRow row fixedTitanIndexes.totalIndex 0 )
+        ( getIntFromRow row fixedTitanIndexes.starIndex 0 )
       )
 
 extractWarAllianceScores : RawSheet -> List AllianceWarScore
@@ -501,6 +515,7 @@ filterAllianceTitanScores statsFilter allianceTitanScores =
       |> titanColorFromString
   in
     { averageTitanScore = computeAverageDamage filteredAllianceScores
+    , maxTitanScore = List.map .damage filteredAllianceScores |> List.maximum |> Maybe.withDefault 0
     , preferredTitanColor = preferredTitanColor
     , titanScores = filteredAllianceScores
     }
@@ -533,6 +548,11 @@ filterMemberTitanScores statsFilter memberTitanScores =
   in
     { pseudo = memberTitanScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
+    , maxScore = List.map .score filteredMemberScores
+      |> List.filter MaybeExtra.hasValue
+      |> List.map ( Maybe.map .damage )
+      |> List.map ( Maybe.withDefault 0 ) -- Default value not reachable, cf filter
+      |> List.maximum
     , preferredTitanColor = preferredTitanColor
     , titanScores = filteredMemberScores
     }
@@ -583,6 +603,7 @@ computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
     pseudo,
     { pseudo = pseudo
     , averageTitanScore = memberTitanScores.averageScore
+    , maxTitanScore = memberTitanScores.maxScore
     , preferredTitanColor = memberTitanScores.preferredTitanColor
     , averageWarScore = memberWarScores.averageScore
     , preferredWarBonus = memberWarScores.preferredWarBonus
@@ -593,6 +614,7 @@ computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
 computeAllianceStats : FilteredStats -> AllianceStats
 computeAllianceStats filteredStats =
   { averageTitanScore = filteredStats.allianceTitanScores.averageTitanScore
+  , maxTitanScore = filteredStats.allianceTitanScores.maxTitanScore
   , preferredTitanColor = filteredStats.allianceTitanScores.preferredTitanColor
   , averageWarScore = filteredStats.allianceWarScores.averageWarScore
   , preferredWarBonus = filteredStats.allianceWarScores.preferredWarBonus

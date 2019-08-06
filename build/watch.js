@@ -51,8 +51,4 @@ const main = async () => {
   });
 };
 
-try {
-  main();
-} catch (error) {
-  throw error;
-}
+main();

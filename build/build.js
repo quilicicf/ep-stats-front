@@ -11,8 +11,4 @@ const main = async () => {
   await renderElm();
 };
 
-try {
-  main();
-} catch (error) {
-  throw error;
-}
+main();

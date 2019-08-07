@@ -221,23 +221,40 @@ generifyAllianceTitanScore allianceTitanScore =
 viewTitanScores : StatsFilterExtender r -> FilteredStats -> List ( Html Msg )
 viewTitanScores statsFilter filteredStats =
   let
-    allianceRowStyles : Attribute msg
-    allianceRowStyles = customStyle [
-        ( "--max", String.fromInt filteredStats.allianceTitanScores.maxTitanScore ),
-        ( "--max-as-string", String.fromInt filteredStats.allianceTitanScores.maxTitanScore |> quote )
+    allianceScores : Html Msg
+    allianceScores =  viewGenericScores
+      ( List.map generifyAllianceTitanScore filteredStats.allianceTitanScores.titanScores )
+      allianceName
+      ( statsFilter.filteredMember /= allianceName )
+      filteredStats.allianceTitanScores.maxTitanScore
+
+    membersScores : List ( Html Msg )
+    membersScores = List.map ( viewMemberTitanScores statsFilter ) filteredStats.membersTitanScores
+  in
+    allianceScores :: membersScores
+
+viewMemberTitanScores : StatsFilterExtender r -> FilteredMemberTitanScores -> Html Msg
+viewMemberTitanScores statsFilters filteredMemberTitanScores = viewGenericScores
+  filteredMemberTitanScores.titanScores
+  filteredMemberTitanScores.pseudo
+  ( statsFilters.filteredMember /= filteredMemberTitanScores.pseudo )
+  ( withDefault 0 filteredMemberTitanScores.maxScore )
+
+viewGenericScores : List MemberTitanScore -> String -> Bool -> Int -> Html Msg
+viewGenericScores genericMemberScores memberPseudo isHidden maxDamage =
+  let
+    rowStyle : Attribute msg
+    rowStyle = customStyle [
+        ( "--max", String.fromInt maxDamage ),
+        ( "--max-as-string", String.fromInt maxDamage |> quote )
       ]
 
-    allianceScores : Html Msg
-    allianceScores = tr [ hidden ( statsFilter.filteredMember /= allianceName ), allianceRowStyles ]
-      (
-        ( th [ class "labels" ] [ text allianceName ] ) ::
-        (
-        List.map generifyAllianceTitanScore filteredStats.allianceTitanScores.titanScores
-          |> mapWithPreviousAndNext viewTitanScore
-        )
-      )
   in
-    [ allianceScores ]
+    tr [ hidden isHidden, rowStyle ]
+      (
+        ( th [ class "labels" ] [ text memberPseudo ] ) ::
+        ( mapWithPreviousAndNext viewTitanScore genericMemberScores )
+      )
 
 viewTitanScore : ( Maybe MemberTitanScore, MemberTitanScore, Maybe MemberTitanScore ) -> Html Msg
 viewTitanScore ( maybePreviousScore, currentScore, maybeNextScore ) =

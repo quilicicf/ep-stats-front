@@ -4,9 +4,11 @@ import Html exposing (..)
 import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
 import Html.Events exposing (onInput)
 import Maybe exposing (..)
+import ParseInt exposing (parseInt)
 
 import Msg exposing (..)
 import Optionize exposing (optionize)
+import SafeParseInt exposing (safeParseInt)
 import AllianceName exposing (allianceName)
 import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
 
@@ -68,7 +70,7 @@ viewTitanFilterForm statsFilter members =
             , max "120"
             , step "10"
             , value ( String.fromInt statsFilter.filteredTitanPeriod )
-            , onInput ( StatsFilterMsg << NewTitanPeriodSelected )
+            , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultStatsFilter.filteredTitanPeriod ) << safeParseInt )
             ]
             []
         ]
@@ -76,14 +78,40 @@ viewTitanFilterForm statsFilter members =
         [ label [ for "color" ] [ text "Color" ]
         , select
             [ id "color"
-            , onInput ( StatsFilterMsg << NewTitanColorSelected )
+            , onInput colorFilterGuesser
             ]
             ( optionize
               ( statsFilter.filteredTitanColor |> .name )
               ( List.map .name titanColors )
             )
         ]
+    , div [ class "form-field-inline" ]
+        [ label [ for "stars" ] [ text "Stars" ]
+        , select
+            [ id "stars"
+            , onInput starsFilterGuesser
+            ]
+            ( optionize
+              ( Maybe.map String.fromInt statsFilter.filteredTitanStars |> withDefault allStarsFilter )
+              ( starsOptions )
+            )
+        ]
     ]
+
+colorFilterGuesser : String -> Msg
+colorFilterGuesser colorFilterAsString = ( StatsFilterMsg << NewTitanColorSelected << titanColorFromString ) colorFilterAsString
+
+starsOptions : List String
+starsOptions = allStarsFilter :: ( List.map String.fromInt [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ] )
+
+allStarsFilter : String
+allStarsFilter = "ALL"
+
+starsFilterGuesser : String -> Msg
+starsFilterGuesser starsFilterAsString =
+  if starsFilterAsString == allStarsFilter
+  then ( StatsFilterMsg << NewTitanStarsSelected ) Nothing
+  else ( StatsFilterMsg << NewTitanStarsSelected << safeParseInt ) starsFilterAsString
 
 ------------
 -- UPDATE --
@@ -95,9 +123,12 @@ updateStatsFilters msg model =
     NewMemberSelected newSelectedMember ->
       { model | filteredMember = newSelectedMember }
 
-    NewTitanPeriodSelected newTitanPeriodAsString ->
-      { model | filteredTitanPeriod = Maybe.withDefault defaultStatsFilter.filteredTitanPeriod (String.toInt newTitanPeriodAsString) }
+    NewTitanPeriodSelected newTitanPeriod ->
+      { model | filteredTitanPeriod = newTitanPeriod }
 
-    NewTitanColorSelected newTitanColorAsString ->
-      { model | filteredTitanColor = titanColorFromString newTitanColorAsString }
+    NewTitanColorSelected newTitanColor ->
+      { model | filteredTitanColor = newTitanColor }
+
+    NewTitanStarsSelected starsFilter -> { model | filteredTitanStars = starsFilter }
+
 

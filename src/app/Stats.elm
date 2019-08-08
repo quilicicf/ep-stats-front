@@ -10,7 +10,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http exposing (..)
 import Maybe exposing (withDefault)
-import ParseInt exposing (parseInt)
 
 import Msg exposing (..)
 import GetAt exposing (getAt)
@@ -19,6 +18,7 @@ import TakeLast exposing (takeLast)
 import Spinner exposing (viewSpinner)
 import MaybeExtra exposing (hasValue)
 import CustomStyle exposing (customStyle)
+import SafeParseInt exposing (safeParseInt)
 import AllianceName exposing (allianceName)
 import Gsheet exposing (computeSheetDataUrl)
 import AreListsEqual exposing (areListsEqual)
@@ -356,12 +356,6 @@ addCompletenessClass isComplete = class (
 -- UPDATE --
 ------------
 
-safeParseInt : String -> Maybe Int
-safeParseInt intAsString =
-  case parseInt intAsString of
-    Ok int -> Just int
-    Err _ -> Nothing
-
 computeScore : Maybe Int -> Int -> Int -> Maybe MemberScore
 computeScore maybeDamage allianceScore membersNumber =
   case maybeDamage of
@@ -516,14 +510,21 @@ parseRawStats rawStats =
       ( extractTitanMemberScores titanSheet )
       ( extractWarMemberScores warSheet )
 
-allianceTitanColorPredicate : DetailedColor -> AllianceTitanScore -> Bool
-allianceTitanColorPredicate filteredTitanColor { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+allianceTitanColorPredicate : StatsFilterExtender r -> AllianceTitanScore -> Bool
+allianceTitanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+
+allianceTitanStarsPredicate : StatsFilterExtender r -> AllianceTitanScore -> Bool
+allianceTitanStarsPredicate { filteredTitanStars } { titanStars } =
+  case filteredTitanStars of
+    Nothing -> True
+    Just stars -> titanStars == stars
 
 filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> FilteredAllianceTitanScores
 filterAllianceTitanScores statsFilter allianceTitanScores =
   let
     filteredAllianceScores : List AllianceTitanScore
-    filteredAllianceScores = List.filter ( allianceTitanColorPredicate statsFilter.filteredTitanColor ) allianceTitanScores
+    filteredAllianceScores = List.filter ( allianceTitanColorPredicate statsFilter ) allianceTitanScores
+      |> List.filter ( allianceTitanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
 
     preferredTitanColor : DetailedColor
@@ -553,14 +554,21 @@ filterAllianceWarScores statsFilter allianceWarScores =
     , warScores = filteredAllianceScores
     }
 
-memberTitanColorPredicate : DetailedColor -> MemberTitanScore -> Bool
-memberTitanColorPredicate filteredTitanColor { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+memberTitanColorPredicate : StatsFilterExtender r -> MemberTitanScore -> Bool
+memberTitanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+
+memberTitanStarsPredicate : StatsFilterExtender r -> MemberTitanScore -> Bool
+memberTitanStarsPredicate { filteredTitanStars } { titanStars } =
+  case filteredTitanStars of
+    Nothing -> True
+    Just stars -> titanStars == stars
 
 filterMemberTitanScores : StatsFilterExtender r -> MemberTitanScores -> FilteredMemberTitanScores
 filterMemberTitanScores statsFilter memberTitanScores =
   let
     filteredMemberScores : List MemberTitanScore
-    filteredMemberScores = List.filter ( memberTitanColorPredicate statsFilter.filteredTitanColor ) memberTitanScores.titanScores
+    filteredMemberScores = List.filter ( memberTitanColorPredicate statsFilter ) memberTitanScores.titanScores
+      |> List.filter ( memberTitanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
 
     preferredTitanColor : Maybe DetailedColor

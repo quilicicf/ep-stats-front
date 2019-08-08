@@ -1,10 +1,10 @@
 module Msg exposing (..)
 
 import Browser exposing (UrlRequest)
-
 import Http
-
 import Url exposing (Url)
+
+import Titans exposing (DetailedColor)
 
 type Msg
   = LinkClicked UrlRequest
@@ -26,5 +26,6 @@ type StatsMsg
 
 type StatsFilterMsg
   = NewMemberSelected String
-  | NewTitanPeriodSelected String
-  | NewTitanColorSelected String
+  | NewTitanPeriodSelected Int
+  | NewTitanColorSelected DetailedColor
+  | NewTitanStarsSelected  ( Maybe Int )

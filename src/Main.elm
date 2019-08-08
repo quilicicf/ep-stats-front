@@ -3,8 +3,6 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
-import Debug exposing (log)
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -25,7 +23,8 @@ import Authorization exposing (makeAuthorizationUrl, readAccessToken)
 import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, updateStatsFilters)
 import Stats exposing (
   Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
-  fetchAllStats, updateStats, viewAllianceStats, viewTitansStats, viewWarsStats
+  fetchAllStats, updateStats, updateStatsWithFilter,
+  viewAllianceStats, viewTitansStats, viewWarsStats
   )
 import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
   decodeStorageAppState, decodeAppConfigFromAppKey,
@@ -48,14 +47,14 @@ type alias Model =
   -- Filters
   , filteredMember : String
   , filteredTitanPeriod : Int
-  , filteredTitanColor : Maybe DetailedColor
+  , filteredTitanColor : DetailedColor
   , filteredTitanStars : Maybe Int
   , filteredWarPeriod : Int
   , filteredWarBonus : Maybe String
 
   -- Stats
-  , statsError : Maybe String
   , stats: Maybe Stats
+  , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
   , filteredStats: Maybe FilteredStats
 
@@ -125,35 +124,46 @@ init flags url key =
       maybeAccessToken : Maybe String
       maybeAccessToken = readAccessToken url
 
-      initModel: Model
-      initModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key url
-
-      initialPage : Page
-      initialPage = withDefault AppKeyPage loadingPage
+      initialModel: Model
+      initialModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key url
 
   in
     case initialCase of
-      Authenticated -> (
-        { initModel | currentPage = initialPage },
-        Cmd.batch [
-          fetchAllStats initModel.sheetId (withDefault "" initModel.accessToken),
-          pushPage initModel.navigationKey initialPage
-        ]
-        )
+      Authenticated -> initAuthenticatedUser loadingPage initialModel
 
       Authenticating -> (
-        { initModel | currentPage = initialPage , accessToken = maybeAccessToken },
-        Cmd.batch [
-          setStorage ( StorageAppState initModel.appKey maybeAccessToken ),
-          fetchAllStats initModel.sheetId (withDefault "" maybeAccessToken),
-          pushPage initModel.navigationKey initialPage
-        ]
+          { initialModel | currentPage = AuthorizedPage , accessToken = maybeAccessToken },
+          Cmd.batch [
+            setStorage ( StorageAppState initialModel.appKey maybeAccessToken ),
+            pushPage initialModel.navigationKey AuthorizedPage,
+            fetchAllStats initialModel.sheetId (withDefault "" maybeAccessToken)
+          ]
         )
 
-      WithAppKey -> ( initModel, load ( makeAuthorizationUrl initModel.baseUrl ) )
+      WithAppKey -> ( initialModel, load ( makeAuthorizationUrl initialModel.baseUrl ) )
 
-      FirstVisit -> ( initModel, pushPage initModel.navigationKey AppKeyPage )
+      FirstVisit -> ( initialModel, pushPage initialModel.navigationKey AppKeyPage )
 
+initAuthenticatedUser : Maybe Page -> Model ->  (Model, Cmd Msg)
+initAuthenticatedUser maybeLoadingPage initialModel =
+  let
+    pageToLoad : Page
+    pageToLoad =
+      case maybeLoadingPage of
+        Nothing -> AlliancePage
+        Just loadingPage ->
+          case loadingPage of
+            TitansPage -> TitansPage
+            WarsPage -> WarsPage
+            _ -> AlliancePage
+  in
+    (
+      { initialModel | currentPage = pageToLoad },
+      Cmd.batch [
+        fetchAllStats initialModel.sheetId (withDefault "" initialModel.accessToken),
+        pushPage initialModel.navigationKey pageToLoad
+      ]
+    )
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -212,7 +222,10 @@ update msg model =
 
                 _ -> ( model, Cmd.none )
 
-    StatsFilterMsg statsFilterMsg -> ( updateStatsFilters statsFilterMsg model, Cmd.none )
+    StatsFilterMsg statsFilterMsg -> (
+        updateStatsFilters statsFilterMsg model |> updateStatsWithFilter,
+        Cmd.none
+      )
 
 view : Model -> Document Msg
 view model =

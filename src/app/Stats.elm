@@ -1,7 +1,7 @@
 module Stats exposing (
   Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
   fetchAllStats,
-  updateStats,
+  updateStats, updateStatsWithFilter,
   viewAllianceStats, viewTitansStats, viewWarsStats
   )
 
@@ -25,13 +25,13 @@ import AreListsEqual exposing (areListsEqual)
 import Wars exposing (sanitizeExternalWarBonus)
 import ComputeTeamValue exposing (computeTeamValue)
 import CreateBearerHeader exposing (createBearerHeader)
-import Titans exposing (DetailedColor, titanColorFromString)
 import MemberScore exposing (MemberScore, AverageMemberScore)
 import MapWithPreviousAndNext exposing (mapWithPreviousAndNext)
 import FindPreferredEventType exposing (findPreferredEventType)
-import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter)
 import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
+import Titans exposing (DetailedColor, titanColorFromString, allTitanColors)
 import GraphUtils exposing (getLineEndX, getLineEndY, getLineStartX, getLineStartY)
+import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitanFilterForm)
 import Gsheet exposing (RawStats, RawSheet, computeSheetDataUrl, decodeRawStats, fixedTitanIndexes, fixedWarIndexes)
 
 ------------
@@ -197,7 +197,7 @@ viewValidTitansStats statsFilter filteredStats =
 
   in
     div [ class "stats" ] [
-      viewTitansFilterForm statsFilter,
+      viewTitanFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersTitanScores ) ),
       div [ class "titan-stats" ] [
         div [ class "graphs-container" ] [
           div [ class "chart-title" ] [ text "Titan scores" ],
@@ -287,9 +287,6 @@ viewTitanScore ( maybePreviousScore, currentScore, maybeNextScore ) =
       ]
       [ span [class "score-presenter"] [ String.fromInt damage |> text ] ]
 
-
-viewTitansFilterForm : StatsFilterExtender r -> Html Msg
-viewTitansFilterForm statsFilter = Html.form [] [ text "Filters coming soon" ] -- TODO
 
 viewValidAllianceStats : AllianceStats -> Html Msg
 viewValidAllianceStats allianceStats =
@@ -519,12 +516,15 @@ parseRawStats rawStats =
       ( extractTitanMemberScores titanSheet )
       ( extractWarMemberScores warSheet )
 
+allianceTitanColorPredicate : DetailedColor -> AllianceTitanScore -> Bool
+allianceTitanColorPredicate filteredTitanColor { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
 
 filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> FilteredAllianceTitanScores
 filterAllianceTitanScores statsFilter allianceTitanScores =
   let
     filteredAllianceScores : List AllianceTitanScore
-    filteredAllianceScores = takeLast statsFilter.filteredTitanPeriod allianceTitanScores
+    filteredAllianceScores = List.filter ( allianceTitanColorPredicate statsFilter.filteredTitanColor ) allianceTitanScores
+      |> takeLast statsFilter.filteredTitanPeriod
 
     preferredTitanColor : DetailedColor
     preferredTitanColor = findPreferredEventType ( .name << .titanColor ) ( Just << .damage ) filteredAllianceScores
@@ -553,11 +553,15 @@ filterAllianceWarScores statsFilter allianceWarScores =
     , warScores = filteredAllianceScores
     }
 
+memberTitanColorPredicate : DetailedColor -> MemberTitanScore -> Bool
+memberTitanColorPredicate filteredTitanColor { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+
 filterMemberTitanScores : StatsFilterExtender r -> MemberTitanScores -> FilteredMemberTitanScores
 filterMemberTitanScores statsFilter memberTitanScores =
   let
     filteredMemberScores : List MemberTitanScore
-    filteredMemberScores = takeLast statsFilter.filteredTitanPeriod memberTitanScores.titanScores
+    filteredMemberScores = List.filter ( memberTitanColorPredicate statsFilter.filteredTitanColor ) memberTitanScores.titanScores
+      |> takeLast statsFilter.filteredTitanPeriod
 
     preferredTitanColor : Maybe DetailedColor
     preferredTitanColor = findPreferredEventType ( .name << .titanColor ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
@@ -566,7 +570,7 @@ filterMemberTitanScores statsFilter memberTitanScores =
     { pseudo = memberTitanScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
     , maxScore = List.map .score filteredMemberScores
-      |> List.filter MaybeExtra.hasValue
+      |> List.filter hasValue
       |> List.map ( Maybe.map .damage )
       |> List.map ( Maybe.withDefault 0 ) -- Default value not reachable, cf filter
       |> List.maximum
@@ -682,4 +686,10 @@ updateStats msg model =
       case httpResult of
         Ok statsAsString -> decodeAndUpdateStats statsAsString model
         Err _ -> model
+
+updateStatsWithFilter : StatsExtender ( StatsFilterExtender r ) -> StatsExtender ( StatsFilterExtender r )
+updateStatsWithFilter model =
+  { model
+  | filteredStats = Maybe.map ( filterStats model ) model.stats
+  }
 

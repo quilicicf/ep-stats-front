@@ -27,3 +27,4 @@ type StatsMsg
 type StatsFilterMsg
   = NewMemberSelected String
   | NewTitanPeriodSelected String
+  | NewTitanColorSelected String

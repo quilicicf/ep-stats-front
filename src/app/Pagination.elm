@@ -49,8 +49,8 @@ type Page
 
 --  Stats
   | AlliancePage
-  | TitansPage -- TODO replace with titans page and wars page
-  | WarsPage -- TODO replace with titans page and wars page
+  | TitansPage
+  | WarsPage
 
 --  Errors
   | NotFoundPage

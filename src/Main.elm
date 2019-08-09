@@ -135,7 +135,7 @@ init flags url key =
           { initialModel | currentPage = AuthorizedPage , accessToken = maybeAccessToken },
           Cmd.batch [
             setStorage ( StorageAppState initialModel.appKey maybeAccessToken ),
-            pushPage initialModel.navigationKey AuthorizedPage,
+            pushPage initialModel.navigationKey AlliancePage,
             fetchAllStats initialModel.sheetId (withDefault "" maybeAccessToken)
           ]
         )

@@ -1,7 +1,8 @@
-module Pagination exposing (Page(..), findPage, findPath, pushPage)
+module Pagination exposing (Page(..), findPage, findPath, findName, pushPage)
 
 import AssocList as Dict exposing (Dict)
 import Browser.Navigation exposing (Key, pushUrl)
+import Tuple3 exposing (..)
 import Url exposing (..)
 
 import Msg exposing (..)
@@ -9,32 +10,35 @@ import Msg exposing (..)
 notFoundPath : String
 notFoundPath = "/notFound"
 
-pages : List (Page, String)
+pages : List (Page, String, String)
 pages = [
 --  Landing page
-  ( AppKeyPage, "/" ),
+  ( AppKeyPage, "/", "App key" ),
 
 -- Not accessible (at least in theory XD)
-  ( AuthorizedPage, "/authorized" ),
+  ( AuthorizedPage, "/authorized", "Authorization callback" ),
 
 --  App configuration
-  ( AppConfigPage, "/appConfig" ),
-  ( AppKeyCopierPage, "/appKeyCopy" ),
+  ( AppConfigPage, "/appConfig", "App config" ),
+  ( AppKeyCopierPage, "/appKeyCopy", "App key copy" ),
 
 --  Stats
-  ( AlliancePage, "/alliance" ),
-  ( TitansPage, "/titans" ),
-  ( WarsPage, "/wars" ),
+  ( AlliancePage, "/alliance", "Alliance" ),
+  ( TitansPage, "/titans", "Titans" ),
+  ( WarsPage, "/wars", "Wars" ),
 
 --  Errors
-  ( NotFoundPage, notFoundPath )
+  ( NotFoundPage, notFoundPath, "Not found" )
   ]
 
 pagesToPaths : Dict Page String
-pagesToPaths = Dict.fromList pages
+pagesToPaths = List.map (\page -> (Tuple3.first page, Tuple3.second page) ) pages |> Dict.fromList
 
 pathsToPages : Dict String Page
-pathsToPages = List.map (\(page, path) -> (path, page)) pages |> Dict.fromList
+pathsToPages = List.map (\page -> (Tuple3.second page, Tuple3.first page) ) pages |> Dict.fromList
+
+pagesToNames : Dict Page String
+pagesToNames = List.map (\page -> (Tuple3.first page, Tuple3.third page) ) pages |> Dict.fromList
 
 type Page
 --  Landing page
@@ -60,6 +64,9 @@ findPage url = Dict.get url.path pathsToPages
 
 findPath : Page -> Maybe String
 findPath page = Dict.get page pagesToPaths
+
+findName : Page -> Maybe String
+findName page = Dict.get page pagesToNames
 
 pushPage : Key -> Page -> Cmd Msg
 pushPage key page = pushUrl key ( findPath page |> Maybe.withDefault notFoundPath )

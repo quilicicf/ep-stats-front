@@ -41,7 +41,7 @@
 
 .stats {
   --row-height: 2rem;
-  --graph-height: calc(6 * var(--row-height));
+  --graph-height: calc(8 * var(--row-height));
   --graph-offset: calc(var(--graph-height) + (var(--row-height) * 3));
 
   .chart-title {
@@ -111,7 +111,7 @@
         &::after { // Ruler for the scale's 0
           @include label();
           content: '0';
-          top: calc(var(--graph-height) + (2 * var(--row-height)));
+          top: calc(var(--graph-height) + var(--row-height));
         }
       }
     }

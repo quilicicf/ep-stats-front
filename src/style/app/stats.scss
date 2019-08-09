@@ -116,11 +116,12 @@
       }
     }
 
-    // One titan score
+    // One score
     .chart-value {
       position: relative;
       --ratio: calc((var(--max) - var(--value)) / var(--max));
       --top: calc((var(--ratio) * var(--graph-height)));
+      --bullet-color: var(--secondary-neutral);
 
       .score-presenter {
         --stroke-size: .5rem;
@@ -196,7 +197,7 @@
         font-size: var(--circle-size);
         line-height: var(--row-height);
 
-        color: var(--titan-color-code);
+        color: var(--bullet-color);
         background-color: var(--primary-neutral-darkest);
 
         clip-path: circle(
@@ -242,7 +243,7 @@
         color: var(--white);
         background-color: var(--primary-neutral-darkest);
         padding: .5em;
-        content: var(--titan-color) ' ' var(--titan-stars-as-string) '⭐\A' var(--value-as-string);
+        content: var(--event) '\A' var(--value-as-string);
         white-space: pre;
 
         z-index: 5;

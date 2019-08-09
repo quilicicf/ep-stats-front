@@ -1,10 +1,12 @@
-module Wars exposing (warBonuses, sanitizeExternalWarBonus)
+module Wars exposing (warBonuses, warBonusFromString, sanitizeExternalWarBonus)
+
+warBonusFromString : String -> Maybe String
+warBonusFromString externalWarBonus =
+  List.filter ((==) externalWarBonus) warBonuses
+   |> List.head
 
 sanitizeExternalWarBonus : String -> String
-sanitizeExternalWarBonus externalWarBonus =
-  List.filter ((==) externalWarBonus) warBonuses
-    |> List.head
-    |> Maybe.withDefault defaultWarBonus
+sanitizeExternalWarBonus externalWarBonus = warBonusFromString externalWarBonus |> Maybe.withDefault defaultWarBonus
 
 defaultWarBonus : String
 defaultWarBonus = "UNKNOWN_BONUS"

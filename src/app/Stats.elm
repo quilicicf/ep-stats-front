@@ -14,7 +14,6 @@ import Maybe exposing (withDefault)
 import Msg exposing (..)
 import GetAt exposing (getAt)
 import Quote exposing (quote)
-import String.Interpolate exposing (interpolate)
 import TakeLast exposing (takeLast)
 import Spinner exposing (viewSpinner)
 import MaybeExtra exposing (hasValue)
@@ -32,7 +31,7 @@ import FindPreferredEventType exposing (findPreferredEventType)
 import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 import Titans exposing (DetailedColor, titanColorFromString, allTitanColors)
 import GraphUtils exposing (getLineEndX, getLineEndY, getLineStartX, getLineStartY)
-import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitanFilterForm)
+import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitansFilterForm, viewWarsFilterForm)
 import Gsheet exposing (RawStats, RawSheet, computeSheetDataUrl, decodeRawStats, fixedTitanIndexes, fixedWarIndexes)
 
 ------------
@@ -204,7 +203,7 @@ viewValidTitansStats statsFilter filteredStats =
 
   in
     div [ class "stats" ] [
-      viewTitanFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersTitanScores ) ),
+      viewTitansFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersTitanScores ) ),
       div [ class "titan-stats" ] [
         div [ class "graphs-container" ] [
           div [ class "chart-title" ] [ text "Titan scores" ],
@@ -229,7 +228,7 @@ viewValidWarsStats statsFilter filteredStats =
 
   in
     div [ class "stats" ] [
-      viewTitanFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersWarScores ) ),
+      viewWarsFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersWarScores ) ),
       div [ class "war-stats" ] [
         div [ class "graphs-container" ] [
           div [ class "chart-title" ] [ text "War scores" ],
@@ -642,11 +641,18 @@ filterAllianceTitanScores statsFilter allianceTitanScores =
     , titanScores = filteredAllianceScores
     }
 
+allianceWarBonusPredicate : StatsFilterExtender r -> AllianceWarScore -> Bool
+allianceWarBonusPredicate { filteredWarBonus } { warBonus } =
+  case filteredWarBonus of
+    Nothing -> True
+    Just bonus -> bonus == warBonus
+
 filterAllianceWarScores : StatsFilterExtender r -> List AllianceWarScore -> FilteredAllianceWarScores
 filterAllianceWarScores statsFilter allianceWarScores =
   let
     filteredAllianceScores : List AllianceWarScore
-    filteredAllianceScores = takeLast statsFilter.filteredWarPeriod allianceWarScores
+    filteredAllianceScores = List.filter ( allianceWarBonusPredicate statsFilter ) allianceWarScores
+      |> takeLast statsFilter.filteredWarPeriod
 
     preferredWarBonus : String
     preferredWarBonus = findPreferredEventType ( .warBonus ) ( Just << .damage ) filteredAllianceScores
@@ -691,11 +697,18 @@ filterMemberTitanScores statsFilter memberTitanScores =
     , titanScores = filteredMemberScores
     }
 
+memberWarBonusPredicate : StatsFilterExtender r -> MemberWarScore -> Bool
+memberWarBonusPredicate { filteredWarBonus } { warBonus } =
+  case filteredWarBonus of
+    Nothing -> True
+    Just bonus -> bonus == warBonus
+
 filterMemberWarScores : StatsFilterExtender r -> MemberWarScores -> FilteredMemberWarScores
 filterMemberWarScores statsFilter memberWarScores =
   let
     filteredMemberScores : List MemberWarScore
-    filteredMemberScores = takeLast statsFilter.filteredTitanPeriod memberWarScores.warScores
+    filteredMemberScores = List.filter ( memberWarBonusPredicate statsFilter ) memberWarScores.warScores
+      |> takeLast statsFilter.filteredTitanPeriod
 
     preferredWarBonus : Maybe String
     preferredWarBonus = findPreferredEventType ( .warBonus ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores

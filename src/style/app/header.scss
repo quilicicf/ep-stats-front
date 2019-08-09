@@ -1,7 +1,48 @@
 .header {
   margin: 0;
   padding: 1rem 0;
-  background-color: var(--primary-neutral-lighter);
-  color: var(--primary-neutral-darker);
+  background-color: var(--primary-neutral-darkest);
+  color: var(--primary-neutral-lightest);
   text-align: center;
+}
+
+.nav-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-neutral-lighter);
+  padding: .5rem 0;
+}
+
+.nav-element {
+  color: var(--primary-neutral-darker);
+  text-decoration: none;
+  padding: .5rem;
+  border: 1px solid var(--primary-neutral-darkest);
+
+  &.active {
+    background-color: var(--secondary-neutral-lighter);
+    cursor: default;
+  }
+
+  &.inactive {
+    background-color: var(--primary-neutral-lightest);
+  }
+}
+
+.nav-element:not(:first-child) {
+  border-left: none;
+}
+
+.nav-element:first-child {
+  border-radius: .5rem 0 0 .5rem;
+}
+
+.nav-element:last-child {
+  border-radius: 0 .5rem .5rem 0;
+}
+
+.nav-element:visited {
+  color: var(--primary-neutral-darker);
 }

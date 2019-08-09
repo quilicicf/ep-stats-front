@@ -16,6 +16,7 @@ import Url exposing (Url)
 
 import Msg exposing (..)
 import Pagination exposing (..)
+import NavBar exposing (viewNavBar)
 import MaybeExtra exposing (hasValue)
 import Spinner exposing (viewSpinner)
 import Titans exposing (DetailedColor)
@@ -247,8 +248,8 @@ view model =
     AuthorizedPage -> createDocument model ( viewSpinner "Authenticating..." )
 
 
-createDocument : { r | teamName: String } -> Html Msg -> Document Msg
-createDocument { teamName } body =
+createDocument : { r | teamName: String, currentPage: Page } -> Html Msg -> Document Msg
+createDocument { teamName, currentPage } body =
   let
     title: String
     title = if teamName == "" then "EP stats" else "EP stats - " ++ teamName
@@ -258,6 +259,7 @@ createDocument { teamName } body =
         div
           []
           [ h1 [ class "header" ] [ text title ]
+          , viewNavBar currentPage
           , body
           ]
       ]

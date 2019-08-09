@@ -29,4 +29,5 @@ type StatsFilterMsg
   | NewTitanPeriodSelected Int
   | NewTitanColorSelected DetailedColor
   | NewTitanStarsSelected  ( Maybe Int )
+  | NewWarPeriodSelected Int
   | NewWarBonusSelected  ( Maybe String )

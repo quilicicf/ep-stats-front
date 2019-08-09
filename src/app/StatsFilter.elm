@@ -133,8 +133,8 @@ viewWarsFilterForm statsFilter members =
             , min "10"
             , max "120"
             , step "10"
-            , value ( String.fromInt statsFilter.filteredTitanPeriod )
-            , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultStatsFilter.filteredTitanPeriod ) << safeParseInt )
+            , value ( String.fromInt statsFilter.filteredWarPeriod )
+            , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultStatsFilter.filteredWarPeriod ) << safeParseInt )
             ]
             []
         ]
@@ -172,6 +172,9 @@ updateStatsFilters msg model =
 
     NewTitanColorSelected newTitanColor ->
       { model | filteredTitanColor = newTitanColor }
+
+    NewWarPeriodSelected newWarPeriod ->
+      { model | filteredWarPeriod = newWarPeriod }
 
     NewTitanStarsSelected starsFilter -> { model | filteredTitanStars = starsFilter }
 

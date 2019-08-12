@@ -2,7 +2,7 @@ module Titans exposing (DetailedColor, titanColors, titanColorFromString, allTit
 
 type alias DetailedColor =
   { name : String -- THe displayable name, i.e. RED
-  , code: String -- The CSS custom property, i.e. var(--red)
+  , icon: String -- The CSS class for the appropriate icon
   }
 
 equals : String -> DetailedColor -> Bool
@@ -14,16 +14,16 @@ titanColorFromString colorAsString = List.filter ( equals colorAsString ) titanC
   |> Maybe.withDefault allTitanColors
 
 allTitanColors : DetailedColor
-allTitanColors = DetailedColor "ALL" "var(--black)"
+allTitanColors = DetailedColor "ALL" "fas fa-question"
 
 titanColors : List DetailedColor
 titanColors =
   [ allTitanColors
-  , DetailedColor "RED" "var(--red)"
-  , DetailedColor "GREEN" "var(--green)"
-  , DetailedColor "BLUE" "var(--blue)"
-  , DetailedColor "HOLY" "var(--holy)"
-  , DetailedColor "DARK" "var(--dark)"
+  , DetailedColor "RED"   "fas fa-fire"
+  , DetailedColor "GREEN" "fas fa-seedling"
+  , DetailedColor "BLUE"  "fas fa-snowflake"
+  , DetailedColor "HOLY"  "fas fa-sun"
+  , DetailedColor "DARK"  "fas fa-skull"
   ]
 
 

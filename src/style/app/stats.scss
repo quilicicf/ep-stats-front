@@ -1,48 +1,18 @@
 @import '../colors/theme';
 
-@mixin label() {
-  --label-width: 4rem;
-  --label-arrow-width: .5rem;
-  --label-font-size: calc(var(--row-height) * .45);
-  --margin-left: 0.1rem;
-
-  font-size: var(--label-font-size);
-  line-height: var(--row-height);
-  padding-left: .7em;
-  text-align: left;
-
-  position: absolute;
-
-  color: var(--secondary-light);
-  background-color: var(--primary-neutral-darkest);
-
-  left: var(--margin-left);
-  height: var(--row-height);
-  right: 0;
-
-  clip-path: polygon(
-      0 0,
-      var(--label-width) 0,
-      calc(var(--label-width) + var(--label-arrow-width)) calc(50% - 1px),
-      100% calc(50% - 1px),
-      100% calc(50% + 1px),
-      calc(var(--label-width) + var(--label-arrow-width)) calc(50% + 1px),
-      var(--label-width) 100%,
-      0 100%,
-      0 0
-  );
-
-  z-index: 2;
-}
-
 .spinner-container {
   margin-top: 4rem;
 }
 
 .stats {
-  --row-height: 2rem;
-  --graph-height: calc(8 * var(--row-height));
-  --graph-offset: calc(var(--graph-height) + (var(--row-height) * 3));
+
+  .graphs-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    margin: 0 5%;
+  }
 
   .chart-title {
     margin-top: 1rem;
@@ -50,211 +20,232 @@
     font-weight: bold;
   }
 
-  .graphs-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
   .graph-container {
-    min-width: calc(30 * var(--row-height));
-    max-width: 90%;
-    height: calc(var(--graph-offset) + (2 * var(--row-height)));
+    --event-size: 2rem;
+
+    --font-size: calc(var(--event-size) / 2);
+
+    --label-height: var(--event-size);
+    --label-width: calc(3 * var(--event-size));
+    --label-arrow-size: calc(var(--label-height) / 2);
+    --label-line-width: .1rem;
+    --label-and-line-width: calc(var(--label-width) + var(--events-number) * var(--event-size));
+
+    --tooltip-font-size: calc(.8 * var(--font-size));
+    --tooltip-height: calc(var(--tooltip-font-size) * 4.8);
+    --tooltip-width: calc(3 * var(--event-size));
+    --tooltip-arrow-size: calc(var(--event-size) / 4);
+
+    --width-height-ratio: 9;
+    --graph-height: calc(var(--width-height-ratio) * var(--event-size));
+    --drawable-graph-height: calc((var(--width-height-ratio) - 1) * var(--event-size));
+    --line-width: calc(var(--event-size) / 10);
+
+    --z-index-label: 0;
+    --z-index-tendency: 1;
+    --z-index-graph-line: 2;
+    --z-index-bullet-points: 3;
+    --z-index-tooltip: 4;
+    --z-index-tooltip-trigger: 5;
+
+    position: relative;
+    width: 100%;
+    height: calc(var(--graph-height) + var(--tooltip-height) + var(--tooltip-arrow-size));
+    font-size: var(--font-size);
+    overflow-y: hidden;
     overflow-x: auto;
 
-    &::before { // Place-holder for the whole graph
-      position: absolute;
-      content: "";
-      left: 0;
-      width: 100%;
-      height: var(--graph-offset);
-      z-index: 1;
-      background-color: var(--white);
-    }
+    display: grid;
+    // @formatter:off
+    grid-template:
+      ".                " 1fr
+      "chart-with-labels" var(--graph-height);
+    // @formatter:on
   }
 
   .chart {
-    --circle-size: .7rem;
-    --circle-half-size: calc(var(--circle-size) * .5);
-
-    --row-half-height: calc(var(--row-height) / 2);
-
-    border-collapse: collapse;
+    grid-area: chart-with-labels;
     position: relative;
-    width: 80%;
-    margin: 0 auto;
-    font-size: 1px; // Hack, reduces the width of cells to nothing
+    margin: auto;
 
-    tr {
-      th {
-        text-align: center;
-        height: var(--row-height);
-        padding: 0;
-      }
+    display: grid;
+    grid-template: ". chart" 1fr / var(--label-width) 1fr;
+  }
 
-      td {
-        text-align: center;
-        height: var(--row-height);
-        padding: 0;
-      }
+  .label {
+    position: absolute;
+    height: var(--label-height);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    left: 0;
+    width: var(--label-and-line-width);
+
+    color: var(--white);
+    background-color: var(--primary-neutral-darkest);
+    //@formatter:off
+    clip-path: polygon(
+        0%                                                  0%,
+        calc(var(--label-width) - var(--label-arrow-size))  0%,
+        calc(var(--label-width))                            calc(var(--label-arrow-size) - (var(--label-line-width) / 2)),
+        100%                                                calc(var(--label-arrow-size) - (var(--label-line-width) / 2)),
+        100%                                                calc(var(--label-arrow-size) + (var(--label-line-width) / 2)),
+        calc(var(--label-width))                            calc(var(--label-arrow-size) + (var(--label-line-width) / 2)),
+        calc(var(--label-width) - var(--label-arrow-size))  100%,
+        0% 100%
+    );
+    //@formatter:on
+  }
+
+  .label-value {
+    text-align: right;
+    width: calc(var(--label-width) - var(--label-arrow-size));
+  }
+
+  .max-label {
+    top: 0;
+  }
+
+  .zero-label {
+    bottom: 0;
+  }
+
+  .member-stats {
+    grid-area: chart;
+    position: relative;
+
+    display: grid;
+    grid-template-columns: repeat(var(--events-number), var(--event-size));
+    grid-template-rows: var(--graph-height);
+  }
+
+  .tendency {
+    position: absolute;
+    height: 100%;
+    width: calc(var(--events-number) * var(--event-size));
+    background-color: var(--secondary-neutral);
+    z-index: var(--z-index-tendency);
+  }
+
+  .member-stat {
+    position: relative;
+  }
+
+  .member-damage {
+    height: 100%;
+  }
+
+  .bullet-point {
+    position: absolute;
+    top: calc(var(--ratio-from-max) * var(--drawable-graph-height));
+    text-align: center;
+    height: calc(var(--event-size) / 2);
+    width: calc(var(--event-size) / 2);
+    padding: calc(var(--event-size) / 8);
+    margin: calc(var(--event-size) / 8);
+    z-index: var(--z-index-bullet-points);
+    background-color: var(--white);
+    border: 1px solid var(--primary-neutral-darkest);
+    border-radius: 50%;
+  }
+
+  .tooltip-trigger {
+    position: absolute;
+    top: calc(var(--ratio-from-max) * var(--drawable-graph-height));
+    height: var(--event-size);
+    width: var(--event-size);
+    margin: 0;
+    z-index: var(--z-index-tooltip-trigger);
+  }
+
+  .tooltip {
+    visibility: hidden;
+    margin: 0;
+    padding-top: calc(var(--tooltip-font-size) / 2);
+    font-size: var(--tooltip-font-size);
+    z-index: var(--z-index-tooltip);
+
+    .fa-star {
+      color: var(--holy);
     }
+  }
 
+  .tooltip-trigger:hover > .tooltip {
+    visibility: visible;
+    position: absolute;
+    top: calc(-1 * (var(--tooltip-height) + var(--tooltip-arrow-size)));
+    left: calc((-1 * var(--tooltip-width) / 2) + var(--event-size) / 2);
+    text-align: center;
+    color: var(--white);
+    background-color: var(--primary-neutral-darkest);
+    height: calc(var(--tooltip-height) + var(--tooltip-arrow-size));
+    width: var(--tooltip-width);
 
-    tr:not(hidden) { // Selected member's table row
-      .labels {
-        &::before { // Ruler for the scale's max
-          @include label();
-          content: var(--max-as-string);
-          top: calc(var(--row-height));
-        }
+    //@formatter:off
+    clip-path: polygon(
+        0%                                     0%,
+        100%                                   0%,
+        100%                                   calc(var(--tooltip-height)),
+        calc(50% + var(--tooltip-arrow-size))  calc(var(--tooltip-height)),
+        50%                                    100%,
+        calc(50% - var(--tooltip-arrow-size))  calc(var(--tooltip-height)),
+        0%                                     calc(var(--tooltip-height))
+    );
+    //@formatter:on
+  }
 
-        &::after { // Ruler for the scale's 0
-          @include label();
-          content: '0';
-          top: calc(var(--graph-height) + var(--row-height));
-        }
-      }
-    }
+  .line {
+    position: absolute;
+    top: calc(var(--label-height) / 2);
+    bottom: calc(var(--label-height) / 2);
 
-    // One score
-    .chart-value {
-      position: relative;
-      --ratio: calc((var(--max) - var(--value)) / var(--max));
-      --top: calc((var(--ratio) * var(--graph-height)));
-      --bullet-color: var(--secondary-neutral);
+    //@formatter:off
+    clip-path: polygon(
+        0%    calc((100% - var(--start-percent-to-max)) + (var(--offset-ratio) * var(--line-width))),
+        100%  calc((100% - var(--end-percent-to-max)) + (var(--offset-ratio) * var(--line-width))),
+        100%  calc(100% - var(--end-percent-to-max)),
+        0%    calc(100% - var(--start-percent-to-max))
+    );
+    //@formatter:on
+  }
 
-      .score-presenter {
-        --stroke-size: .5rem;
-        --half-stroke-size: calc(var(--stroke-size) / 2);
-        padding: 0 0.2rem;
-        display: block;
-        min-width: var(--row-half-height);
+  .graph-line {
+    background-color: var(--primary-neutral-darkest);
+    z-index: var(--z-index-graph-line);
+  }
 
-        // Line start
-        &::before {
-          --previous-ratio: calc((var(--max) - var(--line-start-y)) / var(--max));
-          --previous-y: calc((var(--previous-ratio) * var(--graph-height)));
-          --y1: calc((var(--top) + var(--previous-y)) / 2);
+  .incoming-line {
+    left: 0;
+    right: 50%;
+  }
 
-          --y2: var(--top);
+  .outgoing-line {
+    left: 50%;
+    right: 0;
+  }
 
-          position: absolute;
-          content: "";
-          background-color: var(--primary-neutral-darkest);
-          left: 0;
-          right: 0;
-          top: 0;
-          height: calc(var(--row-height) + var(--graph-height));
+  .no-line {
+    visibility: hidden;
+  }
 
-          clip-path: polygon(
-              var(--line-start-x) calc(var(--y1) + var(--row-half-height) - var(--half-stroke-size)),
-              50% calc(var(--y2) + var(--row-half-height) - var(--half-stroke-size)),
-              50% calc(var(--y2) + var(--row-half-height) + var(--half-stroke-size)),
-              var(--line-start-x) calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size)),
-              var(--line-start-x) calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size))
-          );
+  .titan-color-red {
+    color: var(--red);
+  }
 
-          z-index: 3;
-        }
+  .titan-color-green {
+    color: var(--green);
+  }
 
-        // Line end
-        &::after {
-          --y1: var(--top);
+  .titan-color-blue {
+    color: var(--blue);
+  }
 
-          --next-ratio: calc((var(--max) - var(--line-end-y)) / var(--max));
-          --next-y: calc((var(--next-ratio) * var(--graph-height)));
-          --y2: calc((var(--top) + var(--next-y)) / 2);
+  .titan-color-holy {
+    color: var(--holy);
+  }
 
-          position: absolute;
-          content: "";
-          background-color: var(--primary-neutral-darkest);
-          left: 0;
-          right: 0;
-          top: 0;
-          height: calc(var(--row-height) + var(--graph-height));
-
-          clip-path: polygon(
-              50% calc(var(--y1) + var(--row-half-height) - var(--half-stroke-size)),
-              var(--line-end-x) calc(var(--y2) + var(--row-half-height) - var(--half-stroke-size)),
-              var(--line-end-x) calc(var(--y2) + var(--row-half-height) + var(--half-stroke-size)),
-              50% calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size)),
-              50% calc(var(--y1) + var(--row-half-height) + var(--half-stroke-size))
-          );
-
-          z-index: 3;
-        }
-      }
-
-      // Bullet point
-      &::before {
-        --border: calc(var(--circle-size) * .2);
-
-        display: inline-block;
-        position: absolute;
-
-        content: "‎⬤";
-        text-align: center;
-        font-size: var(--circle-size);
-        line-height: var(--row-height);
-
-        color: var(--bullet-color);
-        background-color: var(--primary-neutral-darkest);
-
-        clip-path: circle(
-            calc(var(--border) + var(--circle-half-size))
-        );
-        top: var(--top);
-        left: calc(50% - (var(--row-height) / 2));
-        width: var(--row-height);
-        height: var(--row-height);
-
-        z-index: 4;
-      }
-
-      // Tooltip
-      &::after {
-        --arrow-size: .25rem;
-        --arrow: calc(100% - var(--arrow-size));
-        --width: 5rem;
-
-        position: absolute;
-        top: calc((var(--ratio) * var(--graph-height)) + var(--row-height) - var(--arrow-size) - var(--circle-half-size));
-        left: 50%;
-        font-size: 1rem;
-        width: var(--width);
-
-        clip-path: polygon(
-            0% 0%,
-            100% 0%,
-            100% var(--arrow),
-            calc(50% - .25rem) var(--arrow),
-            50% 100%,
-            calc(50% + .25rem) var(--arrow),
-            0% var(--arrow)
-        );
-
-        opacity: 0;
-        transform-origin: 50% calc(100% + 10px);
-        transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 90deg);
-        transition: opacity .2s cubic-bezier(0, .5, .5, 1),
-        transform .2s cubic-bezier(0, .5, .5, 1);
-        will-change: opacity, transform;
-
-        color: var(--white);
-        background-color: var(--primary-neutral-darkest);
-        padding: .5em;
-        content: var(--event) '\A' var(--value-as-string);
-        white-space: pre;
-
-        z-index: 5;
-      }
-
-      &:hover::after {
-        opacity: 1;
-        transform: translate3d(-50%, -125%, 0) perspective(1000px) rotate3d(1, 0, 0, 0deg);
-        transition: opacity .2s cubic-bezier(.5, 0, 1, .5),
-        transform .1s cubic-bezier(.5, 0, 1, .5);
-      }
-    }
+  .titan-color-dark {
+    color: var(--dark);
   }
 }

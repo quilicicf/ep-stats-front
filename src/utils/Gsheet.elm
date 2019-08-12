@@ -6,7 +6,6 @@ module Gsheet exposing (
 
 import Json.Decode as Decode exposing(Value, Decoder, string)
 import Json.Decode.Pipeline exposing (required)
-import String.Interpolate exposing (interpolate)
 import Url exposing (..)
 
 import CreateQueryString exposing (createQueryString)
@@ -83,7 +82,7 @@ computeSheetDataUrl sheetId =
       Url.Https
       "sheets.googleapis.com"
       Nothing -- Port
-      (interpolate "/v4/spreadsheets/{0}/values:batchGet" [ sheetId ] ) -- Path
+      ( String.join "/" [ "", "v4", "spreadsheets", sheetId, "values:batchGet" ] ) -- Path
       ( Just ( createQueryString batchGetQueryString ) ) -- Query
       Nothing -- Fragment
   in

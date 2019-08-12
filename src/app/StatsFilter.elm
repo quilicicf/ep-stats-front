@@ -7,7 +7,6 @@ import Maybe exposing (..)
 
 import Msg exposing (..)
 import Optionize exposing (optionize)
-import SafeParseInt exposing (safeParseInt)
 import AllianceName exposing (allianceName)
 import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
 import Wars exposing (warBonuses, warBonusFromString)
@@ -70,7 +69,7 @@ viewTitansFilterForm statsFilter members =
             , max "120"
             , step "10"
             , value ( String.fromInt statsFilter.filteredTitanPeriod )
-            , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultStatsFilter.filteredTitanPeriod ) << safeParseInt )
+            , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultStatsFilter.filteredTitanPeriod ) << String.toInt )
             ]
             []
         ]
@@ -111,7 +110,7 @@ starsFilterGuesser : String -> Msg
 starsFilterGuesser starsFilterAsString =
   if starsFilterAsString == allStarsFilter
   then ( StatsFilterMsg << NewTitanStarsSelected ) Nothing
-  else ( StatsFilterMsg << NewTitanStarsSelected << safeParseInt ) starsFilterAsString
+  else ( StatsFilterMsg << NewTitanStarsSelected << String.toInt ) starsFilterAsString
 
 viewWarsFilterForm : StatsFilterExtender r -> List String -> Html Msg
 viewWarsFilterForm statsFilter members =
@@ -134,7 +133,7 @@ viewWarsFilterForm statsFilter members =
             , max "120"
             , step "10"
             , value ( String.fromInt statsFilter.filteredWarPeriod )
-            , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultStatsFilter.filteredWarPeriod ) << safeParseInt )
+            , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultStatsFilter.filteredWarPeriod ) << String.toInt )
             ]
             []
         ]

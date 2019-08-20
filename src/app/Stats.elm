@@ -446,6 +446,12 @@ computeOutgoingLineData maybeNextScore currentPercent maxDamage =
         , lineStyle = lineStyle
         }
 
+viewTitanColor : DetailedColor -> Html Msg
+viewTitanColor { name, icon } =
+  div [ class ("bullet-point titan-color-" ++ (name |> String.toLower)) ] [
+    i [ class icon ] []
+  ]
+
 viewGenericTitanScore : Int -> (Maybe MemberTitanScore, MemberTitanScore, Maybe MemberTitanScore) -> Html Msg
 viewGenericTitanScore maxDamage (maybePreviousScore, currentScore, maybeNextScore) =
   let
@@ -477,9 +483,7 @@ viewGenericTitanScore maxDamage (maybePreviousScore, currentScore, maybeNextScor
     div [ class "member-stat", percentFromMaxStyle ] [
       div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
       div [ class "member-damage" ] [
-        div [ class ("bullet-point titan-color-" ++ (titanColorName |> String.toLower)) ] [
-          i [ class currentScore.titanColor.icon ] []
-        ],
+        viewTitanColor currentScore.titanColor,
         div [ class "tooltip-trigger" ] [
           p [ class "tooltip" ] [
             span [] [
@@ -495,6 +499,12 @@ viewGenericTitanScore maxDamage (maybePreviousScore, currentScore, maybeNextScor
       ],
       div [ class outgoingLineData.lineType, outgoingLineData.lineStyle ] []
     ]
+
+viewWarBonus : WarBonus -> Html Msg
+viewWarBonus { name, icon } =
+  div [ class ("bullet-point war-bonus war-bonus-" ++ (name |> String.toLower)) ] [
+    i [ class icon ] []
+  ]
 
 viewGenericWarScore : Int -> (Maybe MemberWarScore, MemberWarScore, Maybe MemberWarScore) -> Html Msg
 viewGenericWarScore maxDamage (maybePreviousScore, currentScore, maybeNextScore) =
@@ -527,9 +537,7 @@ viewGenericWarScore maxDamage (maybePreviousScore, currentScore, maybeNextScore)
     div [ class "member-stat", percentFromMaxStyle ] [
       div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
       div [ class "member-damage" ] [
-        div [ class ("bullet-point war-bonus war-bonus-" ++ (warBonusName |> String.toLower)) ] [
-          i [ class currentScore.warBonus.icon ] []
-        ],
+        viewWarBonus currentScore.warBonus,
         div [ class "tooltip-trigger" ] [
           p [ class "tooltip" ] [
             span [] [ text warBonusName ],
@@ -596,11 +604,11 @@ viewMember memberStats =
     td
       [ class "member-value", addCompletenessClass memberStats.averageTitanScore.isComplete ]
       [ text ( round memberStats.averageTitanScore.damage |> String.fromInt ) ],
-    td [ class "member-value" ] [ text ( Maybe.map .name memberStats.preferredTitanColor  |> withDefault "N/A") ],
+    td [ class "member-value" ] [ withDefault allTitanColors memberStats.preferredTitanColor |> viewTitanColor ],
     td
       [ class "member-value", addCompletenessClass memberStats.averageWarScore.isComplete ]
       [ text ( round memberStats.averageWarScore.damage |> String.fromInt ) ],
-    td [ class "member-value" ] [ text ( Maybe.map .name memberStats.preferredWarBonus |> withDefault "N/A" ) ],
+    td [ class "member-value" ] [ withDefault allWarBonuses memberStats.preferredWarBonus |> viewWarBonus ],
     td [ class "member-value" ] [ text ( round memberStats.teamValue |> String.fromInt ) ]
   ]
 

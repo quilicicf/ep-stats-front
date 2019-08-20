@@ -9,7 +9,7 @@ import Msg exposing (..)
 import Optionize exposing (optionize)
 import AllianceName exposing (allianceName)
 import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
-import Wars exposing (warBonuses, warBonusFromString)
+import Wars exposing (WarBonus, warBonuses, allWarBonuses, warBonusFromString)
 
 -----------
 -- MODEL --
@@ -25,7 +25,7 @@ type alias StatsFilterExtender r =
   , filteredTitanStars : Maybe Int
   -- Wars
   , filteredWarPeriod : Int
-  , filteredWarBonus : Maybe String
+  , filteredWarBonus : WarBonus
   }
 
 type alias StatsFilter = StatsFilterExtender {}
@@ -41,7 +41,7 @@ defaultStatsFilter =
   , filteredTitanColor = allTitanColors
   , filteredTitanStars = Nothing
   , filteredWarPeriod = 30
-  , filteredWarBonus = Nothing
+  , filteredWarBonus = allWarBonuses
   }
 
 ----------
@@ -144,14 +144,11 @@ viewWarsFilterForm statsFilter members =
             , onInput bonusFilterGuesser
             ]
             ( optionize
-              ( withDefault allBonusesFilter statsFilter.filteredWarBonus )
-              ( allBonusesFilter :: warBonuses )
+              ( statsFilter.filteredWarBonus |> .name )
+              ( List.map .name warBonuses )
             )
         ]
     ]
-
-allBonusesFilter : String
-allBonusesFilter = "ALL"
 
 bonusFilterGuesser : String -> Msg
 bonusFilterGuesser bonusFilterAsString = ( StatsFilterMsg << NewWarBonusSelected << warBonusFromString ) bonusFilterAsString

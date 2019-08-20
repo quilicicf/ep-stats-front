@@ -15,7 +15,6 @@ import Maybe exposing (withDefault)
 import Msg exposing (..)
 import Flip exposing (flip)
 import GetAt exposing (getAt)
-import Quote exposing (quote)
 import TakeLast exposing (takeLast)
 import Spinner exposing (viewSpinner)
 import MaybeExtra exposing (hasValue)
@@ -25,7 +24,7 @@ import AllianceName exposing (allianceName)
 import Gsheet exposing (computeSheetDataUrl)
 import PresentNumber exposing (presentNumber)
 import AreListsEqual exposing (areListsEqual)
-import Wars exposing (sanitizeExternalWarBonus)
+import Wars exposing (WarBonus, allWarBonuses, warBonusFromString)
 import ComputeTeamValue exposing (computeTeamValue)
 import CreateBearerHeader exposing (createBearerHeader)
 import MemberScore exposing (MemberScore, AverageMemberScore)
@@ -63,7 +62,7 @@ type alias AllianceStats =
   , preferredTitanColor : DetailedColor
   , averageWarScore : Float
   , maxWarScore : Int
-  , preferredWarBonus : String
+  , preferredWarBonus : WarBonus
   , memberStats : Dict String MemberStats
   }
 
@@ -73,7 +72,7 @@ type alias MemberStats =
   , maxTitanScore : Maybe Int
   , preferredTitanColor : Maybe DetailedColor
   , averageWarScore : AverageMemberScore
-  , preferredWarBonus : Maybe String
+  , preferredWarBonus : Maybe WarBonus
   , teamValue : Float
   }
 
@@ -87,7 +86,7 @@ type alias AllianceTitanScore =
 type alias AllianceWarScore =
   { date : String
   , damage : Int
-  , warBonus : String
+  , warBonus : WarBonus
   }
 
 type alias MemberTitanScores =
@@ -110,7 +109,7 @@ type alias MemberWarScores =
 type alias MemberWarScore =
   { date : String
   , score : Maybe MemberScore
-  , warBonus : String
+  , warBonus : WarBonus
   }
 
 type alias FilteredStats =
@@ -131,7 +130,8 @@ type alias FilteredAllianceTitanScores =
 type alias FilteredAllianceWarScores =
   { averageWarScore : Float
   , maxWarScore : Int
-  , preferredWarBonus : String
+  , progression : RegressionResult
+  , preferredWarBonus : WarBonus
   , warScores : List AllianceWarScore
   }
 
@@ -148,7 +148,8 @@ type alias FilteredMemberWarScores =
   { pseudo : String
   , averageScore : AverageMemberScore
   , maxScore : Maybe Int
-  , preferredWarBonus : Maybe String
+  , progression : RegressionResult
+  , preferredWarBonus : Maybe WarBonus
   , warScores : List MemberWarScore
   }
 
@@ -210,12 +211,11 @@ compareMembersStats stats1 stats2 =
   else if stats1.teamValue < stats2.teamValue then LT
   else compare stats1.pseudo stats2.pseudo
 
-computeTendencyStyle : Int -> FilteredMemberTitanScores -> Attribute msg
-computeTendencyStyle maxDamage genericTitanScores =
+computeTendencyStyle : Int -> List (Maybe MemberScore) -> Attribute msg
+computeTendencyStyle maxDamage scores =
   let
     predict : Int -> Float
-    predict = List.map .score genericTitanScores.titanScores
-      |> List.map (Maybe.map .damage)
+    predict = List.map (Maybe.map .damage) scores
       |> List.map (withDefault 0)
       |> List.indexedMap (\index damage -> [index, damage])
       |> computeLinearRegression 2
@@ -225,11 +225,11 @@ computeTendencyStyle maxDamage genericTitanScores =
     startRatio = predict 0 |> flip (/) (toFloat maxDamage)
 
     endRatio : Float
-    endRatio = predict (List.length genericTitanScores.titanScores)
+    endRatio = predict (List.length scores)
       |> flip (/) (toFloat maxDamage)
 
     slope : Float
-    slope = computeSlope startRatio endRatio / (toFloat (List.length genericTitanScores.titanScores))
+    slope = computeSlope startRatio endRatio / (toFloat (List.length scores))
 
     offsetRatio : Float
     offsetRatio = computeOffsetRatio slope
@@ -272,7 +272,7 @@ viewValidTitansStats statsFilter filteredStats =
               ],
               div [ class "member-stats" ] (
                 viewGenericTitanScores genericTitanScores ++ [
-                  div [ class "line tendency", computeTendencyStyle maxDamage genericTitanScores ] []
+                  div [ class "line tendency", List.map .score genericTitanScores.titanScores |> computeTendencyStyle maxDamage  ] []
                 ]
               )
             ]
@@ -284,19 +284,38 @@ viewValidTitansStats statsFilter filteredStats =
 viewValidWarsStats : StatsFilterExtender r -> FilteredStats -> Html Msg
 viewValidWarsStats statsFilter filteredStats =
   let
-    dateRowHeadingElement : Html Msg
-    dateRowHeadingElement = th [] [ text "War date" ]
+    genericWarScores : FilteredMemberWarScores
+    genericWarScores = List.filter (\memberScores -> statsFilter.filteredMember == memberScores.pseudo) filteredStats.membersWarScores
+      |> List.head
+      |> withDefault (generifyAllianceWarScores filteredStats.allianceWarScores)
+
+    maxDamage : Int
+    maxDamage = withDefault 0 genericWarScores.maxScore
+
+    eventsNumberStyle : Attribute msg
+    eventsNumberStyle = customStyle [
+        ( "--events-number", List.length filteredStats.allianceWarScores.warScores |> String.fromInt )
+      ]
 
   in
     div [ class "stats" ] [
-      viewWarsFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersWarScores ) ),
+      viewWarsFilterForm statsFilter ( allianceName :: ( List.map .pseudo filteredStats.membersTitanScores ) ),
       div [ class "war-stats" ] [
         div [ class "graphs-container" ] [
-          div [ class "chart-title" ] [ text "War scores" ],
-          div [ class "graph-container" ] [
-            table [ class "chart" ] [
-              thead [] [ tr [] ( dateRowHeadingElement :: [] ) ],
-              tbody [] ( viewWarScores statsFilter filteredStats )
+          h2 [ class "chart-title" ] [ text "War scores" ],
+          div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
+            div [ class "chart"] [
+              div [ class "label max-label" ] [
+                span [ class "label-value" ] [ withDefault 0 genericWarScores.maxScore |> presentNumber |> text ]
+              ],
+              div [ class "label zero-label" ] [
+                span [ class "label-value" ] [ text "0" ]
+              ],
+              div [ class "member-stats" ] (
+                viewGenericWarScores genericWarScores ++ [
+                  div [ class "line tendency", List.map .score genericWarScores.warScores |> computeTendencyStyle maxDamage  ] []
+                ]
+              )
             ]
           ]
         ]
@@ -321,34 +340,22 @@ generifyAllianceTitanScore allianceTitanScore =
   , titanStars = allianceTitanScore.titanStars
   }
 
+generifyAllianceWarScores : FilteredAllianceWarScores -> FilteredMemberWarScores
+generifyAllianceWarScores allianceWarScores =
+  { pseudo = allianceName
+  , averageScore = AverageMemberScore True allianceWarScores.averageWarScore 0
+  , maxScore = Just allianceWarScores.maxWarScore
+  , progression = allianceWarScores.progression
+  , preferredWarBonus = Just allianceWarScores.preferredWarBonus
+  , warScores = List.map generifyAllianceWarScore allianceWarScores.warScores
+  }
+
 generifyAllianceWarScore : AllianceWarScore -> MemberWarScore
 generifyAllianceWarScore allianceWarScore =
   { date = allianceWarScore.date
   , score = Just ( MemberScore allianceWarScore.damage 0 )
   , warBonus = allianceWarScore.warBonus
   }
-
-viewWarScores : StatsFilterExtender r -> FilteredStats -> List ( Html Msg )
-viewWarScores statsFilter filteredStats =
-  let
-    allianceScores : Html Msg
-    allianceScores =  viewGenericWarScores
-      ( List.map generifyAllianceWarScore filteredStats.allianceWarScores.warScores )
-      allianceName
-      ( statsFilter.filteredMember /= allianceName )
-      filteredStats.allianceWarScores.maxWarScore
-
-    membersScores : List ( Html Msg )
-    membersScores = List.map ( viewMemberWarScores statsFilter ) filteredStats.membersWarScores
-  in
-    allianceScores :: membersScores
-
-viewMemberWarScores : StatsFilterExtender r -> FilteredMemberWarScores -> Html Msg
-viewMemberWarScores statsFilters filteredMemberWarScores = viewGenericWarScores
-  filteredMemberWarScores.warScores
-  filteredMemberWarScores.pseudo
-  ( statsFilters.filteredMember /= filteredMemberWarScores.pseudo )
-  ( withDefault 0 filteredMemberWarScores.maxScore )
 
 viewGenericTitanScores : FilteredMemberTitanScores -> List (Html Msg)
 viewGenericTitanScores scores = mapWithPreviousAndNext ( viewGenericTitanScore ( withDefault 0 scores.maxScore )) scores.titanScores
@@ -489,51 +496,55 @@ viewGenericTitanScore maxDamage (maybePreviousScore, currentScore, maybeNextScor
       div [ class outgoingLineData.lineType, outgoingLineData.lineStyle ] []
     ]
 
-viewGenericWarScores : List MemberWarScore -> String -> Bool -> Int -> Html Msg
-viewGenericWarScores genericMemberScores memberPseudo isHidden maxDamage =
+viewGenericWarScore : Int -> (Maybe MemberWarScore, MemberWarScore, Maybe MemberWarScore) -> Html Msg
+viewGenericWarScore maxDamage (maybePreviousScore, currentScore, maybeNextScore) =
   let
-    rowStyle : Attribute msg
-    rowStyle = customStyle [
-        ( "--max", String.fromInt maxDamage ),
-        ( "--max-as-string", String.fromInt maxDamage |> quote )
-      ]
+    currentDamage : Int
+    currentDamage = Maybe.map .damage currentScore.score |> withDefault 0
+
+    warBonusName : String
+    warBonusName = currentScore.warBonus.name
+
+    percentToMax : Float
+    percentToMax = toFloat currentDamage / toFloat maxDamage
+
+    percentFromMax : Float
+    percentFromMax = 1 - percentToMax
+
+    percentFromMaxStyle : Attribute Msg
+    percentFromMaxStyle = customStyle [ ( "--ratio-from-max", String.fromFloat percentFromMax ) ]
+
+    currentPercent : Float
+    currentPercent = toFloat currentDamage / toFloat maxDamage
+
+    incomingLineData : LineData msg
+    incomingLineData = computeIncomingLineData maybePreviousScore currentPercent maxDamage
+
+    outgoingLineData : LineData msg
+    outgoingLineData = computeOutgoingLineData maybeNextScore currentPercent maxDamage
 
   in
-    tr [ hidden isHidden, rowStyle ]
-      (
-        ( th [ class "labels" ] [ text memberPseudo ] ) ::
-        ( mapWithPreviousAndNext viewWarScore genericMemberScores )
-      )
-
-viewWarScore : ( Maybe MemberWarScore, MemberWarScore, Maybe MemberWarScore ) -> Html Msg
-viewWarScore ( maybePreviousScore, currentScore, maybeNextScore ) =
-  let
-    scoreExtractor : MemberWarScore -> Int
-    scoreExtractor warScore = warScore.score |> withDefault { damage = 0, teamValue = 0 } |> .damage
-
-    damage : Int
-    damage = scoreExtractor currentScore
-
-    maybePreviousDamage : Maybe Int
-    maybePreviousDamage = Maybe.map scoreExtractor maybePreviousScore
-
-    maybeNextDamage : Maybe Int
-    maybeNextDamage = Maybe.map scoreExtractor maybeNextScore
-  in
-    td
-      [ class "chart-value"
-      , customStyle
-        [ ("--value", String.fromInt damage)
-        , ("--value-as-string", String.fromInt damage |> quote)
-        , ("--war-bonus", quote currentScore.warBonus)
-        , ("--line-start-x", getLineStartX maybePreviousDamage)
-        , ("--line-start-y", getLineStartY maybePreviousDamage)
-        , ("--line-end-x", getLineEndX maybeNextDamage)
-        , ("--line-end-y", getLineEndY maybeNextDamage)
-        , ("--event", (quote currentScore.warBonus))
+    div [ class "member-stat", percentFromMaxStyle ] [
+      div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
+      div [ class "member-damage" ] [
+        div [ class ("bullet-point war-bonus war-bonus-" ++ (warBonusName |> String.toLower)) ] [
+          i [ class currentScore.warBonus.icon ] []
+        ],
+        div [ class "tooltip-trigger" ] [
+          p [ class "tooltip" ] [
+            span [] [ text warBonusName ],
+            br [] [],
+            span [] [ presentNumber currentDamage |> text ],
+            br [] [],
+            span [] [ presentDate currentScore.date |> text ]
+          ]
         ]
-      ]
-      [ span [class "score-presenter"] [ String.fromInt damage |> text ] ]
+      ],
+      div [ class outgoingLineData.lineType, outgoingLineData.lineStyle ] []
+    ]
+
+viewGenericWarScores : FilteredMemberWarScores -> List (Html Msg)
+viewGenericWarScores scores = mapWithPreviousAndNext ( viewGenericWarScore ( withDefault 0 scores.maxScore )) scores.warScores
 
 viewValidAllianceStats : AllianceStats -> Html Msg
 viewValidAllianceStats allianceStats =
@@ -555,7 +566,7 @@ viewValidAllianceStats allianceStats =
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text "Preferred war bonus" ],
-          span [ class "alliance-stat-value" ] [ text allianceStats.preferredWarBonus ]
+          span [ class "alliance-stat-value" ] [ text allianceStats.preferredWarBonus.name ]
         ]
       ],
       h2 [] [ text "Alliance members" ],
@@ -589,7 +600,7 @@ viewMember memberStats =
     td
       [ class "member-value", addCompletenessClass memberStats.averageWarScore.isComplete ]
       [ text ( round memberStats.averageWarScore.damage |> String.fromInt ) ],
-    td [ class "member-value" ] [ text ( withDefault "N/A" memberStats.preferredWarBonus ) ],
+    td [ class "member-value" ] [ text ( Maybe.map .name memberStats.preferredWarBonus |> withDefault "N/A" ) ],
     td [ class "member-value" ] [ text ( round memberStats.teamValue |> String.fromInt ) ]
   ]
 
@@ -618,8 +629,8 @@ getIntFromRow row index default = getAt index row |> Maybe.andThen String.toInt 
 getTitanColorFromRow : List String -> Int -> DetailedColor
 getTitanColorFromRow row index = getAt index row |> withDefault "" |> titanColorFromString
 
-getWarBonusFromRow : List String -> Int -> String
-getWarBonusFromRow row index = getAt index row |> withDefault "" |> sanitizeExternalWarBonus
+getWarBonusFromRow : List String -> Int -> WarBonus
+getWarBonusFromRow row index = getAt index row |> withDefault "" |> warBonusFromString
 
 extractTitanAllianceScores : RawSheet -> List AllianceTitanScore
 extractTitanAllianceScores titanSheet =
@@ -709,7 +720,7 @@ extractMemberWarScore memberIndex row =
     memberScore : Maybe MemberScore
     memberScore = computeScore maybeDamage allianceScore membersNumber
 
-    warBonus : String
+    warBonus : WarBonus
     warBonus = getWarBonusFromRow row fixedWarIndexes.bonusIndex
   in
     MemberWarScore
@@ -758,11 +769,11 @@ parseRawStats rawStats =
       ( extractTitanMemberScores titanSheet )
       ( extractWarMemberScores warSheet )
 
-allianceTitanColorPredicate : StatsFilterExtender r -> AllianceTitanScore -> Bool
-allianceTitanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+titanColorPredicate : StatsFilterExtender r -> { u | titanColor : DetailedColor } -> Bool
+titanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
 
-allianceTitanStarsPredicate : StatsFilterExtender r -> AllianceTitanScore -> Bool
-allianceTitanStarsPredicate { filteredTitanStars } { titanStars } =
+titanStarsPredicate : StatsFilterExtender r -> { u | titanStars : Int } -> Bool
+titanStarsPredicate { filteredTitanStars } { titanStars } =
   case filteredTitanStars of
     Nothing -> True
     Just stars -> titanStars == stars
@@ -771,8 +782,8 @@ filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> 
 filterAllianceTitanScores statsFilter allianceTitanScores =
   let
     filteredAllianceScores : List AllianceTitanScore
-    filteredAllianceScores = List.filter ( allianceTitanColorPredicate statsFilter ) allianceTitanScores
-      |> List.filter ( allianceTitanStarsPredicate statsFilter )
+    filteredAllianceScores = List.filter ( titanColorPredicate statsFilter ) allianceTitanScores
+      |> List.filter ( titanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
 
     preferredTitanColor : DetailedColor
@@ -789,45 +800,36 @@ filterAllianceTitanScores statsFilter allianceTitanScores =
     , titanScores = filteredAllianceScores
     }
 
-allianceWarBonusPredicate : StatsFilterExtender r -> AllianceWarScore -> Bool
-allianceWarBonusPredicate { filteredWarBonus } { warBonus } =
-  case filteredWarBonus of
-    Nothing -> True
-    Just bonus -> bonus == warBonus
+warBonusPredicate : StatsFilterExtender r -> { u | warBonus : WarBonus } -> Bool
+warBonusPredicate { filteredWarBonus } { warBonus } = filteredWarBonus == allWarBonuses || warBonus == filteredWarBonus
 
 filterAllianceWarScores : StatsFilterExtender r -> List AllianceWarScore -> FilteredAllianceWarScores
 filterAllianceWarScores statsFilter allianceWarScores =
   let
     filteredAllianceScores : List AllianceWarScore
-    filteredAllianceScores = List.filter ( allianceWarBonusPredicate statsFilter ) allianceWarScores
+    filteredAllianceScores = List.filter ( warBonusPredicate statsFilter ) allianceWarScores
       |> takeLast statsFilter.filteredWarPeriod
 
-    preferredWarBonus : String
-    preferredWarBonus = findPreferredEventType ( .warBonus ) ( Just << .damage ) filteredAllianceScores
+    preferredWarBonus : WarBonus
+    preferredWarBonus = findPreferredEventType ( .name << .warBonus ) ( Just << .damage ) filteredAllianceScores
       |> withDefault ""
-      |> sanitizeExternalWarBonus
+      |> warBonusFromString
   in
     { averageWarScore = computeAverageDamage filteredAllianceScores
     , maxWarScore = List.map .damage filteredAllianceScores |> List.maximum |> Maybe.withDefault 0
+    , progression = List.map .damage filteredAllianceScores
+        |> List.indexedMap (\index damage -> [index, damage])
+        |> computeLinearRegression 2
     , preferredWarBonus = preferredWarBonus
     , warScores = filteredAllianceScores
     }
-
-memberTitanColorPredicate : StatsFilterExtender r -> MemberTitanScore -> Bool
-memberTitanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
-
-memberTitanStarsPredicate : StatsFilterExtender r -> MemberTitanScore -> Bool
-memberTitanStarsPredicate { filteredTitanStars } { titanStars } =
-  case filteredTitanStars of
-    Nothing -> True
-    Just stars -> titanStars == stars
 
 filterMemberTitanScores : StatsFilterExtender r -> MemberTitanScores -> FilteredMemberTitanScores
 filterMemberTitanScores statsFilter memberTitanScores =
   let
     filteredMemberScores : List MemberTitanScore
-    filteredMemberScores = List.filter ( memberTitanColorPredicate statsFilter ) memberTitanScores.titanScores
-      |> List.filter ( memberTitanStarsPredicate statsFilter )
+    filteredMemberScores = List.filter ( titanColorPredicate statsFilter ) memberTitanScores.titanScores
+      |> List.filter ( titanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
 
     preferredTitanColor : Maybe DetailedColor
@@ -851,22 +853,16 @@ filterMemberTitanScores statsFilter memberTitanScores =
     , titanScores = filteredMemberScores
     }
 
-memberWarBonusPredicate : StatsFilterExtender r -> MemberWarScore -> Bool
-memberWarBonusPredicate { filteredWarBonus } { warBonus } =
-  case filteredWarBonus of
-    Nothing -> True
-    Just bonus -> bonus == warBonus
-
 filterMemberWarScores : StatsFilterExtender r -> MemberWarScores -> FilteredMemberWarScores
 filterMemberWarScores statsFilter memberWarScores =
   let
     filteredMemberScores : List MemberWarScore
-    filteredMemberScores = List.filter ( memberWarBonusPredicate statsFilter ) memberWarScores.warScores
+    filteredMemberScores = List.filter ( warBonusPredicate statsFilter ) memberWarScores.warScores
       |> takeLast statsFilter.filteredTitanPeriod
 
-    preferredWarBonus : Maybe String
-    preferredWarBonus = findPreferredEventType ( .warBonus ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
-      |> Maybe.map sanitizeExternalWarBonus
+    preferredWarBonus : Maybe WarBonus
+    preferredWarBonus = findPreferredEventType ( .name << .warBonus ) ( ( Maybe.map .damage ) << .score ) filteredMemberScores
+      |> Maybe.map warBonusFromString
   in
     { pseudo = memberWarScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
@@ -875,6 +871,12 @@ filterMemberWarScores statsFilter memberWarScores =
       |> List.map ( Maybe.map .damage )
       |> List.map ( Maybe.withDefault 0 ) -- Default value not reachable, cf filter
       |> List.maximum
+    , progression = List.map .score filteredMemberScores
+      |> List.filter hasValue
+      |> List.map ( Maybe.map .damage )
+      |> List.map ( Maybe.withDefault 0 ) -- Default value not reachable, cf filter
+      |> List.indexedMap (\index damage -> [index, damage] )
+      |> computeLinearRegression 2
     , preferredWarBonus = preferredWarBonus
     , warScores = filteredMemberScores
     }
@@ -895,7 +897,7 @@ decodeStats statsAsString = decodeRawStats statsAsString |> parseRawStats
 
 retrieveMemberWarScores : Int -> List ( FilteredMemberWarScores ) -> FilteredMemberWarScores
 retrieveMemberWarScores index memberWarScoresList = Maybe.withDefault
-  ( FilteredMemberWarScores "" ( AverageMemberScore False 0 0 ) Nothing Nothing [] ) -- Can't fail anyway, checked before that
+  ( FilteredMemberWarScores "" ( AverageMemberScore False 0 0 ) Nothing (RegressionResult 0 0 (\_ -> 0)) Nothing [] ) -- Can't fail anyway, checked before that
   ( getAt index memberWarScoresList )
 
 mergeTeamValues : AverageMemberScore -> AverageMemberScore -> Float

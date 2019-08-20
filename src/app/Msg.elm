@@ -4,6 +4,7 @@ import Browser exposing (UrlRequest)
 import Http
 import Url exposing (Url)
 
+import Wars exposing (WarBonus)
 import Titans exposing (DetailedColor)
 
 type Msg
@@ -30,4 +31,4 @@ type StatsFilterMsg
   | NewTitanColorSelected DetailedColor
   | NewTitanStarsSelected  ( Maybe Int )
   | NewWarPeriodSelected Int
-  | NewWarBonusSelected  ( Maybe String )
+  | NewWarBonusSelected  ( WarBonus )

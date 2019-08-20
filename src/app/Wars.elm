@@ -1,20 +1,26 @@
-module Wars exposing (warBonuses, warBonusFromString, sanitizeExternalWarBonus)
+module Wars exposing (WarBonus, warBonuses, warBonusFromString, allWarBonuses)
 
-warBonusFromString : String -> Maybe String
-warBonusFromString externalWarBonus =
-  List.filter ((==) externalWarBonus) warBonuses
-   |> List.head
+type alias WarBonus =
+  { name : String
+  , icon : String
+  }
 
-sanitizeExternalWarBonus : String -> String
-sanitizeExternalWarBonus externalWarBonus = warBonusFromString externalWarBonus |> Maybe.withDefault defaultWarBonus
+equals : String -> WarBonus -> Bool
+equals warBonusAsString warBonus = warBonusAsString == warBonus.name
 
-defaultWarBonus : String
-defaultWarBonus = "UNKNOWN_BONUS"
+warBonusFromString : String -> WarBonus
+warBonusFromString warBonusAsString =List.filter ( equals warBonusAsString ) warBonuses
+ |> List.head
+ |> Maybe.withDefault allWarBonuses
 
-warBonuses : List String
+
+allWarBonuses : WarBonus
+allWarBonuses = { name = "ALL", icon = "fas fa-question" }
+
+warBonuses : List WarBonus
 warBonuses =
-  [ "HEAL"
-  , "ATTACK"
-  , "ARROWS"
-  , defaultWarBonus
+  [ allWarBonuses
+  , WarBonus "HEAL"    "fas fa-heartbeat"
+  , WarBonus "ATTACK"  "fas fa-arrow-up"
+  , WarBonus "ARROWS"  "fas fa-bullseye"
   ]

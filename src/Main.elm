@@ -16,6 +16,7 @@ import Url exposing (Url)
 
 import Msg exposing (..)
 import Pagination exposing (..)
+import Wars exposing (WarBonus)
 import NavBar exposing (viewNavBar)
 import MaybeExtra exposing (hasValue)
 import Spinner exposing (viewSpinner)
@@ -51,7 +52,7 @@ type alias Model =
   , filteredTitanColor : DetailedColor
   , filteredTitanStars : Maybe Int
   , filteredWarPeriod : Int
-  , filteredWarBonus : Maybe String
+  , filteredWarBonus : WarBonus
 
   -- Stats
   , stats: Maybe Stats

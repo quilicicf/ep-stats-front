@@ -85,6 +85,7 @@
     color: var(--white);
     background-color: var(--primary-neutral-darkest);
     //@formatter:off
+    //noinspection CssInvalidFunction
     clip-path: polygon(
         0%                                                  0%,
         calc(var(--label-width) - var(--label-arrow-size))  0%,
@@ -183,6 +184,7 @@
     width: var(--tooltip-width);
 
     //@formatter:off
+    //noinspection CssInvalidFunction
     clip-path: polygon(
         0%                                     0%,
         100%                                   0%,
@@ -201,6 +203,7 @@
     bottom: calc(var(--label-height) / 2);
 
     //@formatter:off
+    //noinspection CssInvalidFunction
     clip-path: polygon(
         0%    calc((100% - var(--start-percent-to-max)) + (var(--offset-ratio) * var(--line-width))),
         100%  calc((100% - var(--end-percent-to-max)) + (var(--offset-ratio) * var(--line-width))),
@@ -247,5 +250,9 @@
 
   .titan-color-dark {
     color: var(--dark);
+  }
+
+  .war-bonus {
+    color: var(--primary-color);
   }
 }

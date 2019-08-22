@@ -1,4 +1,4 @@
-module StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, viewTitansFilterForm, viewWarsFilterForm, updateStatsFilters)
+module StatsFilter exposing (StatsFilter, StatsFilterExtender, createDefaultStatsFilter, viewTitansFilterForm, viewWarsFilterForm, updateStatsFilters)
 
 import Html exposing (..)
 import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
@@ -7,7 +7,7 @@ import Maybe exposing (..)
 
 import Msg exposing (..)
 import Optionize exposing (optionize)
-import AllianceName exposing (allianceName)
+import Translations exposing (Translations, TranslationsExtender)
 import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
 import Wars exposing (WarBonus, warBonuses, allWarBonuses, warBonusFromString)
 
@@ -34,9 +34,9 @@ type alias StatsFilter = StatsFilterExtender {}
 -- UTILS --
 -----------
 
-defaultStatsFilter : StatsFilter
-defaultStatsFilter =
-  { filteredMember = allianceName
+createDefaultStatsFilter : Translations -> StatsFilter
+createDefaultStatsFilter translations =
+  { filteredMember = translations.alliance
   , filteredTitanPeriod = 30
   , filteredTitanColor = allTitanColors
   , filteredTitanStars = Nothing
@@ -48,50 +48,59 @@ defaultStatsFilter =
 -- VIEW --
 ----------
 
-viewTitansFilterForm : StatsFilterExtender r -> List String -> Html Msg
-viewTitansFilterForm statsFilter members =
+type alias Model r = StatsFilterExtender (TranslationsExtender r)
+
+viewTitansFilterForm : Model r -> List String -> Html Msg
+viewTitansFilterForm model members =
+  let
+    defaultStatsFilter : StatsFilter
+    defaultStatsFilter = createDefaultStatsFilter model.translations
+
+    titanColorNameExtractor : DetailedColor -> String
+    titanColorNameExtractor color = color.nameGetter model.translations
+  in
   Html.form [ class "stat-filters" ]
-    [ h2 [] [ text "Filter the stats" ]
+    [ h2 [] [ text model.translations.filters ]
     , div [ class "form-field-inline" ]
-        [ label [ for "member" ] [ text "Member" ]
+        [ label [ for "member" ] [ text model.translations.member ]
         , select
             [ id "member"
             , onInput ( StatsFilterMsg << NewMemberSelected )
             ]
-            ( optionize statsFilter.filteredMember members )
+            ( optionize model.filteredMember members )
         ]
     , div [ class "form-field-inline" ]
-        [ label [ for "period" ] [ text "Period" ]
+        [ label [ for "period" ] [ text model.translations.period ]
         , input
             [ id "period"
             , type_ "number"
             , min "10"
             , max "120"
             , step "10"
-            , value ( String.fromInt statsFilter.filteredTitanPeriod )
+            , value ( String.fromInt model.filteredTitanPeriod )
             , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultStatsFilter.filteredTitanPeriod ) << String.toInt )
             ]
             []
         ]
     , div [ class "form-field-inline" ]
-        [ label [ for "color" ] [ text "Color" ]
+        [ label [ for "color" ] [ text model.translations.color ]
         , select
             [ id "color"
             , onInput colorFilterGuesser
             ]
             ( optionize
-              ( statsFilter.filteredTitanColor |> .name )
-              ( List.map .name titanColors )
+              ( model.filteredTitanColor |> titanColorNameExtractor )
+              ( List.map titanColorNameExtractor titanColors )
             )
         ]
     , div [ class "form-field-inline" ]
-        [ label [ for "stars" ] [ text "Stars" ]
+        [ label [ for "stars" ] [ text model.translations.stars ]
         , select
             [ id "stars"
             , onInput starsFilterGuesser
             ]
             ( optionize
-              ( Maybe.map String.fromInt statsFilter.filteredTitanStars |> withDefault allStarsFilter )
+              ( Maybe.map String.fromInt model.filteredTitanStars |> withDefault allStarsFilter )
               ( starsOptions )
             )
         ]
@@ -112,43 +121,50 @@ starsFilterGuesser starsFilterAsString =
   then ( StatsFilterMsg << NewTitanStarsSelected ) Nothing
   else ( StatsFilterMsg << NewTitanStarsSelected << String.toInt ) starsFilterAsString
 
-viewWarsFilterForm : StatsFilterExtender r -> List String -> Html Msg
-viewWarsFilterForm statsFilter members =
-  Html.form [ class "stat-filters" ]
-    [ h2 [] [ text "Filter the stats" ]
-    , div [ class "form-field-inline" ]
-        [ label [ for "member" ] [ text "Member" ]
-        , select
-            [ id "member"
-            , onInput ( StatsFilterMsg << NewMemberSelected )
-            ]
-            ( optionize statsFilter.filteredMember members )
-        ]
-    , div [ class "form-field-inline" ]
-        [ label [ for "period" ] [ text "Period" ]
-        , input
-            [ id "period"
-            , type_ "number"
-            , min "10"
-            , max "120"
-            , step "10"
-            , value ( String.fromInt statsFilter.filteredWarPeriod )
-            , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultStatsFilter.filteredWarPeriod ) << String.toInt )
-            ]
-            []
-        ]
-    , div [ class "form-field-inline" ]
-        [ label [ for "bonus" ] [ text "Bonus" ]
-        , select
-            [ id "bonus"
-            , onInput bonusFilterGuesser
-            ]
-            ( optionize
-              ( statsFilter.filteredWarBonus |> .name )
-              ( List.map .name warBonuses )
-            )
-        ]
-    ]
+viewWarsFilterForm : Model r -> List String -> Html Msg
+viewWarsFilterForm model members =
+  let
+    defaultStatsFilter : StatsFilter
+    defaultStatsFilter = createDefaultStatsFilter model.translations
+
+    warBonusNameExtractor : WarBonus -> String
+    warBonusNameExtractor bonus = bonus.nameGetter model.translations
+  in
+    Html.form [ class "stat-filters" ]
+      [ h2 [] [ text model.translations.filters ]
+      , div [ class "form-field-inline" ]
+          [ label [ for "member" ] [ text model.translations.member ]
+          , select
+              [ id "member"
+              , onInput ( StatsFilterMsg << NewMemberSelected )
+              ]
+              ( optionize model.filteredMember members )
+          ]
+      , div [ class "form-field-inline" ]
+          [ label [ for "period" ] [ text model.translations.period ]
+          , input
+              [ id "period"
+              , type_ "number"
+              , min "10"
+              , max "120"
+              , step "10"
+              , value ( String.fromInt model.filteredWarPeriod )
+              , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultStatsFilter.filteredWarPeriod ) << String.toInt )
+              ]
+              []
+          ]
+      , div [ class "form-field-inline" ]
+          [ label [ for "bonus" ] [ text model.translations.bonus ]
+          , select
+              [ id "bonus"
+              , onInput bonusFilterGuesser
+              ]
+              ( optionize
+                ( model.filteredWarBonus |> warBonusNameExtractor )
+                ( List.map warBonusNameExtractor warBonuses )
+              )
+          ]
+      ]
 
 bonusFilterGuesser : String -> Msg
 bonusFilterGuesser bonusFilterAsString = ( StatsFilterMsg << NewWarBonusSelected << warBonusFromString ) bonusFilterAsString

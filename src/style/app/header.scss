@@ -1,9 +1,38 @@
-.header {
-  margin: 0;
-  padding: 1rem 0;
+.header-bar {
+  --language-height: 1rem;
+  --language-width: 2rem;
+  --language-switcher-padding: .5rem;
+  --language-switcher-width: calc(var(--language-width) * var(--languages-number) + var(--language-switcher-padding));
+
   background-color: var(--primary-neutral-darkest);
   color: var(--primary-neutral-lightest);
-  text-align: center;
+
+  display: grid;
+  grid-template: "title language-switcher" 1fr / 1fr var(--language-switcher-width);
+
+  .header {
+    grid-area: title;
+    margin: 0;
+    padding: 1rem 0;
+    text-align: center;
+  }
+
+  .language-switcher {
+    grid-area: language-switcher;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: var(--language-switcher-padding);
+  }
+
+  .language {
+    padding: 0;
+    margin: 0;
+    border: none;
+    height: var(--language-height);
+    width: var(--language-width);
+  }
 }
 
 .nav-bar {

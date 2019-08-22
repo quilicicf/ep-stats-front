@@ -17,8 +17,10 @@
 
   const storedState = localStorage.getItem(STATE_KEY);
   const startingState = storedState ? JSON.parse(storedState) : null;
+  const navigatorLanguage = navigator.language;
+
   const app = Elm.Main.init({
-    flags: startingState,
+    flags: { ...startingState, navigatorLanguage },
     node: document.getElementById('elm'),
   });
 

@@ -5,23 +5,24 @@ import Html.Attributes exposing (..)
 import Maybe exposing (withDefault)
 
 import Msg exposing (..)
+import Translations exposing (Translations)
 import Pagination exposing (Page(..), findPath, findName)
 
 pagesLinked : List Page
 pagesLinked = [ AlliancePage, TitansPage, WarsPage ]
 
-viewNavBar : Page -> Html Msg
-viewNavBar currentPage =
+viewNavBar : Page -> Translations -> Html Msg
+viewNavBar currentPage translations =
   let
     isCurrentPageLinkable : Bool
     isCurrentPageLinkable = List.member currentPage pagesLinked
   in
     nav
       [ class "nav-bar", hidden ( not isCurrentPageLinkable ) ]
-      ( List.map ( viewNavBarElement currentPage ) pagesLinked )
+      ( List.map ( viewNavBarElement currentPage translations ) pagesLinked )
 
-viewNavBarElement : Page -> Page -> Html Msg
-viewNavBarElement currentPage pageForLink =
+viewNavBarElement : Page -> Translations -> Page -> Html Msg
+viewNavBarElement currentPage translations pageForLink =
   let
     cssClass : String
     cssClass =if currentPage == pageForLink
@@ -30,4 +31,4 @@ viewNavBarElement currentPage pageForLink =
   in
     a
       [ href ( findPath pageForLink |> withDefault "#" ), class cssClass ]
-      [ text ( findName pageForLink |> withDefault "Unknown page" ) ]
+      [ text ( findName pageForLink translations |> withDefault "Unknown page" ) ]

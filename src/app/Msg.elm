@@ -6,10 +6,12 @@ import Url exposing (Url)
 
 import Wars exposing (WarBonus)
 import Titans exposing (DetailedColor)
+import Internationalization exposing (Language)
 
 type Msg
   = LinkClicked UrlRequest
   | UrlChanged Url
+  | LanguageUpdated Language
   | AppConfigMsg AppConfigMsg
   | StatsMsg StatsMsg
   | StatsFilterMsg StatsFilterMsg

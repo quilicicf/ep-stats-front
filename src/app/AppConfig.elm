@@ -5,21 +5,21 @@ module AppConfig exposing (
   )
 
 import Base64
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-
 import Json.Decode as Decode exposing(Value, Decoder, maybe, string, bool)
 import Json.Encode as Encode
-
 import Json.Decode.Pipeline exposing (required, optional)
 
 import Msg exposing (..)
+import Translations exposing (TranslationsExtender)
 
 ------------
 -- MODELS --
 ------------
+
+type alias Model r = TranslationsExtender ( AppConfigExtender r )
 
 type alias AppConfig =
   { teamName: String
@@ -39,6 +39,7 @@ type alias AppConfigExtender r =
 type alias StorageAppState =
   { appKey: String
   , accessToken: Maybe String
+  , selectedLanguage: String
   }
 
 -----------
@@ -71,12 +72,13 @@ storageAppStateDecoder =
   Decode.succeed StorageAppState
     |> optional "appKey" string ""
     |> optional "accessToken" (maybe string) Nothing
+    |> optional "selectedLanguage" string "defaultLanguage"
 
 decodeStorageAppState : Value -> StorageAppState
 decodeStorageAppState appKeyAsJson =
   case Decode.decodeValue storageAppStateDecoder appKeyAsJson of
     Ok appState -> appState
-    Err _ -> StorageAppState "" Nothing
+    Err _ -> StorageAppState "" Nothing "defaultLanguage"
 
 decodeAppConfigFromAppKey : String -> Maybe AppConfig
 decodeAppConfigFromAppKey appKeyInBase64 =
@@ -91,62 +93,62 @@ decodeAppConfigFromAppKey appKeyInBase64 =
 -- VIEW --
 ----------
 
-viewAppConfig : AppConfigExtender r -> Html Msg
-viewAppConfig appConfig =
+viewAppConfig : Model r -> Html Msg
+viewAppConfig model =
   Html.form [ class "configure-alliance" ]
-    [ h2 [] [ text "Configure your Alliance" ]
+    [ h2 [] [ text model.translations.configureYourAlliance ]
     , div [ class "form-field-inline" ]
       [ label [ for "teamName" ] [ text "Team name" ]
-      , input [ type_ "text", id "teamName", value appConfig.teamName, onInput (AppConfigMsg << NewTeamName) ] []
+      , input [ type_ "text", id "teamName", value model.teamName, onInput (AppConfigMsg << NewTeamName) ] []
       ]
     , div [ class "form-field-inline" ]
       [ label [ for "sheetId" ] [ text "Sheet id" ]
-      , input [ type_ "text", id "sheetId", value appConfig.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
+      , input [ type_ "text", id "sheetId", value model.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
       ]
     , div []
       [ button
         [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg CreateAppConfig) ]
-        [ text "Create" ]
+        [ text model.translations.create ]
       ]
     ]
 
-viewAppKeyCopier : AppConfigExtender r -> Html Msg
-viewAppKeyCopier appConfig =
+viewAppKeyCopier : Model r -> Html Msg
+viewAppKeyCopier model =
   let
     adminAppKey : String
-    adminAppKey = encodeAppConfig appConfig True
+    adminAppKey = encodeAppConfig model True
 
     peonAppKey : String
-    peonAppKey = encodeAppConfig appConfig False
+    peonAppKey = encodeAppConfig model False
 
   in
     div [ class "copy-app-key" ] [
-      h2 [] [ text "Copy the keys and validate" ],
+      h2 [] [ text model.translations.copyTheKeysAndValidate ],
       div [ class "form-field" ] [
-        label [] [ text "Admin key" ],
+        label [] [ text model.translations.adminKey ],
         textarea [ id "admin-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text adminAppKey ],
         button
           [ type_ "button", class "button", class "button-secondary", attribute "data-copy-to-clipboard" "#admin-key" ]
-          [ text "Copy!" ]
+          [ text model.translations.copy ]
       ],
       div [ class "form-field" ] [
-        label [] [ text "Peon key" ],
+        label [] [ text model.translations.peonKey ],
         textarea [ id "peon-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text peonAppKey ],
         button
           [ type_ "button", class "button", class "button-secondary", attribute "data-copy-to-clipboard" "#peon-key" ]
-          [ text "Copy!" ]
+          [ text model.translations.copy ]
       ],
       button
         [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKeys adminAppKey)) ]
-        [ text "I've stored'em away" ]
+        [ text model.translations.iveStoredThemAway ]
     ]
 
-viewAppKeyInput : AppConfigExtender r -> Html Msg
-viewAppKeyInput { appKeyError } =
+viewAppKeyInput : Model r -> Html Msg
+viewAppKeyInput { translations, appKeyError } =
   Html.form [ class "input-app-key" ]
-    [ h2 [] [ text "Paste your app key" ]
+    [ h2 [] [ text translations.pasteAppKey ]
     , div [ class "form-field-inline" ]
-        [ label [ for "appKey" ] [ text "App key" ]
+        [ label [ for "appKey" ] [ text translations.appKey ]
         , input
             [ type_ "text"
             , id "appKey"
@@ -158,7 +160,7 @@ viewAppKeyInput { appKeyError } =
     , div []
         [ button
             [ type_ "button", class "button", class "button-primary", onClick (AppConfigMsg InputAppKey) ]
-            [ text "See" ]
+            [ text translations.see ]
         ]
     ]
 
@@ -166,7 +168,7 @@ viewAppKeyInput { appKeyError } =
 -- UPDATE --
 ------------
 
-updateAppConfig : AppConfigMsg -> AppConfigExtender r -> AppConfigExtender r
+updateAppConfig : AppConfigMsg -> Model r -> Model r
 updateAppConfig msg model =
   case msg of
     NewTeamName newTeamName -> { model | teamName = newTeamName }
@@ -194,4 +196,4 @@ updateAppConfig msg model =
             , isAdmin = result.isAdmin
             , appKeyError = ""
             }
-          Nothing -> { model | appKeyError = "Invalid app key!" }
+          Nothing -> { model | appKeyError = model.translations.invalidAppKey }

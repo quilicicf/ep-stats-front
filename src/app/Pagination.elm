@@ -2,6 +2,7 @@ module Pagination exposing (Page(..), findPage, findPath, findName, pushPage)
 
 import AssocList as Dict exposing (Dict)
 import Browser.Navigation exposing (Key, pushUrl)
+import Translations exposing (Translations)
 import Tuple3 exposing (..)
 import Url exposing (..)
 
@@ -10,25 +11,25 @@ import Msg exposing (..)
 notFoundPath : String
 notFoundPath = "/notFound"
 
-pages : List (Page, String, String)
+pages : List (Page, String, (Translations -> String))
 pages = [
 --  Landing page
-  ( AppKeyPage, "/", "App key" ),
+  ( AppKeyPage, "/", .appKey ),
 
 -- Not accessible (at least in theory XD)
-  ( AuthorizedPage, "/authorized", "Authorization callback" ),
+  ( AuthorizedPage, "/authorized", .authorizationCallback ),
 
 --  App configuration
-  ( AppConfigPage, "/appConfig", "App config" ),
-  ( AppKeyCopierPage, "/appKeyCopy", "App key copy" ),
+  ( AppConfigPage, "/appConfig",  .appConfig),
+  ( AppKeyCopierPage, "/appKeyCopy", .appKeyCopy ),
 
 --  Stats
-  ( AlliancePage, "/alliance", "Alliance" ),
-  ( TitansPage, "/titans", "Titans" ),
-  ( WarsPage, "/wars", "Wars" ),
+  ( AlliancePage, "/alliance", .alliance ),
+  ( TitansPage, "/titans", .titans ),
+  ( WarsPage, "/wars", .wars ),
 
 --  Errors
-  ( NotFoundPage, notFoundPath, "Not found" )
+  ( NotFoundPage, notFoundPath, .notFound )
   ]
 
 pagesToPaths : Dict Page String
@@ -37,8 +38,8 @@ pagesToPaths = List.map (\page -> (Tuple3.first page, Tuple3.second page) ) page
 pathsToPages : Dict String Page
 pathsToPages = List.map (\page -> (Tuple3.second page, Tuple3.first page) ) pages |> Dict.fromList
 
-pagesToNames : Dict Page String
-pagesToNames = List.map (\page -> (Tuple3.first page, Tuple3.third page) ) pages |> Dict.fromList
+pagesToNameGetters : Dict Page (Translations -> String)
+pagesToNameGetters = List.map (\page -> (Tuple3.first page, Tuple3.third page) ) pages |> Dict.fromList
 
 type Page
 --  Landing page
@@ -65,8 +66,8 @@ findPage url = Dict.get url.path pathsToPages
 findPath : Page -> Maybe String
 findPath page = Dict.get page pagesToPaths
 
-findName : Page -> Maybe String
-findName page = Dict.get page pagesToNames
+findName : Page -> Translations -> Maybe String
+findName page translations = Dict.get page pagesToNameGetters |> Maybe.map (\getter -> getter translations)
 
 pushPage : Key -> Page -> Cmd Msg
 pushPage key page = pushUrl key ( findPath page |> Maybe.withDefault notFoundPath )

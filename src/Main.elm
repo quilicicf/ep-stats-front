@@ -3,15 +3,13 @@ port module Main exposing (main)
 import Browser exposing (application, UrlRequest, Document)
 import Browser.Navigation exposing (Key, load, pushUrl)
 
+import CustomStyle exposing (customStyle)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-
+import Html.Events exposing (..)
 import Http exposing (..)
-
 import Json.Decode exposing (Value, Decoder)
-
 import Maybe exposing (withDefault)
-
 import Url exposing (Url)
 
 import Msg exposing (..)
@@ -21,8 +19,10 @@ import NavBar exposing (viewNavBar)
 import MaybeExtra exposing (hasValue)
 import Spinner exposing (viewSpinner)
 import Titans exposing (DetailedColor)
+import Translations exposing (Translations)
 import Authorization exposing (makeAuthorizationUrl, readAccessToken)
-import StatsFilter exposing (StatsFilterExtender, defaultStatsFilter, updateStatsFilters)
+import StatsFilter exposing (StatsFilter, StatsFilterExtender, createDefaultStatsFilter, updateStatsFilters)
+import Internationalization exposing (Language(..), languages, findLanguage, languageToString, getTranslations)
 import Stats exposing (
   Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
   fetchAllStats, updateStats, updateStatsWithFilter,
@@ -64,16 +64,23 @@ type alias Model =
   , baseUrl: Url
   , currentPage: Page
   , navigationKey: Key
+
+  -- Internationalization
+  , language: Language
+  , translations: Translations
   }
 
-createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> Model
-createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl =
+createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> Language -> Translations -> Model
+createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl language translations =
   let
     appConfig : AppConfig
     appConfig = withDefault (AppConfig "" "" False) maybeAppConfig
 
     baseUrl : Url
     baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
+
+    defaultStatsFilter : StatsFilter
+    defaultStatsFilter = createDefaultStatsFilter translations
 
   in
     { teamName = appConfig.teamName
@@ -101,6 +108,10 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl =
     , baseUrl = baseUrl
     , currentPage = AppKeyPage
     , navigationKey = key
+
+    -- Internationalization
+    , language = language
+    , translations = translations
     }
 
 type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated
@@ -108,18 +119,26 @@ type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
   let
-      storageAppState : StorageAppState
-      storageAppState = decodeStorageAppState flags
+      { appKey, accessToken, selectedLanguage } = decodeStorageAppState flags
+
+      language : Language
+      language = findLanguage selectedLanguage
+
+      languageAsString : String
+      languageAsString = languageToString language
+
+      translations : Translations
+      translations = getTranslations language
 
       maybeAppConfig : Maybe AppConfig
-      maybeAppConfig = decodeAppConfigFromAppKey storageAppState.appKey
+      maybeAppConfig = decodeAppConfigFromAppKey appKey
 
       loadingPage : Maybe Page
       loadingPage = findPage url
 
       initialCase : InitCase
       initialCase = if ( loadingPage == Just AuthorizedPage ) then Authenticating
-        else if (hasValue maybeAppConfig) && (hasValue storageAppState.accessToken) then  Authenticated
+        else if (hasValue maybeAppConfig) && (hasValue accessToken) then  Authenticated
         else if (hasValue maybeAppConfig) then WithAppKey
         else FirstVisit
 
@@ -127,7 +146,7 @@ init flags url key =
       maybeAccessToken = readAccessToken url
 
       initialModel: Model
-      initialModel = createInitialModel maybeAppConfig storageAppState.appKey storageAppState.accessToken key url
+      initialModel = createInitialModel maybeAppConfig appKey accessToken key url language translations
 
   in
     case initialCase of
@@ -136,7 +155,7 @@ init flags url key =
       Authenticating -> (
           { initialModel | currentPage = AuthorizedPage , accessToken = maybeAccessToken },
           Cmd.batch [
-            setStorage ( StorageAppState initialModel.appKey maybeAccessToken ),
+            setStorage ( StorageAppState initialModel.appKey maybeAccessToken languageAsString ),
             pushPage initialModel.navigationKey AlliancePage,
             fetchAllStats initialModel.sheetId (withDefault "" maybeAccessToken)
           ]
@@ -183,6 +202,11 @@ update msg model =
       in
         ( { model | currentPage = newPage }, Cmd.none )
 
+    LanguageUpdated newLanguage ->
+      ( { model | language = newLanguage, translations = getTranslations newLanguage }
+      , setStorage ( StorageAppState model.appKey model.accessToken ( newLanguage |> languageToString ) )
+      )
+
     AppConfigMsg appConfigMsg ->
       let
         newModel : Model
@@ -196,7 +220,7 @@ update msg model =
           CopiedAppKeys appKey -> (
             newModel,
             Cmd.batch [
-              setStorage (StorageAppState appKey model.accessToken),
+              setStorage ( StorageAppState appKey model.accessToken (model.language |> languageToString) ),
               pushPage model.navigationKey AlliancePage,
               fetchAllStats model.sheetId (withDefault "" model.accessToken)
             ])
@@ -204,7 +228,7 @@ update msg model =
           InputAppKey -> (
             newModel,
             Cmd.batch [
-              setStorage (StorageAppState model.appKey model.accessToken),
+              setStorage ( StorageAppState model.appKey model.accessToken (model.language |> languageToString) ),
               load ( makeAuthorizationUrl model.baseUrl )
             ])
 
@@ -244,27 +268,52 @@ view model =
 
     WarsPage -> createDocument model (viewWarsStats model)
 
-    NotFoundPage -> createDocument model (text "Not found")
+    NotFoundPage -> createDocument model (text model.translations.notFound )
 
-    AuthorizedPage -> createDocument model ( viewSpinner "Authenticating..." )
+    AuthorizedPage -> createDocument model ( viewSpinner "" )
 
 
-createDocument : { r | teamName: String, currentPage: Page } -> Html Msg -> Document Msg
-createDocument { teamName, currentPage } body =
+createDocument : { r | teamName: String, currentPage: Page, language: Language, translations: Translations } -> Html Msg -> Document Msg
+createDocument { teamName, currentPage, language, translations } body =
   let
     title: String
-    title = if teamName == "" then "EP stats" else "EP stats - " ++ teamName
+    title = if teamName == ""
+      then translations.appTitle
+      else translations.appTitle ++ " - " ++ teamName
   in
     { title = title
     , body = [
         div
           []
-          [ h1 [ class "header" ] [ text title ]
-          , viewNavBar currentPage
+          [ viewHeaderBar { title = title, language = language }
+          , (viewNavBar currentPage translations)
           , body
           ]
       ]
     }
+
+viewHeaderBar : { r | title: String, language: Language } -> Html Msg
+viewHeaderBar { title, language } =
+  let
+    style : Attribute msg
+    style = customStyle [ ("--languages-number", List.length languages |> String.fromInt) ]
+  in
+    div [ class "header-bar", style ] [
+      h1 [ class "header" ] [ text title ],
+      viewLanguageSwitcher language
+    ]
+
+viewLanguageSwitcher : Language -> Html Msg
+viewLanguageSwitcher appLanguage =
+  div
+    [ class "language-switcher" ]
+    ( List.map ( viewLanguage appLanguage ) languages )
+
+viewLanguage : Language -> ( String, Language ) -> Html Msg
+viewLanguage appLanguage (languageAsString, language) =
+  button
+    [ class "language", disabled ( appLanguage == language ), onClick ( LanguageUpdated language )  ]
+    [ text languageAsString ]
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none

@@ -1,16 +1,18 @@
-module Optionize exposing (optionize)
+module Optionize exposing (optionizeStrings, optionizeObjects)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
-import Msg exposing (..)
+optionizeStrings : String -> List String -> List ( Html msg )
+optionizeStrings selectedValue allValues =
+  List.map ( optionizeValue identity identity selectedValue ) allValues
 
-optionize : String -> List String -> List ( Html Msg )
-optionize selectedValue values =
-  List.map ( optionize_ selectedValue ) values
+optionizeObjects : ( a -> String ) -> ( a -> String ) -> a -> List a -> List ( Html msg )
+optionizeObjects idExtractor labelExtractor selectedValue allValues =
+  List.map ( optionizeValue idExtractor labelExtractor selectedValue ) allValues
 
-optionize_ : String -> String -> Html Msg
-optionize_ selectedValue value_ =
+optionizeValue : ( a -> String ) -> ( a -> String ) -> a -> a -> Html msg
+optionizeValue idExtractor labelExtractor selectedValue currentValue =
   option
-    [ selected ( value_ == selectedValue ), value value_ ]
-    [ text value_ ]
+    [ selected ( currentValue == selectedValue ), value <| idExtractor currentValue ]
+    [ text <| labelExtractor currentValue ]

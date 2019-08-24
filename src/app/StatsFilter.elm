@@ -6,7 +6,7 @@ import Html.Events exposing (onInput)
 import Maybe exposing (..)
 
 import Msg exposing (..)
-import Optionize exposing (optionize)
+import Optionize exposing (optionizeObjects, optionizeStrings)
 import Translations exposing (Translations, TranslationsExtender)
 import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
 import Wars exposing (WarBonus, warBonuses, allWarBonuses, warBonusFromString)
@@ -67,7 +67,7 @@ viewTitansFilterForm model members =
             [ id "member"
             , onInput ( StatsFilterMsg << NewMemberSelected )
             ]
-            ( optionize model.filteredMember members )
+            ( optionizeStrings model.filteredMember members )
         ]
     , div [ class "form-field-inline" ]
         [ label [ for "period" ] [ text model.translations.period ]
@@ -85,13 +85,8 @@ viewTitansFilterForm model members =
     , div [ class "form-field-inline" ]
         [ label [ for "color" ] [ text model.translations.color ]
         , select
-            [ id "color"
-            , onInput colorFilterGuesser
-            ]
-            ( optionize
-              ( model.filteredTitanColor |> titanColorNameExtractor )
-              ( List.map titanColorNameExtractor titanColors )
-            )
+            [ id "color" , onInput colorFilterGuesser ]
+            ( optionizeObjects .code titanColorNameExtractor model.filteredTitanColor titanColors )
         ]
     , div [ class "form-field-inline" ]
         [ label [ for "stars" ] [ text model.translations.stars ]
@@ -99,7 +94,7 @@ viewTitansFilterForm model members =
             [ id "stars"
             , onInput starsFilterGuesser
             ]
-            ( optionize
+            ( optionizeStrings
               ( Maybe.map String.fromInt model.filteredTitanStars |> withDefault allStarsFilter )
               ( starsOptions )
             )
@@ -138,7 +133,7 @@ viewWarsFilterForm model members =
               [ id "member"
               , onInput ( StatsFilterMsg << NewMemberSelected )
               ]
-              ( optionize model.filteredMember members )
+              ( optionizeStrings model.filteredMember members )
           ]
       , div [ class "form-field-inline" ]
           [ label [ for "period" ] [ text model.translations.period ]
@@ -156,13 +151,8 @@ viewWarsFilterForm model members =
       , div [ class "form-field-inline" ]
           [ label [ for "bonus" ] [ text model.translations.bonus ]
           , select
-              [ id "bonus"
-              , onInput bonusFilterGuesser
-              ]
-              ( optionize
-                ( model.filteredWarBonus |> warBonusNameExtractor )
-                ( List.map warBonusNameExtractor warBonuses )
-              )
+              [ id "bonus" , onInput bonusFilterGuesser ]
+              ( optionizeObjects .code warBonusNameExtractor model.filteredWarBonus warBonuses )
           ]
       ]
 

@@ -1,6 +1,6 @@
 .header-bar {
   --language-height: 1rem;
-  --language-width: 2rem;
+  --language-width: calc(4 / 3 * var(--language-height));
   --language-switcher-padding: .5rem;
   --language-switcher-width: calc(var(--language-width) * var(--languages-number) + var(--language-switcher-padding));
 
@@ -8,7 +8,7 @@
   color: var(--primary-neutral-lightest);
 
   display: grid;
-  grid-template: "title language-switcher" 1fr / 1fr var(--language-switcher-width);
+  grid-template: "padding title language-switcher" 1fr / var(--language-switcher-width) 1fr var(--language-switcher-width);
 
   .header {
     grid-area: title;
@@ -30,6 +30,18 @@
     padding: 0;
     margin: 0;
     border: none;
+    cursor: pointer;
+    filter: brightness(60%);
+    height: var(--language-height);
+    width: var(--language-width);
+  }
+
+  .language[disabled] {
+    filter: brightness(100%);
+    cursor: auto;
+  }
+
+  .flag {
     height: var(--language-height);
     width: var(--language-width);
   }

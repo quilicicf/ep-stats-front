@@ -10,6 +10,8 @@ import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode exposing (Value, Decoder)
 import Maybe exposing (withDefault)
+import Svg exposing (svg, use)
+import Svg.Attributes exposing (xlinkHref)
 import Url exposing (Url)
 
 import Msg exposing (..)
@@ -313,7 +315,7 @@ viewLanguage : Language -> ( String, Language ) -> Html Msg
 viewLanguage appLanguage (languageAsString, language) =
   button
     [ class "language", disabled ( appLanguage == language ), onClick ( LanguageUpdated language )  ]
-    [ text languageAsString ]
+    [ svg [ Svg.Attributes.class "flag" ] [ use [ xlinkHref ( "#flag-icon-css-" ++ languageAsString ) ] [] ] ]
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none

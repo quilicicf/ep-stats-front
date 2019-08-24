@@ -449,9 +449,9 @@ computeOutgoingLineData maybeNextScore currentPercent maxDamage =
         , lineStyle = lineStyle
         }
 
-viewTitanColor : DetailedColor -> Html Msg
-viewTitanColor { code, icon } =
-  div [ class ("bullet-point titan-color-" ++ (code |> String.toLower)) ] [
+viewTitanColor : Translations -> DetailedColor -> Html Msg
+viewTitanColor translations { code, nameGetter, icon } =
+  div [ class ("bullet-point titan-color-" ++ (code |> String.toLower)), title <| nameGetter translations ] [
     i [ class icon ] []
   ]
 
@@ -486,7 +486,7 @@ viewGenericTitanScore translations maxDamage (maybePreviousScore, currentScore, 
     div [ class "member-stat", percentFromMaxStyle ] [
       div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
       div [ class "member-damage" ] [
-        viewTitanColor currentScore.titanColor,
+        viewTitanColor translations currentScore.titanColor,
         div [ class "tooltip-trigger" ] [
           p [ class "tooltip" ] [
             span [] [
@@ -503,9 +503,9 @@ viewGenericTitanScore translations maxDamage (maybePreviousScore, currentScore, 
       div [ class outgoingLineData.lineType, outgoingLineData.lineStyle ] []
     ]
 
-viewWarBonus : WarBonus -> Html Msg
-viewWarBonus { code, icon } =
-  div [ class ("bullet-point war-bonus war-bonus-" ++ (code |> String.toLower)) ] [
+viewWarBonus : Translations -> WarBonus -> Html Msg
+viewWarBonus translations { code, nameGetter, icon } =
+  div [ class ("bullet-point war-bonus war-bonus-" ++ (code |> String.toLower)), title <| nameGetter translations ] [
     i [ class icon ] []
   ]
 
@@ -540,7 +540,7 @@ viewGenericWarScore translations maxDamage (maybePreviousScore, currentScore, ma
     div [ class "member-stat", percentFromMaxStyle ] [
       div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
       div [ class "member-damage" ] [
-        viewWarBonus currentScore.warBonus,
+        viewWarBonus translations currentScore.warBonus,
         div [ class "tooltip-trigger" ] [
           p [ class "tooltip" ] [
             span [] [ text warBonusName ],
@@ -567,19 +567,19 @@ viewValidAllianceStats { translations } allianceStats =
       div [ class "alliance-stats" ] [
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.averageTitanScore ],
-          span [ class "alliance-stat-value" ] [ text <| String.fromInt <| round <| allianceStats.averageTitanScore ]
+          span [ class "alliance-stat-value" ] [ text <| presentNumber <| round <| allianceStats.averageTitanScore ]
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.preferredTitanColor ],
-          span [ class "alliance-stat-value" ] [ text <| allianceStats.preferredTitanColor.nameGetter translations  ]
+          span [ class "alliance-stat-value" ] [ viewTitanColor translations <| allianceStats.preferredTitanColor  ]
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.averageWarScore ],
-          span [ class "alliance-stat-value" ] [ text <| String.fromInt <| round <| allianceStats.averageWarScore ]
+          span [ class "alliance-stat-value" ] [ text <| presentNumber <| round <| allianceStats.averageWarScore ]
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.preferredWarBonus ],
-          span [ class "alliance-stat-value" ] [ text <| allianceStats.preferredWarBonus.nameGetter translations ]
+          span [ class "alliance-stat-value" ] [ viewWarBonus translations <| allianceStats.preferredWarBonus ]
         ]
       ],
       h2 [] [ text translations.allianceMembers ],
@@ -596,25 +596,25 @@ viewValidAllianceStats { translations } allianceStats =
           Dict.values allianceStats.memberStats
             |> List.sortWith compareMembersStats
             |> List.reverse
-            |> List.map viewMember
+            |> List.map ( viewMember translations )
         )
       ]
     ]
   ]
 
-viewMember : MemberStats -> Html Msg
-viewMember memberStats =
+viewMember : Translations -> MemberStats -> Html Msg
+viewMember translations memberStats =
   tr [ class "member-row" ] [
     th [ class "member-pseudo" ] [ text memberStats.pseudo ],
     td
       [ class "member-value", addCompletenessClass memberStats.averageTitanScore.isComplete ]
-      [ text ( round memberStats.averageTitanScore.damage |> String.fromInt ) ],
-    td [ class "member-value" ] [ withDefault allTitanColors memberStats.preferredTitanColor |> viewTitanColor ],
+      [ text <| presentNumber <| round memberStats.averageTitanScore.damage ],
+    td [ class "member-value" ] [ viewTitanColor translations <| withDefault allTitanColors memberStats.preferredTitanColor ],
     td
       [ class "member-value", addCompletenessClass memberStats.averageWarScore.isComplete ]
-      [ text ( round memberStats.averageWarScore.damage |> String.fromInt ) ],
-    td [ class "member-value" ] [ withDefault allWarBonuses memberStats.preferredWarBonus |> viewWarBonus ],
-    td [ class "member-value" ] [ text ( round memberStats.teamValue |> String.fromInt ) ]
+      [ text <| presentNumber <| round memberStats.averageWarScore.damage ],
+    td [ class "member-value" ] [ viewWarBonus translations<| withDefault allWarBonuses memberStats.preferredWarBonus ],
+    td [ class "member-value" ] [ text <| presentNumber <| round memberStats.teamValue ]
   ]
 
 addCompletenessClass : Bool -> Attribute msg

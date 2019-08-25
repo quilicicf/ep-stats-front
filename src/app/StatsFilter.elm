@@ -92,11 +92,13 @@ viewTitansFilterForm model members =
         [ label [ for "stars" ] [ text model.translations.stars ]
         , select
             [ id "stars"
-            , onInput starsFilterGuesser
+            , onInput ( StatsFilterMsg << NewTitanStarsSelected << String.toInt )
             ]
-            ( optionizeStrings
-              ( Maybe.map String.fromInt model.filteredTitanStars |> withDefault allStarsFilter )
-              ( starsOptions )
+            ( optionizeObjects
+              .value
+              .label
+              ( newStarsOption model.translations model.filteredTitanStars )
+              ( allStarsOptions model.translations )
             )
         ]
     ]
@@ -104,17 +106,17 @@ viewTitansFilterForm model members =
 colorFilterGuesser : String -> Msg
 colorFilterGuesser colorFilterAsString = ( StatsFilterMsg << NewTitanColorSelected << titanColorFromString ) colorFilterAsString
 
-starsOptions : List String
-starsOptions = allStarsFilter :: ( List.map String.fromInt [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ] )
+type alias StarsOption = { label : String, value : String }
 
-allStarsFilter : String
-allStarsFilter = "ALL"
+newStarsOption : Translations -> Maybe Int -> StarsOption
+newStarsOption translations maybeStars =
+  case maybeStars of
+    Just stars -> StarsOption ( String.fromInt stars ) ( String.fromInt stars )
+    Nothing -> StarsOption translations.all "ALL"
 
-starsFilterGuesser : String -> Msg
-starsFilterGuesser starsFilterAsString =
-  if starsFilterAsString == allStarsFilter
-  then ( StatsFilterMsg << NewTitanStarsSelected ) Nothing
-  else ( StatsFilterMsg << NewTitanStarsSelected << String.toInt ) starsFilterAsString
+allStarsOptions : Translations -> List StarsOption
+allStarsOptions translations = ( Nothing :: ( List.range 1 12 |> List.map Just ) )
+ |> List.map ( newStarsOption translations )
 
 viewWarsFilterForm : Model r -> List String -> Html Msg
 viewWarsFilterForm model members =

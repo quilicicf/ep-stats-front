@@ -74,6 +74,8 @@ type alias MemberStats =
   , preferredTitanColor : Maybe DetailedColor
   , averageWarScore : AverageMemberScore
   , preferredWarBonus : Maybe WarBonus
+  , titanTeamValue : Float
+  , warTeamValue : Float
   , teamValue : Float
   }
 
@@ -601,6 +603,14 @@ viewValidAllianceStats { translations } allianceStats =
     ]
   ]
 
+teamValuesTitle : Translations -> { r | titanTeamValue: Float, warTeamValue: Float } -> String
+teamValuesTitle translations { titanTeamValue, warTeamValue } =
+  String.join "" [
+    translations.titans, ": ", presentNumber <| round titanTeamValue,
+    "\n",
+    translations.wars, ": ", presentNumber <| round warTeamValue
+  ]
+
 viewMember : Translations -> MemberStats -> Html Msg
 viewMember translations memberStats =
   tr [ class "member-row" ] [
@@ -613,7 +623,9 @@ viewMember translations memberStats =
       [ class "member-value" ]
       [ text <| presentNumber <| round memberStats.averageWarScore.damage ],
     td [ class "member-value" ] [ viewWarBonus translations<| withDefault allWarBonuses memberStats.preferredWarBonus ],
-    td [ class "member-value" ] [ text <| presentNumber <| round memberStats.teamValue ]
+    td [ class "member-value"
+       , title ( teamValuesTitle translations memberStats )
+       ] [ text <| presentNumber <| round memberStats.teamValue ]
   ]
 
 ------------
@@ -905,7 +917,7 @@ retrieveMemberWarScores index memberWarScoresList = Maybe.withDefault
   ( getAt index memberWarScoresList )
 
 mergeTeamValues : AverageMemberScore -> AverageMemberScore -> Float
-mergeTeamValues titanAverageScore warAverageScore = titanAverageScore.teamValue + warAverageScore.teamValue / 2
+mergeTeamValues titanAverageScore warAverageScore = ( titanAverageScore.teamValue + warAverageScore.teamValue ) / 2
 
 computeMemberStats : (String, FilteredMemberTitanScores, FilteredMemberWarScores) -> ( String, MemberStats )
 computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
@@ -917,6 +929,8 @@ computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
     , preferredTitanColor = memberTitanScores.preferredTitanColor
     , averageWarScore = memberWarScores.averageScore
     , preferredWarBonus = memberWarScores.preferredWarBonus
+    , titanTeamValue = memberTitanScores.averageScore.teamValue
+    , warTeamValue = memberWarScores.averageScore.teamValue
     , teamValue = mergeTeamValues memberTitanScores.averageScore memberWarScores.averageScore
     }
   )

@@ -1,4 +1,9 @@
-module StatsFilter exposing (StatsFilter, StatsFilterExtender, createDefaultStatsFilter, viewTitansFilterForm, viewWarsFilterForm, updateStatsFilters)
+module StatsFilter exposing (
+    StatsFilter, StatsFilterExtender,
+    createDefaultStatsFilter,
+    viewTitansFilterForm, viewWarsFilterForm,
+    updateStatsFilters
+  )
 
 import Html exposing (..)
 import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
@@ -7,6 +12,7 @@ import Maybe exposing (..)
 
 import Msg exposing (..)
 import Optionize exposing (optionizeObjects, optionizeStrings)
+import StepRange exposing (stepRange)
 import Translations exposing (Translations, TranslationsExtender)
 import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
 import Wars exposing (WarBonus, warBonuses, allWarBonuses, warBonusFromString)
@@ -34,13 +40,16 @@ type alias StatsFilter = StatsFilterExtender {}
 -- UTILS --
 -----------
 
+defaultFilterPeriod : Int
+defaultFilterPeriod = 30
+
 createDefaultStatsFilter : Translations -> StatsFilter
 createDefaultStatsFilter translations =
   { filteredMember = translations.alliance
-  , filteredTitanPeriod = 30
+  , filteredTitanPeriod = defaultFilterPeriod
   , filteredTitanColor = allTitanColors
   , filteredTitanStars = Nothing
-  , filteredWarPeriod = 30
+  , filteredWarPeriod = defaultFilterPeriod
   , filteredWarBonus = allWarBonuses
   }
 
@@ -50,12 +59,12 @@ createDefaultStatsFilter translations =
 
 type alias Model r = StatsFilterExtender (TranslationsExtender r)
 
+allPeriods : List String
+allPeriods = stepRange 10 120 10 |> List.map String.fromInt
+
 viewTitansFilterForm : Model r -> List String -> Html Msg
 viewTitansFilterForm model members =
   let
-    defaultStatsFilter : StatsFilter
-    defaultStatsFilter = createDefaultStatsFilter model.translations
-
     titanColorNameExtractor : DetailedColor -> String
     titanColorNameExtractor color = color.nameGetter model.translations
   in
@@ -71,16 +80,12 @@ viewTitansFilterForm model members =
         ]
     , div [ class "form-field-inline" ]
         [ label [ for "period" ] [ text model.translations.period ]
-        , input
+        , select
             [ id "period"
-            , type_ "number"
-            , min "10"
-            , max "120"
-            , step "10"
-            , value ( String.fromInt model.filteredTitanPeriod )
-            , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultStatsFilter.filteredTitanPeriod ) << String.toInt )
+            , value <| String.fromInt model.filteredTitanPeriod
+            , onInput ( StatsFilterMsg << NewTitanPeriodSelected << ( withDefault defaultFilterPeriod ) << String.toInt )
             ]
-            []
+            ( optionizeStrings ( String.fromInt model.filteredTitanPeriod ) ( allPeriods ) )
         ]
     , div [ class "form-field-inline" ]
         [ label [ for "color" ] [ text model.translations.color ]
@@ -139,16 +144,12 @@ viewWarsFilterForm model members =
           ]
       , div [ class "form-field-inline" ]
           [ label [ for "period" ] [ text model.translations.period ]
-          , input
+          , select
               [ id "period"
-              , type_ "number"
-              , min "10"
-              , max "120"
-              , step "10"
-              , value ( String.fromInt model.filteredWarPeriod )
-              , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultStatsFilter.filteredWarPeriod ) << String.toInt )
+              , value <| String.fromInt model.filteredWarPeriod
+              , onInput ( StatsFilterMsg << NewWarPeriodSelected << ( withDefault defaultFilterPeriod ) << String.toInt )
               ]
-              []
+              ( optionizeStrings ( model.filteredWarPeriod |> String.fromInt ) ( allPeriods ) )
           ]
       , div [ class "form-field-inline" ]
           [ label [ for "bonus" ] [ text model.translations.bonus ]

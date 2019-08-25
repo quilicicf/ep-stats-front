@@ -122,7 +122,7 @@ viewAppKeyCopier model =
     peonAppKey = encodeAppConfig model False
 
   in
-    div [ class "copy-app-key" ] [
+    div [ class "app-key-form" ] [
       h2 [] [ text model.translations.copyTheKeysAndValidate ],
       div [ class "form-field" ] [
         label [] [ text model.translations.adminKey ],
@@ -145,13 +145,14 @@ viewAppKeyCopier model =
 
 viewAppKeyInput : Model r -> Html Msg
 viewAppKeyInput { translations, appKeyError } =
-  Html.form [ class "input-app-key" ]
+  Html.form [ class "app-key-form" ]
     [ h2 [] [ text translations.pasteAppKey ]
-    , div [ class "form-field-inline" ]
+    , div [ class "form-field-inline app-key-form-field" ]
         [ label [ for "appKey" ] [ text translations.appKey ]
-        , input
-            [ type_ "text"
-            , id "appKey"
+        , textarea
+            [ id "appKey"
+            , class "app-key-container"
+            , rows 5, cols 80
             , onInput (AppConfigMsg << NewAppKey)
             ]
             []

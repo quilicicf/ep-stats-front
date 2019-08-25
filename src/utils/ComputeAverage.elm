@@ -1,6 +1,5 @@
 module ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 
-import MaybeExtra exposing (hasValue)
 import MemberScore exposing (MemberScore, AverageMemberScore)
 
 type alias HasDamage r = { r | damage : Int }
@@ -16,25 +15,19 @@ computeAverageDamage list =
   in
     sum / ( toFloat ( List.length list ) )
 
-scoreAccumulator : Maybe MemberScore -> MemberScore -> MemberScore
-scoreAccumulator maybeScore seed =
-  case maybeScore of
-    Just score -> { damage = seed.damage + score.damage, teamValue = seed.teamValue + score.teamValue }
-    Nothing -> seed
+scoreAccumulator : MemberScore -> MemberScore -> MemberScore
+scoreAccumulator score seed =
+    { damage = seed.damage + score.damage, teamValue = seed.teamValue + score.teamValue }
 
-computeAverageScore : List ( Maybe MemberScore ) -> AverageMemberScore
+computeAverageScore : List MemberScore -> AverageMemberScore
 computeAverageScore list =
   let
     sum : MemberScore
     sum = List.foldl scoreAccumulator { damage = 0, teamValue = 0 } list
 
-    isComplete : Bool
-    isComplete = ( List.filter hasValue list |> List.length ) == List.length list
-
     size : Float
     size = toFloat ( List.length list )
   in
-    { isComplete = isComplete
-    , damage = ( toFloat sum.damage ) / size,
+    { damage = ( toFloat sum.damage ) / size,
       teamValue = ( toFloat sum.teamValue ) / size
     }

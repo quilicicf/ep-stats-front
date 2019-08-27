@@ -4,12 +4,13 @@ const { watch } = require('chokidar');
 const { resolve: resolvePath } = require('path');
 const liveServer = require('live-server');
 
+const copyAssets = require('./copyAssets');
 const renderElm = require('./renderElm');
 const renderSass = require('./renderSass');
 const prepareBuild = require('./prepareBuild');
 
 const {
-  SRC_PATH, DIST_PATH, APP_HTML_NAME, APP_HTML_SOURCE_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT, STYLE_OUTPUT_PATH,
+  SRC_PATH, DIST_PATH, APP_HTML_NAME, APP_ENTRY_POINT, STYLE_ENTRY_POINT,
 } = require('./constants');
 
 const SERVER_PORT = 5420;
@@ -18,6 +19,7 @@ const STYLE_FILES_GLOB = resolvePath(SRC_PATH, '**', '*.scss');
 
 const main = async () => {
   await prepareBuild();
+  copyAssets({ shouldWatch: true });
 
   const elmWatcher = watch(
     [ APP_ENTRY_POINT, ELM_FILES_GLOB ],
@@ -45,7 +47,8 @@ const main = async () => {
     host: 'localhost',
     port: SERVER_PORT,
     root: DIST_PATH,
-    watch: [ SRC_PATH, APP_HTML_SOURCE_PATH, STYLE_OUTPUT_PATH ],
+    open: false,
+    watch: [ DIST_PATH ],
     wait: 500,
     file: APP_HTML_NAME,
   });

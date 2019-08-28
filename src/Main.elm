@@ -117,7 +117,32 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
     , translations = translations
     }
 
-type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated | ReadingPrivacyPolicy
+type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated | DirectAccess Page
+
+guessInitialCase : Maybe Page -> Maybe AppConfig -> Maybe String -> InitCase
+guessInitialCase loadingPageMaybe appConfigMaybe accessTokenMaybe =
+  let
+    hasAppConfig : Bool
+    hasAppConfig = hasValue appConfigMaybe
+
+    isReadyToSeeStats : Bool
+    isReadyToSeeStats = hasAppConfig && hasValue accessTokenMaybe
+
+    startStatsCase : InitCase
+    startStatsCase = if hasAppConfig && isReadyToSeeStats then Authenticated
+      else if hasAppConfig then WithAppKey
+      else FirstVisit
+  in
+    case loadingPageMaybe of
+      Just loadingPage ->
+        case loadingPage of
+          AuthorizedPage -> Authenticating
+          AppKeyPage -> startStatsCase
+          AlliancePage -> startStatsCase
+          TitansPage ->startStatsCase
+          WarsPage -> startStatsCase
+          _ -> DirectAccess loadingPage
+      Nothing -> startStatsCase
 
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
@@ -140,14 +165,10 @@ init flags url key =
       loadingPage = findPage url
 
       initialCase : InitCase
-      initialCase = if ( loadingPage == Just AuthorizedPage ) then Authenticating
-        else if (loadingPage == (Just PrivacyPolicy)) then ReadingPrivacyPolicy
-        else if (hasValue maybeAppConfig) && (hasValue accessToken) then  Authenticated
-        else if (hasValue maybeAppConfig) then WithAppKey
-        else FirstVisit
+      initialCase = guessInitialCase loadingPage maybeAppConfig accessToken
 
-      maybeAccessToken : Maybe String
-      maybeAccessToken = readAccessToken url
+      accessTokenFromUrl : Maybe String
+      accessTokenFromUrl = readAccessToken url
 
       initialModel: Model
       initialModel = createInitialModel maybeAppConfig appKey accessToken key url language translations
@@ -157,17 +178,17 @@ init flags url key =
       Authenticated -> initAuthenticatedUser loadingPage initialModel
 
       Authenticating -> (
-          { initialModel | currentPage = AuthorizedPage , accessToken = maybeAccessToken },
+          { initialModel | currentPage = AuthorizedPage , accessToken = accessTokenFromUrl },
           Cmd.batch [
-            setStorage ( StorageAppState initialModel.appKey maybeAccessToken languageAsString ),
+            setStorage ( StorageAppState initialModel.appKey accessTokenFromUrl languageAsString ),
             pushPage initialModel.navigationKey AlliancePage,
-            fetchAllStats initialModel.sheetId (withDefault "" maybeAccessToken)
+            fetchAllStats initialModel.sheetId (withDefault "" accessTokenFromUrl)
           ]
         )
 
       WithAppKey -> ( initialModel, load ( makeAuthorizationUrl initialModel.baseUrl ) )
 
-      ReadingPrivacyPolicy -> ( { initialModel | currentPage = PrivacyPolicy }, Cmd.none )
+      DirectAccess page -> ( { initialModel | currentPage = page }, Cmd.none )
 
       FirstVisit -> ( initialModel, pushPage initialModel.navigationKey AppKeyPage )
 

@@ -2,9 +2,10 @@
     "type": "application",
     "source-directories": [
         "src",
-        "src/utils",
         "src/app",
-        "src/i18n"
+        "src/i18n",
+        "src/static",
+        "src/utils"
     ],
     "elm-version": "0.19.0",
     "dependencies": {

@@ -10,6 +10,7 @@ import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode exposing (Value, Decoder)
 import Maybe exposing (withDefault)
+import PrivacyPolicy exposing (viewPrivacyPolicy)
 import Svg exposing (svg, use)
 import Svg.Attributes exposing (xlinkHref)
 import Url exposing (Url)
@@ -116,7 +117,7 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
     , translations = translations
     }
 
-type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated
+type InitCase = FirstVisit | WithAppKey | Authenticating | Authenticated | ReadingPrivacyPolicy
 
 init : Value -> Url -> Key -> (Model, Cmd Msg)
 init flags url key =
@@ -140,6 +141,7 @@ init flags url key =
 
       initialCase : InitCase
       initialCase = if ( loadingPage == Just AuthorizedPage ) then Authenticating
+        else if (loadingPage == (Just PrivacyPolicy)) then ReadingPrivacyPolicy
         else if (hasValue maybeAppConfig) && (hasValue accessToken) then  Authenticated
         else if (hasValue maybeAppConfig) then WithAppKey
         else FirstVisit
@@ -164,6 +166,8 @@ init flags url key =
         )
 
       WithAppKey -> ( initialModel, load ( makeAuthorizationUrl initialModel.baseUrl ) )
+
+      ReadingPrivacyPolicy -> ( { initialModel | currentPage = PrivacyPolicy }, Cmd.none )
 
       FirstVisit -> ( initialModel, pushPage initialModel.navigationKey AppKeyPage )
 
@@ -274,6 +278,7 @@ view model =
 
     AuthorizedPage -> createDocument model ( viewSpinner "" )
 
+    PrivacyPolicy -> viewPrivacyPolicy model.translations
 
 createDocument : { r | teamName: String, currentPage: Page, language: Language, translations: Translations } -> Html Msg -> Document Msg
 createDocument { teamName, currentPage, language, translations } body =
@@ -288,7 +293,7 @@ createDocument { teamName, currentPage, language, translations } body =
         div
           []
           [ viewHeaderBar { title = title, language = language }
-          , (viewNavBar currentPage translations)
+          , viewNavBar currentPage translations
           , body
           ]
       ]

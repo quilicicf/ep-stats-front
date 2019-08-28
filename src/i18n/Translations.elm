@@ -55,6 +55,7 @@ type alias Translations =
   , appConfig: String
   , appKeyCopy: String
   , authorizationCallback: String
+  , privacyPolicy: String
   }
 
 type alias TranslationsExtender r = { r | translations: Translations }

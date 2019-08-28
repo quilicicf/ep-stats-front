@@ -16,7 +16,7 @@ pages = [
 --  Landing page
   ( AppKeyPage, "/", .appKey ),
 
--- Not accessible (at least in theory XD)
+--  Not accessible (at least in theory XD)
   ( AuthorizedPage, "/authorized", .authorizationCallback ),
 
 --  App configuration
@@ -27,6 +27,9 @@ pages = [
   ( AlliancePage, "/alliance", .alliance ),
   ( TitansPage, "/titans", .titans ),
   ( WarsPage, "/wars", .wars ),
+
+--  Static content
+  ( PrivacyPolicy, "/privacy-policy", .privacyPolicy ),
 
 --  Errors
   ( NotFoundPage, notFoundPath, .notFound )
@@ -52,6 +55,8 @@ type Page
   | AppConfigPage
   | AppKeyCopierPage
 
+--  Stats
+  | PrivacyPolicy
 --  Stats
   | AlliancePage
   | TitansPage

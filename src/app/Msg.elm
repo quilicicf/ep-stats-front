@@ -11,6 +11,7 @@ import Internationalization exposing (Language)
 type Msg
   = LinkClicked UrlRequest
   | UrlChanged Url
+  | WelcomeMsg WelcomeMsg
   | LanguageUpdated Language
   | AppConfigMsg AppConfigMsg
   | StatsMsg StatsMsg
@@ -34,3 +35,7 @@ type StatsFilterMsg
   | NewTitanStarsSelected  ( Maybe Int )
   | NewWarPeriodSelected Int
   | NewWarBonusSelected  ( WarBonus )
+
+type WelcomeMsg
+  = ICreateKey
+  | IHasKey

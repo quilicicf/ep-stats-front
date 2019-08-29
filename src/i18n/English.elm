@@ -59,4 +59,5 @@ englishTranslations =
   , appKeyCopy= "App key copy"
   , authorizationCallback = "Authorization callback"
   , privacyPolicy = "Privacy policy"
+  , welcome = "Welcome"
   }

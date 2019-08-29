@@ -20,6 +20,7 @@ import Pagination exposing (..)
 import Wars exposing (WarBonus)
 import NavBar exposing (viewNavBar)
 import MaybeExtra exposing (hasValue)
+import Welcome exposing (viewWelcome)
 import Spinner exposing (viewSpinner)
 import Titans exposing (DetailedColor)
 import Translations exposing (Translations)
@@ -280,45 +281,59 @@ update msg model =
         Cmd.none
       )
 
+    WelcomeMsg welcomeMsg ->
+      case welcomeMsg of
+        IHasKey -> ( { model | currentPage = AppKeyPage }, pushPage model.navigationKey AppKeyPage )
+        ICreateKey -> ( { model | currentPage = AppConfigPage }, pushPage model.navigationKey AppConfigPage )
+
 view : Model -> Document Msg
 view model =
   case model.currentPage of
-    AppConfigPage -> createDocument model (viewAppConfig model)
+    AppConfigPage -> createDocumentWithDefaultTitle model (viewAppConfig model)
 
-    AppKeyPage -> createDocument model (viewAppKeyInput model)
+    AppKeyPage -> createDocumentWithDefaultTitle model (viewAppKeyInput model)
 
-    AppKeyCopierPage -> createDocument model (viewAppKeyCopier model)
+    AppKeyCopierPage -> createDocumentWithDefaultTitle model (viewAppKeyCopier model)
 
-    AlliancePage -> createDocument model (viewAllianceStats model)
+    AlliancePage -> createDocumentWithTeamName model (viewAllianceStats model)
 
-    TitansPage -> createDocument model (viewTitansStats model)
+    TitansPage -> createDocumentWithTeamName model (viewTitansStats model)
 
-    WarsPage -> createDocument model (viewWarsStats model)
+    WarsPage -> createDocumentWithTeamName model (viewWarsStats model)
 
-    NotFoundPage -> createDocument model (text model.translations.notFound )
+    NotFoundPage -> createDocumentWithDefaultTitle model (text model.translations.notFound )
 
-    AuthorizedPage -> createDocument model ( viewSpinner "" )
+    AuthorizedPage -> createDocumentWithDefaultTitle model ( viewSpinner "" )
 
-    PrivacyPolicy -> viewPrivacyPolicy model.translations
+    PrivacyPolicy -> createDocument ( model.translations.appTitle ++ " - Privacy policy" ) model viewPrivacyPolicy
 
-createDocument : { r | teamName: String, currentPage: Page, language: Language, translations: Translations } -> Html Msg -> Document Msg
-createDocument { teamName, currentPage, language, translations } body =
+    WelcomePage -> createDocument ( model.translations.appTitle ++ " - " ++ model.translations.welcome ) model ( viewWelcome model.language)
+
+createDocumentWithTeamName : Model -> Html Msg -> Document Msg
+createDocumentWithTeamName model body =
   let
     title: String
-    title = if teamName == ""
-      then translations.appTitle
-      else translations.appTitle ++ " - " ++ teamName
+    title = if model.teamName == ""
+      then model.translations.appTitle
+      else model.translations.appTitle ++ " - " ++ model.teamName
   in
-    { title = title
-    , body = [
-        div
-          []
-          [ viewHeaderBar { title = title, language = language }
-          , viewNavBar currentPage translations
-          , body
-          ]
-      ]
-    }
+    createDocument title model body
+
+createDocumentWithDefaultTitle : Model -> Html Msg -> Document Msg
+createDocumentWithDefaultTitle model body = createDocument model.translations.appTitle model body
+
+createDocument : String -> { r | currentPage: Page, language: Language, translations: Translations } -> Html Msg -> Document Msg
+createDocument title { currentPage, language, translations } body =
+  { title = title
+  , body = [
+      div
+        []
+        [ viewHeaderBar { title = title, language = language }
+        , viewNavBar currentPage translations
+        , body
+        ]
+    ]
+  }
 
 viewHeaderBar : { r | title: String, language: Language } -> Html Msg
 viewHeaderBar { title, language } =

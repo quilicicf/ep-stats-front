@@ -1,5 +1,7 @@
 module Translations exposing (Translations, TranslationsExtender)
 
+import Html exposing (..)
+
 type alias Translations =
   { notFound : String
   , authenticating: String
@@ -56,6 +58,7 @@ type alias Translations =
   , appKeyCopy: String
   , authorizationCallback: String
   , privacyPolicy: String
+  , welcome: String
   }
 
 type alias TranslationsExtender r = { r | translations: Translations }

@@ -1,14 +1,12 @@
 @import 'style/colors/theme';
-
 @import 'style/generic/forms';
 @import 'style/generic/inputs';
 @import 'style/generic/buttons';
 @import 'style/generic/selects';
 @import 'style/generic/spinner';
 @import 'style/generic/textarea';
-
+@import 'style/static/welcome';
 @import 'style/static/privacy-policy';
-
 @import 'style/app/stats';
 @import 'style/app/header';
 @import 'style/app/filters';
@@ -16,7 +14,6 @@
 @import 'style/app/choose-side';
 @import 'style/app/app-key';
 @import 'style/app/configure-alliance';
-
 @import '../node_modules/normalize-scss/sass/normalize/import-now';
 
 /****************
@@ -70,6 +67,10 @@ body {
     height: 1em;
     width: 1em;
   }
+}
+
+.textual-content {
+  width: 700px;
 }
 
 .sr-only {

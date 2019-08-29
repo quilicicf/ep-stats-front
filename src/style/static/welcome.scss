@@ -1,0 +1,18 @@
+.welcome {
+  font-size: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .start-using {
+    width: 100%;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+
+    .button {
+      margin-left: 1rem;
+    }
+  }
+}

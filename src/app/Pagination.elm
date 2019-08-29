@@ -14,12 +14,13 @@ notFoundPath = "/notFound"
 pages : List (Page, String, (Translations -> String))
 pages = [
 --  Landing page
-  ( AppKeyPage, "/", .appKey ),
+  ( WelcomePage, "/", .welcome ),
 
 --  Not accessible (at least in theory XD)
   ( AuthorizedPage, "/authorized", .authorizationCallback ),
 
 --  App configuration
+  ( AppKeyPage, "/appKey", .appKey ),
   ( AppConfigPage, "/appConfig",  .appConfig),
   ( AppKeyCopierPage, "/appKeyCopy", .appKeyCopy ),
 
@@ -46,12 +47,13 @@ pagesToNameGetters = List.map (\page -> (Tuple3.first page, Tuple3.third page) )
 
 type Page
 --  Landing page
-  = AppKeyPage
+  = WelcomePage
 
 -- Not accessible (at least in theory XD)
   | AuthorizedPage
 
 --  App configuration
+  | AppKeyPage
   | AppConfigPage
   | AppKeyCopierPage
 

@@ -10,7 +10,7 @@ const renderSass = require('./renderSass');
 const prepareBuild = require('./prepareBuild');
 
 const {
-  SRC_PATH, DIST_PATH, APP_HTML_NAME, APP_ENTRY_POINT, STYLE_ENTRY_POINT,
+  SRC_PATH, DIST_PATH, APP_HTML_NAME, APP_HTML_OUTPUT_PATH, STYLE_OUTPUT_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT,
 } = require('./constants');
 
 const SERVER_PORT = 5420;
@@ -48,7 +48,7 @@ const main = async () => {
     port: SERVER_PORT,
     root: DIST_PATH,
     open: false,
-    watch: [ DIST_PATH ],
+    watch: [ APP_HTML_OUTPUT_PATH, STYLE_OUTPUT_PATH ],
     wait: 500,
     file: APP_HTML_NAME,
   });

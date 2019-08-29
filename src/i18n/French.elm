@@ -59,4 +59,5 @@ frenchTranslations =
   , appKeyCopy= "Copie de clef"
   , authorizationCallback = "Page d'authentification"
   , privacyPolicy = "Politique de confidentialité"
+  , welcome = "Bienvenue"
   }

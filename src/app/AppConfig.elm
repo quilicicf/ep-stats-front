@@ -4,7 +4,6 @@ module AppConfig exposing (
   decodeStorageAppState, decodeAppConfigFromAppKey
   )
 
-import Base64
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -12,6 +11,7 @@ import Json.Decode as Decode exposing(Value, Decoder, maybe, string, bool)
 import Json.Encode as Encode
 import Json.Decode.Pipeline exposing (required, optional)
 
+import KeyCreator
 import Msg exposing (..)
 import Translations exposing (TranslationsExtender)
 
@@ -58,7 +58,8 @@ encodeAppConfig : AppConfigExtender r -> Bool -> String
 encodeAppConfig appConfig isAdmin =
   jsonifyAppConfig appConfig isAdmin
     |> Encode.encode 0
-    |> Base64.encode
+    |> KeyCreator.createKey "START_KEY|>" "<|END_KEY"
+    |> Maybe.withDefault "FAILED MISERABLY"
 
 appConfigDecoder : Decoder AppConfig
 appConfigDecoder =
@@ -80,14 +81,14 @@ decodeStorageAppState appKeyAsJson =
     Ok appState -> appState
     Err _ -> StorageAppState "" Nothing "defaultLanguage"
 
-decodeAppConfigFromAppKey : String -> Maybe AppConfig
-decodeAppConfigFromAppKey appKeyInBase64 =
-  case Base64.decode appKeyInBase64 of
-    Ok decodedAppKey ->
-      case Decode.decodeString appConfigDecoder decodedAppKey of
-        Ok appConfig -> Just appConfig
-        Err _ -> Nothing
+decodeAppConfig : String -> Maybe AppConfig
+decodeAppConfig decodedAppKey =
+  case Decode.decodeString appConfigDecoder decodedAppKey of
+    Ok appConfig -> Just appConfig
     Err _ -> Nothing
+
+decodeAppConfigFromAppKey : String -> Maybe AppConfig
+decodeAppConfigFromAppKey encodedAppKey = KeyCreator.readKey encodedAppKey |> Maybe.andThen decodeAppConfig
 
 ----------
 -- VIEW --

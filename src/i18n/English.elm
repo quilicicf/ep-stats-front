@@ -1,6 +1,6 @@
 module English exposing (englishTranslations)
 
-import Translations exposing (Translations)
+import Translations exposing (..)
 
 englishTranslations : Translations
 englishTranslations =

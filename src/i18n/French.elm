@@ -1,6 +1,6 @@
 module French exposing (frenchTranslations)
 
-import Translations exposing (Translations)
+import Translations exposing (..)
 
 frenchTranslations : Translations
 frenchTranslations =

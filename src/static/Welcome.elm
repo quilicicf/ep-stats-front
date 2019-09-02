@@ -6,7 +6,7 @@ import Html.Events exposing (..)
 
 import Msg exposing (..)
 import Constants exposing (..)
-import Internationalization exposing (Language(..))
+import Internationalization exposing (..)
 
 viewWelcome : Language -> Html Msg
 viewWelcome language =

@@ -5,10 +5,10 @@ module Gsheet exposing (
   )
 
 import Json.Decode as Decode exposing(Value, Decoder, string)
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode.Pipeline exposing (..)
 import Url exposing (..)
 
-import CreateQueryString exposing (createQueryString)
+import CreateQueryString exposing (..)
 
 ------------
 -- MODELS --

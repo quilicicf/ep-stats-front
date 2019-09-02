@@ -10,31 +10,31 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (..)
 import Http exposing (..)
-import Maybe exposing (withDefault)
+import Maybe exposing (..)
 
 import Msg exposing (..)
-import Flip exposing (flip)
-import GetAt exposing (getAt)
-import TakeLast exposing (takeLast)
-import Spinner exposing (viewSpinner)
-import MaybeExtra exposing (hasValue)
-import CustomStyle exposing (customStyle)
-import PresentDate exposing (presentDate)
-import Gsheet exposing (computeSheetDataUrl)
-import PresentNumber exposing (presentNumber)
-import AreListsEqual exposing (areListsEqual)
-import Translations exposing (Translations, TranslationsExtender)
-import ComputeTeamValue exposing (computeTeamValue)
-import CreateBearerHeader exposing (createBearerHeader)
-import MemberScore exposing (MemberScore, AverageMemberScore)
-import MapWithPreviousAndNext exposing (mapWithPreviousAndNext)
-import FindPreferredEventType exposing (findPreferredEventType)
-import Wars exposing (WarBonus, allWarBonuses, warBonusFromString)
-import ComputeAverage exposing (computeAverageDamage, computeAverageScore)
-import LinearRegression exposing (RegressionResult, computeLinearRegression)
-import Titans exposing (DetailedColor, titanColorFromString, allTitanColors)
-import StatsFilter exposing (StatsFilter, StatsFilterExtender, createDefaultStatsFilter, viewTitansFilterForm, viewWarsFilterForm)
-import Gsheet exposing (RawStats, RawSheet, computeSheetDataUrl, decodeRawStats, fixedTitanIndexes, fixedWarIndexes)
+import Flip exposing (..)
+import GetAt exposing (..)
+import TakeLast exposing (..)
+import Spinner exposing (..)
+import MaybeExtra exposing (..)
+import CustomStyle exposing (..)
+import PresentDate exposing (..)
+import Gsheet exposing (..)
+import PresentNumber exposing (..)
+import AreListsEqual exposing (..)
+import Translations exposing (..)
+import ComputeTeamValue exposing (..)
+import CreateBearerHeader exposing (..)
+import MemberScore exposing (..)
+import MapWithPreviousAndNext exposing (..)
+import FindPreferredEventType exposing (..)
+import Wars exposing (..)
+import ComputeAverage exposing (..)
+import LinearRegression exposing (..)
+import Titans exposing (..)
+import StatsFilter exposing (..)
+import Gsheet exposing (..)
 
 ------------
 -- MODELS --
@@ -154,13 +154,6 @@ type alias FilteredMemberWarScores =
   , progression : RegressionResult
   , preferredWarBonus : Maybe WarBonus
   , warScores : List MemberWarScore
-  }
-
-type alias TitanScore =
-  { score : Int
-  , teamValue : Int
-  , titanColor: DetailedColor
-  , titanStars : Int
   }
 
 type alias LineData msg =
@@ -753,9 +746,6 @@ extractWarDataForMember data offset index memberPseudo =
   let
     memberDataIndex : Int
     memberDataIndex = offset + index
-
-    logged = Debug.log "Pseudo" memberPseudo
-    logged2 = Debug.log "Hits" (List.map ( hasScore memberDataIndex ) data |> List.map (\bool -> if bool == True then "true" else "false") |> String.join ", ")
 
     memberScores : List MemberWarScore
     memberScores = List.filter ( hasScore memberDataIndex ) data

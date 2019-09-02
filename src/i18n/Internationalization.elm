@@ -1,9 +1,9 @@
 module Internationalization exposing (Language(..), languages, findLanguage, languageToString, getTranslations)
 
-import Translations exposing (Translations)
+import Translations exposing (..)
 
-import French exposing (frenchTranslations)
-import English exposing (englishTranslations)
+import French exposing (..)
+import English exposing (..)
 
 type Language = English | French
 

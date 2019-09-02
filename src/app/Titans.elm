@@ -1,6 +1,6 @@
 module Titans exposing (DetailedColor, titanColors, titanColorFromString, allTitanColors)
 
-import Translations exposing (Translations)
+import Translations exposing (..)
 
 type alias DetailedColor =
   { code : String -- The code (to compare with the gsheet)

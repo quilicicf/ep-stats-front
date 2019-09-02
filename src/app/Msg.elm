@@ -1,12 +1,12 @@
 module Msg exposing (..)
 
-import Browser exposing (UrlRequest)
-import Http
-import Url exposing (Url)
+import Browser exposing (..)
+import Http exposing (..)
+import Url exposing (..)
 
-import Wars exposing (WarBonus)
-import Titans exposing (DetailedColor)
-import Internationalization exposing (Language)
+import Wars exposing (..)
+import Titans exposing (..)
+import Internationalization exposing (..)
 
 type Msg
   = LinkClicked UrlRequest
@@ -26,7 +26,7 @@ type AppConfigMsg
   | InputAppKey
 
 type StatsMsg
-  = GotStats (Result Http.Error String)
+  = GotStats (Result Error String)
 
 type StatsFilterMsg
   = NewMemberSelected String

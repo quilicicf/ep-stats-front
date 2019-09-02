@@ -1,15 +1,12 @@
 module Authorization exposing (makeAuthorizationUrl, readAccessToken)
 
 import Dict exposing (..)
-
-import Maybe exposing (withDefault)
-
-import OAuth.Implicit exposing (Authorization, makeAuthUrl)
-
+import Maybe exposing (..)
+import OAuth.Implicit exposing (..)
 import Url exposing (..)
 import Url.Parser as Parser exposing (..)
 
-import GetAt exposing (getAt)
+import GetAt exposing (..)
 
 makeAuthorization : Url -> Authorization
 makeAuthorization baseUrl = Authorization

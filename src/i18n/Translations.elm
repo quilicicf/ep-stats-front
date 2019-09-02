@@ -1,7 +1,5 @@
 module Translations exposing (Translations, TranslationsExtender)
 
-import Html exposing (..)
-
 type alias Translations =
   { notFound : String
   , authenticating: String

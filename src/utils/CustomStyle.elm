@@ -1,7 +1,7 @@
 module CustomStyle exposing (customStyle)
 
-import Html exposing (Attribute)
-import Html.Attributes exposing (attribute)
+import Html exposing (..)
+import Html.Attributes exposing (..)
 
 singleStyle : ( String, String ) -> String
 singleStyle ( propertyName, propertyValue) = String.join "" [ propertyName, ": ", propertyValue ]

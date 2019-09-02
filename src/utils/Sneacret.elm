@@ -1,10 +1,11 @@
-module KeyCreator exposing (createKey, readKey)
+module Sneacret exposing (sneak, unSneak)
 
-import Dict exposing (Dict)
+import Dict exposing (..)
 
-import Flip exposing (flip)
-import Chunk exposing (chunk)
-import GetAt exposing (getAt)
+import Flip exposing (..)
+import Chunk exposing (..)
+import GetAt exposing (..)
+import Last exposing (..)
 import MaybeExtra exposing (..)
 
 invisibleSpaces : List Char
@@ -70,8 +71,6 @@ recursiveUpgradeRadix oldRadix index currentValue accumulator =
 
 encodeCharacter : Int -> String
 encodeCharacter characterCode = recursiveDowngradeRadix characterCode encodingBase []
-  |> (\x -> Debug.log "Character code" (characterCode, x))
-  |> Tuple.second
   |> List.map ( flip getAt invisibleSpaces )
   |> List.map ( Maybe.withDefault 'X' ) -- Can't happen
   |> String.fromList
@@ -92,8 +91,8 @@ isCharacterAllowed character currentResult =
 isAllowed : String -> Bool
 isAllowed value = String.toList value |> List.foldl isCharacterAllowed True
 
-createKey : String -> String -> String -> Maybe String
-createKey prefix suffix value =  if isAllowed value
+sneak : String -> String -> String -> Maybe String
+sneak prefix suffix value =  if isAllowed value
   then Just ( prefix ++ ( encodeString value ) ++ suffix )
   else Nothing
 
@@ -104,8 +103,8 @@ decodeCharacter invisibles = List.map ( flip Dict.get indexedInvisibleSpaces ) i
   |> flip getAt alphabet
   |> Maybe.withDefault 'X' -- Can only happen for keys created manually with character codes overflowing alphabet size
 
-readKey : String -> Maybe String
-readKey value =
+unSneak : String -> Maybe String
+unSneak value =
   let
     chunks : List (List Char)
     chunks = String.toList value
@@ -113,7 +112,7 @@ readKey value =
      |> chunk encodingCharacterSize
 
     lastChunkSize : Int
-    lastChunkSize = List.reverse chunks |> List.head |> Maybe.map List.length |> Maybe.withDefault 0
+    lastChunkSize = last chunks |> Maybe.map List.length |> Maybe.withDefault 0
 
     hasRightNumberOfInvisibleSpaces : Bool
     hasRightNumberOfInvisibleSpaces = ( not <| List.isEmpty chunks ) && ( lastChunkSize == encodingCharacterSize )

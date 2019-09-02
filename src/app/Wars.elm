@@ -1,6 +1,6 @@
 module Wars exposing (WarBonus, warBonuses, warBonusFromString, allWarBonuses)
 
-import Translations exposing (Translations)
+import Translations exposing (..)
 
 type alias WarBonus =
   { code : String -- The code (to compare with the gsheet)

@@ -1,14 +1,8 @@
 module MapWithPreviousAndNext exposing (mapWithPreviousAndNext)
 
-import List exposing (indexedMap, map)
+import List exposing (..)
 
-import GetAt exposing (getAt)
-
-type alias LinkedElement a =
-  { previous : Maybe a
-  , current : a
-  , next : Maybe a
-  }
+import GetAt exposing (..)
 
 linkElement : List a -> Int -> a -> (Maybe a, a, Maybe a)
 linkElement list index element =

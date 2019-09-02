@@ -2,7 +2,7 @@ module FindPreferredEventType exposing (findPreferredEventType)
 
 import Dict exposing (..)
 
-import Hits exposing (Hits, computeHitsAverage)
+import Hits exposing (..)
 
 addIfExisting : Int -> Maybe Hits -> Maybe Hits
 addIfExisting valueToAdd maybeHits =

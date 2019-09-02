@@ -1,8 +1,8 @@
 module Pagination exposing (Page(..), findPage, findPath, findName, pushPage)
 
-import AssocList as Dict exposing (Dict)
-import Browser.Navigation exposing (Key, pushUrl)
-import Translations exposing (Translations)
+import AssocList as Dict exposing (..)
+import Browser.Navigation exposing (..)
+import Translations exposing (..)
 import Tuple3 exposing (..)
 import Url exposing (..)
 

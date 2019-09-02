@@ -1,6 +1,6 @@
 module ComputeAverage exposing (computeAverageDamage, computeAverageScore)
 
-import MemberScore exposing (MemberScore, AverageMemberScore)
+import MemberScore exposing (..)
 
 type alias HasDamage r = { r | damage : Int }
 

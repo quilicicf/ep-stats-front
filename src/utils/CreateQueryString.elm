@@ -1,6 +1,6 @@
 module CreateQueryString exposing (createQueryString)
 
-import Url exposing (percentEncode)
+import Url exposing (..)
 
 createQueryParameter : ( String, String ) -> String
 createQueryParameter ( name, value ) =

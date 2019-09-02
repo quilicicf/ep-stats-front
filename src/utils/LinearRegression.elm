@@ -5,11 +5,6 @@ import Basics exposing (round)
 import Flip exposing (flip)
 import GetAt exposing (getAt)
 
-type alias RegressionOptions =
-  { order: Int
-  , precision: Int
-  }
-
 type alias RegressionResult =
   { gradient: Float
   , intercept: Float

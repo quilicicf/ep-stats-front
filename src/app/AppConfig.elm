@@ -5,15 +5,15 @@ module AppConfig exposing (
   )
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as Decode exposing(Value, Decoder, maybe, string, bool)
-import Json.Encode as Encode
-import Json.Decode.Pipeline exposing (required, optional)
+import Json.Decode as Decode exposing (..)
+import Json.Encode as Encode exposing (..)
+import Json.Decode.Pipeline as Pipeline exposing (..)
 
-import KeyCreator
+import Sneacret exposing (..)
 import Msg exposing (..)
-import Translations exposing (TranslationsExtender)
+import Translations exposing (..)
 
 ------------
 -- MODELS --
@@ -46,7 +46,7 @@ type alias StorageAppState =
 -- UTILS --
 -----------
 
-jsonifyAppConfig : AppConfigExtender r -> Bool -> Value
+jsonifyAppConfig : AppConfigExtender r -> Bool -> Decode.Value
 jsonifyAppConfig appConfig isAdmin =
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
@@ -58,24 +58,24 @@ encodeAppConfig : AppConfigExtender r -> Bool -> String
 encodeAppConfig appConfig isAdmin =
   jsonifyAppConfig appConfig isAdmin
     |> Encode.encode 0
-    |> KeyCreator.createKey "START_KEY|>" "<|END_KEY"
+    |> Sneacret.sneak "START_KEY|>" "<|END_KEY"
     |> Maybe.withDefault "FAILED MISERABLY"
 
 appConfigDecoder : Decoder AppConfig
 appConfigDecoder =
   Decode.succeed AppConfig
-    |> required "teamName" string
-    |> required "sheetId" string
-    |> required "isAdmin" bool
+    |> Pipeline.required "teamName" Decode.string
+    |> Pipeline.required "sheetId" Decode.string
+    |> Pipeline.required "isAdmin" Decode.bool
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
   Decode.succeed StorageAppState
-    |> optional "appKey" string ""
-    |> optional "accessToken" (maybe string) Nothing
-    |> optional "selectedLanguage" string "defaultLanguage"
+    |> Pipeline.optional "appKey" Decode.string ""
+    |> Pipeline.optional "accessToken" (maybe Decode.string) Nothing
+    |> Pipeline.optional "selectedLanguage" Decode.string "defaultLanguage"
 
-decodeStorageAppState : Value -> StorageAppState
+decodeStorageAppState : Decode.Value -> StorageAppState
 decodeStorageAppState appKeyAsJson =
   case Decode.decodeValue storageAppStateDecoder appKeyAsJson of
     Ok appState -> appState
@@ -88,7 +88,7 @@ decodeAppConfig decodedAppKey =
     Err _ -> Nothing
 
 decodeAppConfigFromAppKey : String -> Maybe AppConfig
-decodeAppConfigFromAppKey encodedAppKey = KeyCreator.readKey encodedAppKey |> Maybe.andThen decodeAppConfig
+decodeAppConfigFromAppKey encodedAppKey = Sneacret.unSneak encodedAppKey |> Maybe.andThen decodeAppConfig
 
 ----------
 -- VIEW --
@@ -100,11 +100,11 @@ viewAppConfig model =
     [ h2 [] [ text model.translations.configureYourAlliance ]
     , div [ class "form-field-inline" ]
       [ label [ for "teamName" ] [ text "Team name" ]
-      , input [ type_ "text", id "teamName", value model.teamName, onInput (AppConfigMsg << NewTeamName) ] []
+      , input [ type_ "text", id "teamName", Attributes.value model.teamName, onInput (AppConfigMsg << NewTeamName) ] []
       ]
     , div [ class "form-field-inline" ]
       [ label [ for "sheetId" ] [ text "Sheet id" ]
-      , input [ type_ "text", id "sheetId", value model.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
+      , input [ type_ "text", id "sheetId", Attributes.value model.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
       ]
     , div []
       [ button

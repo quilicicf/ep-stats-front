@@ -4,7 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 import Msg exposing (..)
-import CustomStyle exposing (customStyle)
+import CustomStyle exposing (..)
 
 viewSpinner : String -> Html Msg
 viewSpinner message =

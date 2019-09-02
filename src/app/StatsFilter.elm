@@ -6,16 +6,16 @@ module StatsFilter exposing (
   )
 
 import Html exposing (..)
-import Html.Attributes exposing (class, for, id, type_, value, min, max, step)
-import Html.Events exposing (onInput)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Maybe exposing (..)
 
 import Msg exposing (..)
-import Optionize exposing (optionizeObjects, optionizeStrings)
-import StepRange exposing (stepRange)
-import Translations exposing (Translations, TranslationsExtender)
-import Titans exposing (DetailedColor, titanColorFromString, titanColors, allTitanColors)
-import Wars exposing (WarBonus, warBonuses, allWarBonuses, warBonusFromString)
+import Optionize exposing (..)
+import StepRange exposing (..)
+import Translations exposing (..)
+import Titans exposing (..)
+import Wars exposing (..)
 
 -----------
 -- MODEL --

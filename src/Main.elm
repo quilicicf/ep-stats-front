@@ -1,41 +1,35 @@
-port module Main exposing (main)
+port module Main exposing (..)
 
-import Browser exposing (application, UrlRequest, Document)
-import Browser.Navigation exposing (Key, load, pushUrl)
+import Browser exposing (..)
+import Browser.Navigation exposing (..)
 
-import CustomStyle exposing (customStyle)
+import CustomStyle exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http exposing (..)
-import Json.Decode exposing (Value, Decoder)
-import Maybe exposing (withDefault)
-import PrivacyPolicy exposing (viewPrivacyPolicy)
-import Svg exposing (svg, use)
-import Svg.Attributes exposing (xlinkHref)
-import Url exposing (Url)
+import Json.Decode exposing (..)
+import Maybe exposing (..)
+import PrivacyPolicy exposing (..)
+import Url exposing (..)
+
+import Svg
+import Svg.Attributes
 
 import Msg exposing (..)
 import Pagination exposing (..)
-import Wars exposing (WarBonus)
-import NavBar exposing (viewNavBar)
-import MaybeExtra exposing (hasValue)
-import Welcome exposing (viewWelcome)
-import Spinner exposing (viewSpinner)
-import Titans exposing (DetailedColor)
-import Translations exposing (Translations)
-import Authorization exposing (makeAuthorizationUrl, readAccessToken)
-import StatsFilter exposing (StatsFilter, StatsFilterExtender, createDefaultStatsFilter, updateStatsFilters)
-import Internationalization exposing (Language(..), languages, findLanguage, languageToString, getTranslations)
-import Stats exposing (
-  Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
-  fetchAllStats, updateStats, updateStatsWithFilter,
-  viewAllianceStats, viewTitansStats, viewWarsStats
-  )
-import AppConfig exposing (AppConfig, AppConfigExtender, StorageAppState,
-  decodeStorageAppState, decodeAppConfigFromAppKey,
-  updateAppConfig, viewAppConfig, viewAppKeyInput, viewAppKeyCopier
-  )
+import Wars exposing (..)
+import NavBar exposing (..)
+import MaybeExtra exposing (..)
+import Welcome exposing (..)
+import Spinner exposing (..)
+import Titans exposing (..)
+import Translations exposing (..)
+import Authorization exposing (..)
+import StatsFilter exposing (..)
+import Internationalization exposing (..)
+import Stats exposing (..)
+import AppConfig exposing (..)
 
 port setStorage : StorageAppState -> Cmd msg
 
@@ -356,7 +350,7 @@ viewLanguage : Language -> ( String, Language ) -> Html Msg
 viewLanguage appLanguage (languageAsString, language) =
   button
     [ class "language", disabled ( appLanguage == language ), onClick ( LanguageUpdated language )  ]
-    [ svg [ Svg.Attributes.class "flag" ] [ use [ xlinkHref ( "#flag-icon-css-" ++ languageAsString ) ] [] ] ]
+    [ Svg.svg [ Svg.Attributes.class "flag" ] [ Svg.use [ Svg.Attributes.xlinkHref ( "#flag-icon-css-" ++ languageAsString ) ] [] ] ]
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none

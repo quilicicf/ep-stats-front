@@ -2,11 +2,11 @@ module NavBar exposing (viewNavBar)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Maybe exposing (withDefault)
+import Maybe exposing (..)
 
 import Msg exposing (..)
-import Translations exposing (Translations)
-import Pagination exposing (Page(..), findPath, findName)
+import Translations exposing (..)
+import Pagination exposing (..)
 
 pagesLinked : List Page
 pagesLinked = [ AlliancePage, TitansPage, WarsPage ]

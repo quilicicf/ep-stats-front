@@ -27,6 +27,7 @@ module.exports = {
 
   APP_HTML_OUTPUT_PATH: resolvePath(DIST_PATH, APP_HTML_NAME),
   APP_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.js'),
+  APP_MIN_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.min.js'),
   STYLE_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.css'),
   STYLE_SOURCE_MAP_PATH: resolvePath(DIST_PATH, 'app.css.map'),
   DEPLOYMENT_OUTPUT_PATH: resolvePath(DIST_PATH, DEPLOYMENT_NAME),

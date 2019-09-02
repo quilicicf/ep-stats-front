@@ -32,7 +32,8 @@ module.exports = ({ shouldWatch = false }) => {
   const method = shouldWatch ? createWatcher : copySync;
 
   _.each(WATCH_LIST, ({ source, destination }) => {
-    process.stdout.write(`Watcher initialized: ${cyan(relativize(source))} => ${yellow(relativize(destination))}\n`);
+    const lineStart = shouldWatch ? 'Watcher initialized' : 'File(s) copied';
+    process.stdout.write(`${lineStart}: ${cyan(relativize(source))} => ${yellow(relativize(destination))}\n`);
     method(source, destination, { initialCopy: true });
   });
 };

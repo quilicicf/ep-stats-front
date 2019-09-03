@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "eslint './build/**/*.js'",
     "start": "node build/watch.js",
+    "serve": "node build/serve.js",
     "build": "node build/build.js"
   },
   "repository": {

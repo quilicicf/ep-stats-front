@@ -11,7 +11,7 @@ const { DIST_PATH, APP_OUTPUT_PATH } = require('./constants');
 
 const main = async () => {
   await prepareBuild();
-  copyAssets({ shouldWatch: false });
+  await copyAssets({ shouldWatch: false });
   await renderSass();
   await renderElm();
   await minifyApp(APP_OUTPUT_PATH);

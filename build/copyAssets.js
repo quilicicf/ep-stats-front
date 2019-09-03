@@ -1,7 +1,9 @@
 const _ = require('lodash');
-const { copySync, watch } = require('cpx');
+const { copy, watch } = require('cpx');
 const { cyan, yellow } = require('chalk');
 const { relative } = require('path');
+
+const changeAppImport = require('./changeAppImport');
 
 const {
   DIR_PATH,
@@ -14,7 +16,7 @@ const {
 } = require('./constants');
 
 const WATCH_LIST = [
-  { source: APP_HTML_SOURCE_PATH, destination: DIST_PATH },
+  { source: APP_HTML_SOURCE_PATH, destination: DIST_PATH, transformer: changeAppImport },
   { source: DEPLOYMENT_SOURCE_PATH, destination: DIST_PATH },
   { source: ASSETS_GLOB, destination: DIST_ASSETS_PATH },
   { source: WEB_FONT_SOURCE_GLOB, destination: DIST_ASSETS_PATH },
@@ -22,18 +24,29 @@ const WATCH_LIST = [
 
 const relativize = path => relative(DIR_PATH, path);
 
-const createWatcher = (source, destination, options) =>
-  watch(source, destination, options)
-    .on('copy', ({ srcPath }) => {
-      process.stdout.write(`${cyan('Just copied:')} ${relativize(srcPath)}\n`);
-    });
-
-module.exports = ({ shouldWatch = false }) => {
-  const method = shouldWatch ? createWatcher : copySync;
-
+const watchAssets = () => {
   _.each(WATCH_LIST, ({ source, destination }) => {
-    const lineStart = shouldWatch ? 'Watcher initialized' : 'File(s) copied';
-    process.stdout.write(`${lineStart}: ${cyan(relativize(source))} => ${yellow(relativize(destination))}\n`);
-    method(source, destination, { initialCopy: true });
+    process.stdout.write(`Watcher initialized: ${cyan(relativize(source))} => ${yellow(relativize(destination))}\n`);
+    watch(source, destination, { initialCopy: true })
+      .on('copy', ({ srcPath }) => {
+        process.stdout.write(`${cyan('Just copied:')} ${relativize(srcPath)}\n`);
+      });
   });
 };
+
+const copyAssets = () => {
+  const copyPromises = _.map(
+    WATCH_LIST,
+    ({ source, destination, transformer }) => new Promise((resolve, reject) => {
+      process.stdout.write(`File(s) copied: ${cyan(relativize(source))} => ${yellow(relativize(destination))}\n`);
+      copy(source, destination, { initialCopy: true, transform: transformer }, (error) => {
+        if (error) { return reject(error); }
+        return resolve();
+      });
+    }),
+  );
+
+  return Promise.all(copyPromises);
+};
+
+module.exports = async ({ shouldWatch = false }) => (shouldWatch ? watchAssets() : copyAssets());

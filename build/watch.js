@@ -19,7 +19,7 @@ const STYLE_FILES_GLOB = resolvePath(SRC_PATH, '**', '*.scss');
 
 const main = async () => {
   await prepareBuild();
-  copyAssets({ shouldWatch: true });
+  await copyAssets({ shouldWatch: true });
 
   const elmWatcher = watch(
     [ APP_ENTRY_POINT, ELM_FILES_GLOB ],

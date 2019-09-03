@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
 const statDir = require('./statDir');
-const minifyApp = require('./minifyApp');
 const copyAssets = require('./copyAssets');
 const renderElm = require('./renderElm');
 const renderSass = require('./renderSass');
 const prepareBuild = require('./prepareBuild');
-
-const { DIST_PATH, APP_OUTPUT_PATH } = require('./constants');
+const gzipAppAndStyle = require('./gzipAppAndStyle');
+const minifyAppAndStyle = require('./minifyAppAndStyle');
 
 const main = async () => {
   await prepareBuild();
-  await copyAssets({ shouldWatch: false });
-  await renderSass();
+  await copyAssets({ isForProd: true });
+  await renderSass({ isForProd: true });
   await renderElm();
-  await minifyApp(APP_OUTPUT_PATH);
-  statDir(DIST_PATH);
+  await minifyAppAndStyle();
+  await gzipAppAndStyle();
+  statDir();
 };
 
 main();

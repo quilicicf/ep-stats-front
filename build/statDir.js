@@ -2,6 +2,8 @@ const _ = require('lodash');
 const getTree = require('directory-tree');
 const fileSize = require('filesize');
 
+const { DIST_PATH } = require('./constants');
+
 const INDENTATIONS = {
   CHILD: '├── ',
   LAST_CHILD: '└── ',
@@ -27,7 +29,7 @@ const recursiveShowTree = (tree, depth = 0) => {
     recursiveShowTree(child, depth + 1);
   });
 };
-module.exports = (folderPath) => {
-  const folderTree = getTree(folderPath, { exclude: /netlify\.toml/ });
+module.exports = () => {
+  const folderTree = getTree(DIST_PATH, { exclude: /netlify\.toml/ });
   recursiveShowTree(folderTree, 0);
 };

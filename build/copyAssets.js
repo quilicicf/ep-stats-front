@@ -49,4 +49,4 @@ const copyAssets = () => {
   return Promise.all(copyPromises);
 };
 
-module.exports = async ({ shouldWatch = false }) => (shouldWatch ? watchAssets() : copyAssets());
+module.exports = async ({ isForProd = false }) => (isForProd ? copyAssets() : watchAssets());

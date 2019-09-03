@@ -4,16 +4,19 @@ const { render } = require('node-sass');
 const writeFile = require('./writeFile');
 const { STYLE_ENTRY_POINT, STYLE_OUTPUT_PATH, STYLE_SOURCE_MAP_PATH } = require('./constants');
 
-const SASS_OPTIONS = {
+const getSassOptions = isForProd => ({
   file: STYLE_ENTRY_POINT,
   outFile: STYLE_OUTPUT_PATH,
-  sourceMap: true,
-};
+  precision: 9,
+  sourceMap: !isForProd,
+  outputStyle: isForProd ? 'compress' : 'nested',
+});
 
-module.exports = async () => {
+module.exports = async ({ isForProd = false }) => {
   try {
+    const sassOptions = getSassOptions(isForProd);
     const { css, map } = await new Promise((resolve, reject) => {
-      render(SASS_OPTIONS, (error, result) => {
+      render(sassOptions, (error, result) => {
         if (error) {
           return reject(error);
         }
@@ -22,8 +25,10 @@ module.exports = async () => {
     });
 
     process.stdout.write('Success! Compiled SASS\n');
-    writeFile(STYLE_OUTPUT_PATH, css);
-    return writeFile(STYLE_SOURCE_MAP_PATH, map);
+    await writeFile(STYLE_OUTPUT_PATH, css);
+    if (map) { await writeFile(STYLE_SOURCE_MAP_PATH, map); }
+
+    return Promise.resolve();
 
   } catch (sassRenderingError) {
     process.stdout.write(chalk.yellow(`SASS error:\n${sassRenderingError.stack}\n`));

@@ -26,9 +26,15 @@ module.exports = {
   WEB_FONT_SOURCE_GLOB: resolvePath(NODE_MODULES_PATH, '@fortawesome', 'fontawesome-free-webfonts', 'webfonts', 'fa-solid-900*'),
 
   APP_HTML_OUTPUT_PATH: resolvePath(DIST_PATH, APP_HTML_NAME),
+
   APP_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.js'),
   APP_MIN_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.min.js'),
+  APP_GZIPPED_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.min.js.gzip'),
+
   STYLE_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.css'),
+  STYLE_MIN_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.min.css'),
+  STYLE_GZIPPED_OUTPUT_PATH: resolvePath(DIST_PATH, 'app.min.css.gzip'),
   STYLE_SOURCE_MAP_PATH: resolvePath(DIST_PATH, 'app.css.map'),
+
   DEPLOYMENT_OUTPUT_PATH: resolvePath(DIST_PATH, DEPLOYMENT_NAME),
 };

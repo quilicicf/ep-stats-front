@@ -3,7 +3,7 @@ const { copy, watch } = require('cpx');
 const { cyan, yellow } = require('chalk');
 const { relative } = require('path');
 
-const changeAppImport = require('./changeAppImport');
+const changeAppImports = require('./changeAppImports');
 
 const {
   DIR_PATH,
@@ -16,7 +16,7 @@ const {
 } = require('./constants');
 
 const WATCH_LIST = [
-  { source: APP_HTML_SOURCE_PATH, destination: DIST_PATH, transformer: changeAppImport },
+  { source: APP_HTML_SOURCE_PATH, destination: DIST_PATH, transformer: changeAppImports },
   { source: DEPLOYMENT_SOURCE_PATH, destination: DIST_PATH },
   { source: ASSETS_GLOB, destination: DIST_ASSETS_PATH },
   { source: WEB_FONT_SOURCE_GLOB, destination: DIST_ASSETS_PATH },

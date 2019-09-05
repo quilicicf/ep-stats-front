@@ -14,6 +14,9 @@ const { SRC_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT } = require('./constants');
 const ELM_FILES_GLOB = resolvePath(SRC_PATH, '**', '*.elm');
 const STYLE_FILES_GLOB = resolvePath(SRC_PATH, '**', '*.scss');
 
+const elmTaskQueue = Promise.resolve();
+const addElmRenderToTaskQueue = () => elmTaskQueue.then(() => renderSass({}));
+
 const main = async () => {
   await prepareBuild();
   await copyAssets({});
@@ -35,10 +38,10 @@ const main = async () => {
   );
 
   sassWatcher
-    .on('add', () => renderSass({}))
-    .on('change', () => renderSass({}))
-    .on('unlink', () => renderSass({}))
-    .on('ready', () => renderSass({}));
+    .on('add', addElmRenderToTaskQueue)
+    .on('change', addElmRenderToTaskQueue)
+    .on('unlink', addElmRenderToTaskQueue)
+    .on('ready', addElmRenderToTaskQueue);
 
   startServer();
 };

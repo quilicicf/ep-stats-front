@@ -11,6 +11,7 @@ import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
 import Json.Decode.Pipeline as Pipeline exposing (..)
 
+import MaybeExtra exposing (maybeify)
 import Sneacret exposing (..)
 import Msg exposing (..)
 import Translations exposing (..)
@@ -24,14 +25,14 @@ type alias Model r = TranslationsExtender ( AppConfigExtender r )
 type alias AppConfig =
   { teamName: String
   , sheetId: String
-  , isAdmin: Bool
+  , adminKey: Maybe String
   }
 
 type alias AppConfigExtender r =
   { r
   | teamName: String
   , sheetId: String
-  , isAdmin: Bool
+  , adminKey: Maybe String
   , appKey: String
   , appKeyError: String
   }
@@ -46,27 +47,37 @@ type alias StorageAppState =
 -- UTILS --
 -----------
 
-jsonifyAppConfig : AppConfigExtender r -> Bool -> Decode.Value
+encodeMaybe : ( a -> Encode.Value ) -> Maybe a -> Encode.Value
+encodeMaybe encoder maybe = case maybe of
+  Just value -> encoder value
+  Nothing -> Encode.null
+
+jsonifyAppConfig : AppConfigExtender r -> Bool -> Encode.Value
 jsonifyAppConfig appConfig isAdmin =
+  let
+    adminKeyEncoder : Maybe String -> Encode.Value
+    adminKeyEncoder adminKey = if isAdmin
+      then encodeMaybe Encode.string adminKey
+      else encodeMaybe Encode.string Nothing
+  in
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
       , ("sheetId", Encode.string appConfig.sheetId)
-      , ("isAdmin", Encode.bool isAdmin)
+      , ("adminKey", adminKeyEncoder appConfig.adminKey)
       ]
 
 encodeAppConfig : AppConfigExtender r -> Bool -> String
-encodeAppConfig appConfig isAdmin =
-  jsonifyAppConfig appConfig isAdmin
-    |> Encode.encode 0
-    |> Sneacret.sneak "START_KEY|>" "<|END_KEY"
-    |> Maybe.withDefault "FAILED MISERABLY"
+encodeAppConfig appConfig isAdmin = jsonifyAppConfig appConfig isAdmin
+  |> Encode.encode 0
+  |> Sneacret.sneak "START_KEY|>" "<|END_KEY"
+  |> Maybe.withDefault "FAILED MISERABLY"
 
 appConfigDecoder : Decoder AppConfig
 appConfigDecoder =
   Decode.succeed AppConfig
     |> Pipeline.required "teamName" Decode.string
     |> Pipeline.required "sheetId" Decode.string
-    |> Pipeline.required "isAdmin" Decode.bool
+    |> Pipeline.required "adminKey" ( Decode.nullable Decode.string )
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
@@ -105,6 +116,15 @@ viewAppConfig model =
     , div [ class "form-field-inline" ]
       [ label [ for "sheetId" ] [ text "Sheet id" ]
       , input [ type_ "text", id "sheetId", Attributes.value model.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
+      ]
+    , div [ class "form-field-inline" ]
+      [ label [ for "adminKey" ] [ text "Admin key" ]
+      , input
+        [ type_ "text"
+        , id "adminKey"
+        , Attributes.value <| Maybe.withDefault "" model.adminKey
+        , onInput (AppConfigMsg << NewAdminKey << maybeify)
+        ] []
       ]
     , div []
       [ button
@@ -195,7 +215,10 @@ updateAppConfig msg model =
             { model
             | teamName = result.teamName
             , sheetId = result.sheetId
-            , isAdmin = result.isAdmin
+            , adminKey = result.adminKey
             , appKeyError = ""
             }
           Nothing -> { model | appKeyError = model.translations.invalidAppKey }
+
+    NewAdminKey newAdminKey -> { model | adminKey = newAdminKey }
+

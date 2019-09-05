@@ -5,6 +5,7 @@ module Stats exposing (
   viewAllianceStats, viewTitansStats, viewWarsStats
   )
 
+import AppConfig exposing (AppConfigExtender)
 import Dict exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -40,11 +41,12 @@ import Gsheet exposing (..)
 -- MODELS --
 ------------
 
-type alias Model r = StatsFilterExtender (StatsExtender (TranslationsExtender r))
+type alias Model r = AppConfigExtender (StatsFilterExtender (StatsExtender (TranslationsExtender r)))
 
 type alias StatsExtender r =
   { r
-  | stats: Maybe Stats
+  | isAdmin: Bool
+  , stats: Maybe Stats
   , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
   , filteredStats: Maybe FilteredStats
@@ -771,10 +773,10 @@ parseRawStats : RawStats -> Stats
 parseRawStats rawStats =
   let
     titanSheet : RawSheet
-    titanSheet = withDefault ( RawSheet [] ) ( getAt 0 rawStats.valueRanges )
+    titanSheet = withDefault ( RawSheet [] ) ( getAt 1 rawStats.valueRanges )
 
     warSheet : RawSheet
-    warSheet = withDefault ( RawSheet [] ) ( getAt 1 rawStats.valueRanges )
+    warSheet = withDefault ( RawSheet [] ) ( getAt 2 rawStats.valueRanges )
 
   in
     Stats
@@ -898,8 +900,8 @@ filterStats statsFilter stats =
 filterStatsForAlliancePage : Stats -> StatsFilterExtender r -> FilteredStats
 filterStatsForAlliancePage stats defaultStatsFilter = filterStats defaultStatsFilter stats
 
-decodeStats : String -> Stats
-decodeStats statsAsString = decodeRawStats statsAsString |> parseRawStats
+decodeStats : String -> RawStats
+decodeStats statsAsString = decodeRawStats statsAsString
 
 retrieveMemberWarScores : Int -> List ( FilteredMemberWarScores ) -> FilteredMemberWarScores
 retrieveMemberWarScores index memberWarScoresList = Maybe.withDefault
@@ -957,11 +959,25 @@ updateValidStats stats model =
     , filteredStats = Just filteredStats
     }
 
+isAdminKeyValid : RawSheet -> Maybe String -> Bool
+isAdminKeyValid rawSheet adminKey =
+  let
+    expectedAdminKey : Maybe String
+    expectedAdminKey = getAt 0 rawSheet.values |> Maybe.andThen ( getAt 0 )
+  in
+    expectedAdminKey == adminKey
+
 decodeAndUpdateStats : String -> Model r -> Model r
 decodeAndUpdateStats statsAsString model =
   let
+    rawStats : RawStats
+    rawStats = decodeStats statsAsString
+
     stats : Stats
-    stats = decodeStats statsAsString
+    stats = parseRawStats rawStats
+
+    isAdmin : Bool
+    isAdmin = isAdminKeyValid ( getAt 0 rawStats.valueRanges |> withDefault (RawSheet []) ) model.adminKey
 
     areMembersListEqual : Bool
     areMembersListEqual = areListsEqual
@@ -973,7 +989,7 @@ decodeAndUpdateStats statsAsString model =
 
   in
     case maybeErrorMessage of
-      Nothing -> updateValidStats stats model
+      Nothing -> updateValidStats stats { model | isAdmin = isAdmin }
       Just _ -> { model | statsError = maybeErrorMessage }
 
 updateStats : StatsMsg -> Model r -> Model r

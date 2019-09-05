@@ -37,7 +37,7 @@ type alias Model =
   -- AppConfig
   { teamName: String
   , sheetId: String
-  , isAdmin: Bool
+  , adminKey: Maybe String
   , appKey: String
   , appKeyError: String
 
@@ -53,6 +53,7 @@ type alias Model =
   , filteredWarBonus : WarBonus
 
   -- Stats
+  , isAdmin: Bool
   , stats: Maybe Stats
   , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
@@ -72,7 +73,7 @@ createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> 
 createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl language translations =
   let
     appConfig : AppConfig
-    appConfig = withDefault (AppConfig "" "" False) maybeAppConfig
+    appConfig = withDefault (AppConfig "" "" Nothing) maybeAppConfig
 
     baseUrl : Url
     baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
@@ -83,7 +84,7 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
   in
     { teamName = appConfig.teamName
     , sheetId = appConfig.sheetId
-    , isAdmin = appConfig.isAdmin
+    , adminKey = appConfig.adminKey
     , appKey = appKey
     , appKeyError = ""
 
@@ -97,8 +98,11 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
     , filteredTitanStars = defaultStatsFilter.filteredTitanStars
     , filteredWarPeriod = defaultStatsFilter.filteredWarPeriod
     , filteredWarBonus = defaultStatsFilter.filteredWarBonus
-    , statsError = Nothing
+
+    -- Filters
+    , isAdmin = False
     , stats = Nothing
+    , statsError = Nothing
     , allianceStats  = Nothing
     , filteredStats = Nothing
 

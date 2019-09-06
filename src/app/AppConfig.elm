@@ -204,21 +204,16 @@ updateAppConfig msg model =
     CopiedAppKeys copiedAppKey -> { model | appKey = copiedAppKey }
 
     InputAppKey ->
-      -- TODO: No way to avoid that boilerplate? Seriously?
-      let
-        maybeResult : Maybe AppConfig
-        maybeResult = decodeAppConfigFromAppKey model.appKey
-
-      in
-        case maybeResult of
-          Just result ->
+      decodeAppConfigFromAppKey model.appKey
+        |> Maybe.map (\result ->
             { model
             | teamName = result.teamName
             , sheetId = result.sheetId
             , adminKey = result.adminKey
             , appKeyError = ""
             }
-          Nothing -> { model | appKeyError = model.translations.invalidAppKey }
+          )
+        |> Maybe.withDefault { model | appKeyError = model.translations.invalidAppKey }
 
     NewAdminKey newAdminKey -> { model | adminKey = newAdminKey }
 

@@ -21,6 +21,7 @@ type AppConfigMsg
   = NewTeamName String
   | NewSheetId String
   | NewAdminKey ( Maybe String )
+  | NewSheetKey String
   | NewAppKey String
   | CreateAppConfig
   | CopiedAppKeys String
@@ -28,6 +29,7 @@ type AppConfigMsg
 
 type StatsMsg
   = GotStats (Result Error String)
+  | BackToAppKeyMsg
 
 type StatsFilterMsg
   = NewMemberSelected String

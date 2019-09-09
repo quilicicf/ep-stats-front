@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Maybe exposing (..)
 
+import MaybeExtra exposing (..)
 import Msg exposing (..)
 import Translations exposing (..)
 import Pagination exposing (..)
@@ -11,11 +12,11 @@ import Pagination exposing (..)
 pagesLinked : List Page
 pagesLinked = [ AlliancePage, TitansPage, WarsPage ]
 
-viewNavBar : Page -> Translations -> Html Msg
-viewNavBar currentPage translations =
+viewNavBar : Page -> Maybe String ->  Translations -> Html Msg
+viewNavBar currentPage statsError translations =
   let
     isCurrentPageLinkable : Bool
-    isCurrentPageLinkable = List.member currentPage pagesLinked
+    isCurrentPageLinkable = List.member currentPage pagesLinked && ( not <| hasValue statsError )
   in
     nav
       [ class "nav-bar", hidden ( not isCurrentPageLinkable ) ]

@@ -38,6 +38,7 @@ type alias Model =
   { teamName: String
   , sheetId: String
   , adminKey: Maybe String
+  , sheetKey: String
   , appKey: String
   , appKeyError: String
 
@@ -73,7 +74,7 @@ createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> 
 createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl language translations =
   let
     appConfig : AppConfig
-    appConfig = withDefault (AppConfig "" "" Nothing) maybeAppConfig
+    appConfig = withDefault (AppConfig "" "" Nothing "") maybeAppConfig
 
     baseUrl : Url
     baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
@@ -85,6 +86,7 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
     { teamName = appConfig.teamName
     , sheetId = appConfig.sheetId
     , adminKey = appConfig.adminKey
+    , sheetKey = appConfig.sheetKey
     , appKey = appKey
     , appKeyError = ""
 
@@ -264,7 +266,12 @@ update msg model =
       case statsMsg of
         GotStats httpResult ->
           case httpResult of
-            Ok _ -> ( updateStats statsMsg model, Cmd.none )
+            Ok statsAsString -> updateStats statsAsString model
+              (\updatedModel -> setStorage
+                { appKey = ""
+                , accessToken = updatedModel.accessToken
+                , selectedLanguage = ( languageToString updatedModel.language )
+                })
             Err error ->
               case error of
                 BadStatus status ->
@@ -273,6 +280,9 @@ update msg model =
                     _ -> ( model, Cmd.none )
 
                 _ -> ( model, Cmd.none )
+
+        BackToAppKeyMsg -> ( model, pushPage model.navigationKey AppKeyPage )
+
 
     StatsFilterMsg statsFilterMsg -> (
         updateStatsFilters statsFilterMsg model |> updateStatsWithFilter,
@@ -320,14 +330,14 @@ createDocumentWithTeamName model body =
 createDocumentWithDefaultTitle : Model -> Html Msg -> Document Msg
 createDocumentWithDefaultTitle model body = createDocument model.translations.appTitle model body
 
-createDocument : String -> { r | currentPage: Page, language: Language, translations: Translations } -> Html Msg -> Document Msg
-createDocument title { currentPage, language, translations } body =
+createDocument : String -> Model -> Html Msg -> Document Msg
+createDocument title { currentPage, language, statsError, translations } body =
   { title = title
   , body = [
       div
         []
         [ viewHeaderBar { title = title, language = language }
-        , viewNavBar currentPage translations
+        , viewNavBar currentPage statsError translations
         , body
         ]
     ]

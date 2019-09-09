@@ -12,7 +12,7 @@ const main = async () => {
   await prepareBuild();
   await copyAssets({ isForProd: true });
   await renderSass({ isForProd: true });
-  await renderElm();
+  await renderElm({ isForProd: true });
   await minifyAppAndStyle();
   await gzipAppAndStyle();
   statDir();

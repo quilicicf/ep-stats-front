@@ -14,8 +14,9 @@ const { SRC_PATH, APP_ENTRY_POINT, STYLE_ENTRY_POINT } = require('./constants');
 const ELM_FILES_GLOB = resolvePath(SRC_PATH, '**', '*.elm');
 const STYLE_FILES_GLOB = resolvePath(SRC_PATH, '**', '*.scss');
 
-const elmTaskQueue = Promise.resolve();
-const addElmRenderToTaskQueue = () => elmTaskQueue.then(() => renderSass({}));
+const renderTaskQueue = Promise.resolve();
+const addElmRenderToTaskQueue = () => renderTaskQueue.then(() => renderElm({}));
+const addSassRenderToTaskQueue = () => renderTaskQueue.then(() => renderSass({}));
 
 const main = async () => {
   await prepareBuild();
@@ -27,10 +28,10 @@ const main = async () => {
   );
 
   elmWatcher
-    .on('add', renderElm)
-    .on('change', renderElm)
-    .on('unlink', renderElm)
-    .on('ready', renderElm);
+    .on('add', addElmRenderToTaskQueue)
+    .on('change', addElmRenderToTaskQueue)
+    .on('unlink', addElmRenderToTaskQueue)
+    .on('ready', addElmRenderToTaskQueue);
 
   const sassWatcher = watch(
     [ STYLE_ENTRY_POINT, STYLE_FILES_GLOB ],
@@ -38,10 +39,10 @@ const main = async () => {
   );
 
   sassWatcher
-    .on('add', addElmRenderToTaskQueue)
-    .on('change', addElmRenderToTaskQueue)
-    .on('unlink', addElmRenderToTaskQueue)
-    .on('ready', addElmRenderToTaskQueue);
+    .on('add', addSassRenderToTaskQueue)
+    .on('change', addSassRenderToTaskQueue)
+    .on('unlink', addSassRenderToTaskQueue)
+    .on('ready', addSassRenderToTaskQueue);
 
   startServer();
 };

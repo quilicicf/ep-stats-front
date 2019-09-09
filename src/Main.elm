@@ -214,6 +214,13 @@ initAuthenticatedUser maybeLoadingPage initialModel =
       ]
     )
 
+eraseAppKeyFromStorage : Model -> Cmd Msg
+eraseAppKeyFromStorage updatedModel = setStorage
+  { appKey = ""
+  , accessToken = updatedModel.accessToken
+  , selectedLanguage = ( languageToString updatedModel.language )
+  }
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -266,12 +273,7 @@ update msg model =
       case statsMsg of
         GotStats httpResult ->
           case httpResult of
-            Ok statsAsString -> updateStats statsAsString model
-              (\updatedModel -> setStorage
-                { appKey = ""
-                , accessToken = updatedModel.accessToken
-                , selectedLanguage = ( languageToString updatedModel.language )
-                })
+            Ok statsAsString -> updateStats statsAsString model eraseAppKeyFromStorage
             Err error ->
               case error of
                 BadStatus status ->

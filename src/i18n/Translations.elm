@@ -41,6 +41,8 @@ type alias Translations =
   , filters: String
   , fetchingTheData: String
   , membersListsDiffer: String
+  , keyRevoked: String
+  , backToAppKeyPage: String
   , red: String
   , green: String
   , blue: String

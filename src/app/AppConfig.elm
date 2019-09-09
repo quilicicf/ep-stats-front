@@ -26,6 +26,7 @@ type alias AppConfig =
   { teamName: String
   , sheetId: String
   , adminKey: Maybe String
+  , sheetKey: String
   }
 
 type alias AppConfigExtender r =
@@ -33,6 +34,7 @@ type alias AppConfigExtender r =
   | teamName: String
   , sheetId: String
   , adminKey: Maybe String
+  , sheetKey: String
   , appKey: String
   , appKeyError: String
   }
@@ -64,6 +66,7 @@ jsonifyAppConfig appConfig isAdmin =
       [ ("teamName", Encode.string appConfig.teamName)
       , ("sheetId", Encode.string appConfig.sheetId)
       , ("adminKey", adminKeyEncoder appConfig.adminKey)
+      , ("sheetKey", Encode.string appConfig.sheetKey)
       ]
 
 encodeAppConfig : AppConfigExtender r -> Bool -> String
@@ -78,6 +81,7 @@ appConfigDecoder =
     |> Pipeline.required "teamName" Decode.string
     |> Pipeline.required "sheetId" Decode.string
     |> Pipeline.required "adminKey" ( Decode.nullable Decode.string )
+    |> Pipeline.required "sheetKey" Decode.string
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
@@ -124,6 +128,15 @@ viewAppConfig model =
         , id "adminKey"
         , Attributes.value <| Maybe.withDefault "" model.adminKey
         , onInput (AppConfigMsg << NewAdminKey << maybeify)
+        ] []
+      ]
+    , div [ class "form-field-inline" ]
+      [ label [ for "sheetKey" ] [ text "Sheet key" ]
+      , input
+        [ type_ "text"
+        , id "sheetKey"
+        , Attributes.value model.sheetKey
+        , onInput (AppConfigMsg << NewSheetKey)
         ] []
       ]
     , div []
@@ -217,3 +230,4 @@ updateAppConfig msg model =
 
     NewAdminKey newAdminKey -> { model | adminKey = newAdminKey }
 
+    NewSheetKey newSheetKey -> { model | sheetKey = newSheetKey }

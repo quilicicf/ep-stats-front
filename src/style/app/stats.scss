@@ -236,3 +236,22 @@
     color: var(--primary-color);
   }
 }
+
+.error-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .error-message {
+    max-width: 700px;
+    color: var(--red);
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 1.5rem 0;
+  }
+
+  .button {
+    display: inline-block;
+  }
+}

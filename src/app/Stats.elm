@@ -10,6 +10,7 @@ import Dict exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (..)
+import Html.Events exposing (..)
 import Http exposing (..)
 import Maybe exposing (..)
 
@@ -30,6 +31,7 @@ import CreateBearerHeader exposing (..)
 import MemberScore exposing (..)
 import MapWithPreviousAndNext exposing (..)
 import FindPreferredEventType exposing (..)
+import Url exposing (..)
 import Wars exposing (..)
 import ComputeAverage exposing (..)
 import LinearRegression exposing (..)
@@ -186,10 +188,12 @@ fetchAllStats sheetId accessToken = Http.request
   }
 
 viewAllianceStats : Model r -> Html Msg
-viewAllianceStats model =
-  case model.allianceStats of
-    Just validAllianceStats -> viewValidAllianceStats model validAllianceStats
-    Nothing -> viewSpinner model.translations.fetchingTheData
+viewAllianceStats model = case model.statsError of
+  Just errorMessage -> viewErrorMessage model errorMessage
+  Nothing ->
+    case model.allianceStats of
+      Just validAllianceStats -> viewValidAllianceStats model validAllianceStats
+      Nothing -> viewSpinner model.translations.fetchingTheData
 
 viewTitansStats : Model r -> Html Msg
 viewTitansStats model =
@@ -202,6 +206,13 @@ viewWarsStats model =
   case model.filteredStats of
     Just validFilteredStats -> viewValidWarsStats model validFilteredStats
     Nothing -> viewSpinner model.translations.fetchingTheData
+
+viewErrorMessage : Model r -> String -> Html Msg
+viewErrorMessage { translations } errorMessage =
+  div [ class "error-page" ] [
+    div [ class "error-message" ] [ text errorMessage ],
+    div [ class "button button-primary", role "button", onClick ( StatsMsg BackToAppKeyMsg ) ] [ text translations.backToAppKeyPage ]
+  ]
 
 compareMembersStats : MemberStats -> MemberStats -> Order
 compareMembersStats stats1 stats2 =
@@ -959,16 +970,26 @@ updateValidStats stats model =
     , filteredStats = Just filteredStats
     }
 
+isSheetKeyValid : RawSheet -> String -> Bool
+isSheetKeyValid rawSheet sheetKey =
+  let
+    expectedAdminKey : String
+    expectedAdminKey = getAt 0 rawSheet.values
+      |> Maybe.andThen ( getAt 0 )
+      |> Maybe.withDefault ""
+  in
+    expectedAdminKey == sheetKey
+
 isAdminKeyValid : RawSheet -> Maybe String -> Bool
 isAdminKeyValid rawSheet adminKey =
   let
     expectedAdminKey : Maybe String
-    expectedAdminKey = getAt 0 rawSheet.values |> Maybe.andThen ( getAt 0 )
+    expectedAdminKey = getAt 0 rawSheet.values |> Maybe.andThen ( getAt 1 )
   in
     expectedAdminKey == adminKey
 
-decodeAndUpdateStats : String -> Model r -> Model r
-decodeAndUpdateStats statsAsString model =
+decodeAndUpdateStats : String -> Model r -> (Model r -> Cmd Msg) -> ( Model r, Cmd Msg )
+decodeAndUpdateStats statsAsString model eraseAppKeyFromStorage =
   let
     rawStats : RawStats
     rawStats = decodeStats statsAsString
@@ -976,8 +997,14 @@ decodeAndUpdateStats statsAsString model =
     stats : Stats
     stats = parseRawStats rawStats
 
+    adminSheet : RawSheet
+    adminSheet = ( getAt 0 rawStats.valueRanges |> withDefault (RawSheet []) )
+
+    isKeyRevoked : Bool
+    isKeyRevoked = not <| isSheetKeyValid adminSheet model.sheetKey
+
     isAdmin : Bool
-    isAdmin = isAdminKeyValid ( getAt 0 rawStats.valueRanges |> withDefault (RawSheet []) ) model.adminKey
+    isAdmin = isAdminKeyValid adminSheet model.adminKey
 
     areMembersListEqual : Bool
     areMembersListEqual = areListsEqual
@@ -988,17 +1015,14 @@ decodeAndUpdateStats statsAsString model =
     maybeErrorMessage = if areMembersListEqual then Nothing else Just model.translations.membersListsDiffer
 
   in
-    case maybeErrorMessage of
-      Nothing -> updateValidStats stats { model | isAdmin = isAdmin }
-      Just _ -> { model | statsError = maybeErrorMessage }
+    if isKeyRevoked
+      then ( { model | statsError = Just model.translations.keyRevoked }, eraseAppKeyFromStorage model )
+      else case maybeErrorMessage of
+         Nothing -> ( updateValidStats stats { model | isAdmin = isAdmin }, Cmd.none )
+         Just _ -> ( { model | statsError = maybeErrorMessage }, Cmd.none )
 
-updateStats : StatsMsg -> Model r -> Model r
-updateStats msg model =
-  case msg of
-    GotStats httpResult ->
-      case httpResult of
-        Ok statsAsString -> decodeAndUpdateStats statsAsString model
-        Err _ -> model
+updateStats : String -> Model r -> (Model r -> Cmd Msg) -> ( Model r, Cmd Msg )
+updateStats statsAsString model eraseAppKeyFromStorage = decodeAndUpdateStats statsAsString model eraseAppKeyFromStorage
 
 updateStatsWithFilter : Model r -> Model r
 updateStatsWithFilter model =

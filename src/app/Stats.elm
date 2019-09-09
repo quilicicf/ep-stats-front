@@ -31,7 +31,6 @@ import CreateBearerHeader exposing (..)
 import MemberScore exposing (..)
 import MapWithPreviousAndNext exposing (..)
 import FindPreferredEventType exposing (..)
-import Url exposing (..)
 import Wars exposing (..)
 import ComputeAverage exposing (..)
 import LinearRegression exposing (..)
@@ -196,16 +195,20 @@ viewAllianceStats model = case model.statsError of
       Nothing -> viewSpinner model.translations.fetchingTheData
 
 viewTitansStats : Model r -> Html Msg
-viewTitansStats model =
-  case model.filteredStats of
-    Just validFilteredStats -> viewValidTitansStats model validFilteredStats
-    Nothing -> viewSpinner model.translations.fetchingTheData
+viewTitansStats model = case model.statsError of
+  Just errorMessage -> viewErrorMessage model errorMessage
+  Nothing ->
+    case model.filteredStats of
+      Just validFilteredStats -> viewValidTitansStats model validFilteredStats
+      Nothing -> viewSpinner model.translations.fetchingTheData
 
 viewWarsStats : Model r -> Html Msg
-viewWarsStats model =
-  case model.filteredStats of
-    Just validFilteredStats -> viewValidWarsStats model validFilteredStats
-    Nothing -> viewSpinner model.translations.fetchingTheData
+viewWarsStats model = case model.statsError of
+  Just errorMessage -> viewErrorMessage model errorMessage
+  Nothing ->
+    case model.filteredStats of
+      Just validFilteredStats -> viewValidWarsStats model validFilteredStats
+      Nothing -> viewSpinner model.translations.fetchingTheData
 
 viewErrorMessage : Model r -> String -> Html Msg
 viewErrorMessage { translations } errorMessage =

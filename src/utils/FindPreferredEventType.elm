@@ -1,6 +1,6 @@
-module FindPreferredEventType exposing (findPreferredEventType)
+module FindPreferredEventType exposing (findPreferredEventType, findPreferredEventType2)
 
-import Dict exposing (..)
+import AssocList as Dict exposing (..)
 
 import Hits exposing (..)
 
@@ -25,9 +25,27 @@ accumulator rawEventTypeExtractor damageExtractor damageContainer seed =
   in
     Dict.update rawEventType ( addIfExisting maybeDamage ) seed
 
+accumulator2 : ( scoreContainer -> eventType ) -> ( scoreContainer -> Int ) -> scoreContainer -> Dict eventType Hits -> Dict eventType Hits
+accumulator2 eventTypeExtractor damageExtractor damageContainer seed =
+  let
+    maybeDamage : Int
+    maybeDamage = damageExtractor damageContainer
+  in
+    Dict.update ( eventTypeExtractor damageContainer ) ( addIfExisting maybeDamage ) seed
+
 findPreferredEventType : ( s -> String ) -> ( s -> Int ) -> List s -> Maybe String
 findPreferredEventType rawEventTypeExtractor damageExtractor scores =
   List.foldl ( accumulator rawEventTypeExtractor damageExtractor ) Dict.empty scores
+    |> Dict.map (\_ hits -> computeHitsAverage hits)
+    |> Dict.toList
+    |> List.sortBy Tuple.second
+    |> List.reverse
+    |> List.head
+    |> Maybe.map Tuple.first
+
+findPreferredEventType2 : ( scoreContainer -> eventType ) -> ( scoreContainer -> Int ) -> List scoreContainer -> Maybe eventType
+findPreferredEventType2 eventTypeExtractor damageExtractor scores =
+  List.foldl ( accumulator2 eventTypeExtractor damageExtractor ) Dict.empty scores
     |> Dict.map (\_ hits -> computeHitsAverage hits)
     |> Dict.toList
     |> List.sortBy Tuple.second

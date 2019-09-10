@@ -1,32 +1,36 @@
-module Titans exposing (DetailedColor, titanColors, titanColorFromString, allTitanColors)
+module Titans exposing (TitanColor(..), TitanColorData, titanColorsByCode, titanColorFromString, getTitanColorData)
+
+import AssocList as Dict exposing (..)
 
 import Translations exposing (..)
 
-type alias DetailedColor =
+type alias TitanColorData =
   { code : String -- The code (to compare with the gsheet)
-  , nameGetter : Translations -> String -- The displayable name, i.e. RED
+  , name : String -- The displayable name, i.e. RED
   , icon: String -- The CSS class for the appropriate icon
   }
 
-equals : String -> DetailedColor -> Bool
-equals colorAsString titanColor = colorAsString == titanColor.code
+type TitanColor = RED | GREEN | BLUE | HOLY | DARK | ALL
 
-titanColorFromString : String -> DetailedColor
-titanColorFromString colorAsString = List.filter ( equals colorAsString ) titanColors
-  |> List.head
-  |> Maybe.withDefault allTitanColors
+titanColorFromString : String -> TitanColor
+titanColorFromString colorAsString = Dict.get colorAsString titanColorsByCode
+  |> Maybe.withDefault ALL
 
-allTitanColors : DetailedColor
-allTitanColors = DetailedColor "ALL" .all "fas fa-question"
+getTitanColorData : Translations -> TitanColor -> TitanColorData
+getTitanColorData translations titanColor = case titanColor of
+  RED   -> TitanColorData "RED"   translations.red   "fas fa-fire"
+  GREEN -> TitanColorData "GREEN" translations.green "fas fa-seedling"
+  BLUE  -> TitanColorData "BLUE"  translations.blue  "fas fa-snowflake"
+  HOLY  -> TitanColorData "HOLY"  translations.holy  "fas fa-sun"
+  DARK  -> TitanColorData "DARK"  translations.dark  "fas fa-skull"
+  ALL   -> TitanColorData "ALL"   translations.all   "fas fa-question"
 
-titanColors : List DetailedColor
-titanColors =
-  [ allTitanColors
-  , DetailedColor "RED"    .red    "fas fa-fire"
-  , DetailedColor "GREEN"  .green  "fas fa-seedling"
-  , DetailedColor "BLUE"   .blue   "fas fa-snowflake"
-  , DetailedColor "HOLY"   .holy   "fas fa-sun"
-  , DetailedColor "DARK"   .dark   "fas fa-skull"
+titanColorsByCode : Dict String TitanColor
+titanColorsByCode = Dict.fromList [
+    ( "RED", RED ),
+    ( "GREEN", GREEN ),
+    ( "BLUE", BLUE ),
+    ( "HOLY", HOLY ),
+    ( "DARK", DARK ),
+    ( "ALL", ALL )
   ]
-
-

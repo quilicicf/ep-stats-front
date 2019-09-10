@@ -63,7 +63,7 @@ type alias Stats =
 type alias AllianceStats =
   { averageTitanScore : Float
   , maxTitanScore : Int
-  , preferredTitanColor : DetailedColor
+  , preferredTitanColor : TitanColor
   , averageWarScore : Float
   , maxWarScore : Int
   , preferredWarBonus : WarBonus
@@ -74,7 +74,7 @@ type alias MemberStats =
   { pseudo : String
   , averageTitanScore : AverageMemberScore
   , maxTitanScore : Maybe Int
-  , preferredTitanColor : Maybe DetailedColor
+  , preferredTitanColor : Maybe TitanColor
   , averageWarScore : AverageMemberScore
   , preferredWarBonus : Maybe WarBonus
   , titanTeamValue : Float
@@ -85,7 +85,7 @@ type alias MemberStats =
 type alias AllianceTitanScore =
   { date : String
   , damage : Int
-  , titanColor : DetailedColor
+  , titanColor : TitanColor
   , titanStars : Int
   }
 
@@ -103,7 +103,7 @@ type alias MemberTitanScores =
 type alias MemberTitanScore =
   { date : String
   , score : MemberScore
-  , titanColor : DetailedColor
+  , titanColor : TitanColor
   , titanStars : Int
   }
 
@@ -129,7 +129,7 @@ type alias FilteredAllianceTitanScores =
   { averageTitanScore : Float
   , maxTitanScore : Int
   , progression : RegressionResult
-  , preferredTitanColor : DetailedColor
+  , preferredTitanColor : TitanColor
   , titanScores : List AllianceTitanScore
   }
 
@@ -146,7 +146,7 @@ type alias FilteredMemberTitanScores =
   , averageScore : AverageMemberScore
   , maxScore : Maybe Int
   , progression : RegressionResult
-  , preferredTitanColor : Maybe DetailedColor
+  , preferredTitanColor : Maybe TitanColor
   , titanScores : List MemberTitanScore
   }
 
@@ -459,9 +459,9 @@ computeOutgoingLineData maybeNextScore currentPercent maxDamage =
         , lineStyle = lineStyle
         }
 
-viewTitanColor : Translations -> DetailedColor -> Html Msg
-viewTitanColor translations { code, nameGetter, icon } =
-  div [ class ("bullet-point titan-color-" ++ (code |> String.toLower)), title <| nameGetter translations ] [
+viewTitanColor : TitanColorData -> Html Msg
+viewTitanColor { code, name, icon } =
+  div [ class ("bullet-point titan-color-" ++ (code |> String.toLower)), title name ] [
     i [ class icon ] []
   ]
 
@@ -471,8 +471,8 @@ viewGenericTitanScore translations maxDamage (maybePreviousScore, currentScore, 
     currentDamage : Int
     currentDamage = currentScore.score.damage
 
-    titanColorName : String
-    titanColorName = currentScore.titanColor.nameGetter translations
+    titanColorData : TitanColorData
+    titanColorData = getTitanColorData translations currentScore.titanColor
 
     percentToMax : Float
     percentToMax = toFloat currentDamage / toFloat maxDamage
@@ -496,11 +496,11 @@ viewGenericTitanScore translations maxDamage (maybePreviousScore, currentScore, 
     div [ class "member-stat", percentFromMaxStyle ] [
       div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
       div [ class "member-damage" ] [
-        viewTitanColor translations currentScore.titanColor,
+        viewTitanColor titanColorData,
         div [ class "tooltip-trigger" ] [
           p [ class "tooltip" ] [
             span [] [
-              text ( String.join " " [ titanColorName, String.fromInt currentScore.titanStars ] ),
+              text ( String.join " " [ titanColorData.name, String.fromInt currentScore.titanStars ] ),
               i [ class "fas fa-star" ] []
             ],
             br [] [],
@@ -513,9 +513,9 @@ viewGenericTitanScore translations maxDamage (maybePreviousScore, currentScore, 
       div [ class outgoingLineData.lineType, outgoingLineData.lineStyle ] []
     ]
 
-viewWarBonus : Translations -> WarBonus -> Html Msg
-viewWarBonus translations { code, nameGetter, icon } =
-  div [ class ("bullet-point war-bonus war-bonus-" ++ (code |> String.toLower)), title <| nameGetter translations ] [
+viewWarBonus : WarBonusData -> Html Msg
+viewWarBonus { code, name, icon } =
+  div [ class ("bullet-point war-bonus war-bonus-" ++ (code |> String.toLower)), title name ] [
     i [ class icon ] []
   ]
 
@@ -526,7 +526,7 @@ viewGenericWarScore translations maxDamage (maybePreviousScore, currentScore, ma
     currentDamage = currentScore.score.damage
 
     warBonusName : String
-    warBonusName = currentScore.warBonus.nameGetter translations
+    warBonusName = getWarBonusData translations currentScore.warBonus |> .name
 
     percentToMax : Float
     percentToMax = toFloat currentDamage / toFloat maxDamage
@@ -550,7 +550,7 @@ viewGenericWarScore translations maxDamage (maybePreviousScore, currentScore, ma
     div [ class "member-stat", percentFromMaxStyle ] [
       div [ class incomingLineData.lineType, incomingLineData.lineStyle ] [],
       div [ class "member-damage" ] [
-        viewWarBonus translations currentScore.warBonus,
+        viewWarBonus ( getWarBonusData translations currentScore.warBonus ),
         div [ class "tooltip-trigger" ] [
           p [ class "tooltip" ] [
             span [] [ text warBonusName ],
@@ -581,7 +581,7 @@ viewValidAllianceStats { translations } allianceStats =
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.preferredTitanColor ],
-          span [ class "alliance-stat-value" ] [ viewTitanColor translations <| allianceStats.preferredTitanColor  ]
+          span [ class "alliance-stat-value" ] [ viewTitanColor ( getTitanColorData translations allianceStats.preferredTitanColor )  ]
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.averageWarScore ],
@@ -589,7 +589,7 @@ viewValidAllianceStats { translations } allianceStats =
         ],
         div [ class "alliance-stat" ] [
           span [ class "alliance-stat-name" ] [ text translations.preferredWarBonus ],
-          span [ class "alliance-stat-value" ] [ viewWarBonus translations <| allianceStats.preferredWarBonus ]
+          span [ class "alliance-stat-value" ] [ viewWarBonus ( getWarBonusData translations allianceStats.preferredWarBonus ) ]
         ]
       ],
       h2 [] [ text translations.allianceMembers ],
@@ -627,11 +627,11 @@ viewMember translations memberStats =
     td
       [ class "member-value" ]
       [ text <| presentNumber <| round memberStats.averageTitanScore.damage ],
-    td [ class "member-value" ] [ viewTitanColor translations <| withDefault allTitanColors memberStats.preferredTitanColor ],
+    td [ class "member-value" ] [ viewTitanColor <| ( getTitanColorData translations ) <| withDefault ALL memberStats.preferredTitanColor ],
     td
       [ class "member-value" ]
       [ text <| presentNumber <| round memberStats.averageWarScore.damage ],
-    td [ class "member-value" ] [ viewWarBonus translations<| withDefault allWarBonuses memberStats.preferredWarBonus ],
+    td [ class "member-value" ] [ viewWarBonus <| ( getWarBonusData translations ) <| withDefault AllBonus memberStats.preferredWarBonus ],
     td [ class "member-value"
        , title ( teamValuesTitle translations memberStats )
        ] [ text <| presentNumber <| round memberStats.teamValue ]
@@ -648,7 +648,7 @@ computeScore damage allianceScore membersNumber =
 getIntFromRow : List String -> Int -> Int -> Int
 getIntFromRow row index default = getAt index row |> Maybe.andThen String.toInt |> withDefault default
 
-getTitanColorFromRow : List String -> Int -> DetailedColor
+getTitanColorFromRow : List String -> Int -> TitanColor
 getTitanColorFromRow row index = getAt index row |> withDefault "" |> titanColorFromString
 
 getWarBonusFromRow : List String -> Int -> WarBonus
@@ -690,7 +690,7 @@ extractMemberTitanScore memberIndex row =
     memberScore : MemberScore
     memberScore = computeScore memberDamage allianceScore membersNumber
 
-    titanColor : DetailedColor
+    titanColor : TitanColor
     titanColor = getTitanColorFromRow row fixedTitanIndexes.colorIndex
 
     titanStars : Int
@@ -799,8 +799,8 @@ parseRawStats rawStats =
       ( extractTitanMemberScores titanSheet )
       ( extractWarMemberScores warSheet )
 
-titanColorPredicate : StatsFilterExtender r -> { u | titanColor : DetailedColor } -> Bool
-titanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == allTitanColors || titanColor == filteredTitanColor
+titanColorPredicate : StatsFilterExtender r -> { u | titanColor : TitanColor } -> Bool
+titanColorPredicate { filteredTitanColor } { titanColor } = filteredTitanColor == ALL || titanColor == filteredTitanColor
 
 titanStarsPredicate : StatsFilterExtender r -> { u | titanStars : Int } -> Bool
 titanStarsPredicate { filteredTitanStars } { titanStars } =
@@ -816,10 +816,9 @@ filterAllianceTitanScores statsFilter allianceTitanScores =
       |> List.filter ( titanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
 
-    preferredTitanColor : DetailedColor
-    preferredTitanColor = findPreferredEventType ( .code << .titanColor ) .damage filteredAllianceScores
-      |> withDefault ""
-      |> titanColorFromString
+    preferredTitanColor : TitanColor
+    preferredTitanColor = findPreferredEventType2 .titanColor .damage filteredAllianceScores |> withDefault ALL
+
   in
     { averageTitanScore = computeAverageDamage filteredAllianceScores
     , maxTitanScore = List.map .damage filteredAllianceScores |> List.maximum |> Maybe.withDefault 0
@@ -831,7 +830,7 @@ filterAllianceTitanScores statsFilter allianceTitanScores =
     }
 
 warBonusPredicate : StatsFilterExtender r -> { u | warBonus : WarBonus } -> Bool
-warBonusPredicate { filteredWarBonus } { warBonus } = filteredWarBonus == allWarBonuses || warBonus == filteredWarBonus
+warBonusPredicate { filteredWarBonus } { warBonus } = filteredWarBonus == AllBonus || warBonus == filteredWarBonus
 
 filterAllianceWarScores : StatsFilterExtender r -> List AllianceWarScore -> FilteredAllianceWarScores
 filterAllianceWarScores statsFilter allianceWarScores =
@@ -841,9 +840,8 @@ filterAllianceWarScores statsFilter allianceWarScores =
       |> takeLast statsFilter.filteredWarPeriod
 
     preferredWarBonus : WarBonus
-    preferredWarBonus = findPreferredEventType ( .code << .warBonus ) .damage filteredAllianceScores
-      |> withDefault ""
-      |> warBonusFromString
+    preferredWarBonus = findPreferredEventType2 .warBonus .damage filteredAllianceScores |> withDefault AllBonus
+
   in
     { averageWarScore = computeAverageDamage filteredAllianceScores
     , maxWarScore = List.map .damage filteredAllianceScores |> List.maximum |> Maybe.withDefault 0
@@ -862,9 +860,9 @@ filterMemberTitanScores statsFilter memberTitanScores =
       |> List.filter ( titanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
 
-    preferredTitanColor : Maybe DetailedColor
-    preferredTitanColor = findPreferredEventType ( .code << .titanColor ) ( .damage << .score ) filteredMemberScores
-      |> Maybe.map titanColorFromString
+    preferredTitanColor : Maybe TitanColor
+    preferredTitanColor = findPreferredEventType2 .titanColor ( .damage << .score ) filteredMemberScores
+
   in
     { pseudo = memberTitanScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
@@ -887,8 +885,8 @@ filterMemberWarScores statsFilter memberWarScores =
       |> takeLast statsFilter.filteredTitanPeriod
 
     preferredWarBonus : Maybe WarBonus
-    preferredWarBonus = findPreferredEventType ( .code << .warBonus ) ( .damage << .score ) filteredMemberScores
-      |> Maybe.map warBonusFromString
+    preferredWarBonus = findPreferredEventType2 .warBonus ( .damage << .score ) filteredMemberScores
+
   in
     { pseudo = memberWarScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore

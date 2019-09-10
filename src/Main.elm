@@ -48,7 +48,7 @@ type alias Model =
   -- Filters
   , filteredMember : String
   , filteredTitanPeriod : Int
-  , filteredTitanColor : DetailedColor
+  , filteredTitanColor : TitanColor
   , filteredTitanStars : Maybe Int
   , filteredWarPeriod : Int
   , filteredWarBonus : WarBonus

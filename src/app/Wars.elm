@@ -1,29 +1,31 @@
-module Wars exposing (WarBonus, warBonuses, warBonusFromString, allWarBonuses)
+module Wars exposing (WarBonus(..), WarBonusData, warBonusesByCode, warBonusFromString, getWarBonusData)
 
+import AssocList as Dict exposing (Dict)
+import FlipTuple exposing (flipTuple)
 import Translations exposing (..)
 
-type alias WarBonus =
+type alias WarBonusData =
   { code : String -- The code (to compare with the gsheet)
-  , nameGetter : Translations -> String -- The displayable name, i.e. HEAL
+  , name : String -- The displayable (internationalized) name, i.e. HEAL
   , icon : String -- The CSS class for the appropriate icon
   }
 
-equals : String -> WarBonus -> Bool
-equals warBonusAsString warBonus = warBonusAsString == warBonus.code
+type WarBonus = HealBonus | AttackBonus | ArrowsBonus | AllBonus
 
 warBonusFromString : String -> WarBonus
-warBonusFromString warBonusAsString =List.filter ( equals warBonusAsString ) warBonuses
- |> List.head
- |> Maybe.withDefault allWarBonuses
+warBonusFromString warBonusAsString = Dict.get warBonusAsString warBonusesByCode |> Maybe.withDefault AllBonus
 
+getWarBonusData : Translations -> WarBonus -> WarBonusData
+getWarBonusData translations warBonus = case warBonus of
+  HealBonus -> WarBonusData "HEAL" translations.heal "fas fa-heartbeat"
+  AttackBonus -> WarBonusData "ATTACK" translations.attack "fas fa-arrow-up"
+  ArrowsBonus -> WarBonusData "ARROWS" translations.arrows "fas fa-bullseye"
+  AllBonus -> WarBonusData "ALL" translations.all "fas fa-question"
 
-allWarBonuses : WarBonus
-allWarBonuses = WarBonus "ALL" .all "fas fa-question"
-
-warBonuses : List WarBonus
-warBonuses =
-  [ allWarBonuses
-  , WarBonus "HEAL"    .heal    "fas fa-heartbeat"
-  , WarBonus "ATTACK"  .attack  "fas fa-arrow-up"
-  , WarBonus "ARROWS"  .arrows  "fas fa-bullseye"
+warBonusesByCode : Dict String WarBonus
+warBonusesByCode = Dict.fromList [
+    ( "ALL", AllBonus ),
+    ( "HEAL", HealBonus ),
+    ( "ATTACK", AttackBonus ),
+    ( "ARROWS", ArrowsBonus)
   ]

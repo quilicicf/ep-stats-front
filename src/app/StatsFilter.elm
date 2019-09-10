@@ -5,6 +5,7 @@ module StatsFilter exposing (
     updateStatsFilters
   )
 
+import AssocList as Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -27,7 +28,7 @@ type alias StatsFilterExtender r =
   | filteredMember : String
   -- Titans
   , filteredTitanPeriod : Int
-  , filteredTitanColor : DetailedColor
+  , filteredTitanColor : TitanColor
   , filteredTitanStars : Maybe Int
   -- Wars
   , filteredWarPeriod : Int
@@ -47,10 +48,10 @@ createDefaultStatsFilter : Translations -> StatsFilter
 createDefaultStatsFilter translations =
   { filteredMember = translations.alliance
   , filteredTitanPeriod = defaultFilterPeriod
-  , filteredTitanColor = allTitanColors
+  , filteredTitanColor = ALL
   , filteredTitanStars = Nothing
   , filteredWarPeriod = defaultFilterPeriod
-  , filteredWarBonus = allWarBonuses
+  , filteredWarBonus = AllBonus
   }
 
 ----------
@@ -65,8 +66,11 @@ allPeriods = stepRange 10 120 10 |> List.map String.fromInt
 viewTitansFilterForm : Model r -> List String -> Html Msg
 viewTitansFilterForm model members =
   let
-    titanColorNameExtractor : DetailedColor -> String
-    titanColorNameExtractor color = color.nameGetter model.translations
+    filteredTitanColorData : TitanColorData
+    filteredTitanColorData = getTitanColorData model.translations model.filteredTitanColor
+
+    titanColorsData : List TitanColorData
+    titanColorsData = Dict.values titanColorsByCode |> List.map ( getTitanColorData model.translations )
   in
   Html.form [ class "stat-filters" ]
     [ h2 [] [ text model.translations.filters ]
@@ -91,7 +95,7 @@ viewTitansFilterForm model members =
         [ label [ for "color" ] [ text model.translations.color ]
         , select
             [ id "color" , onInput colorFilterGuesser ]
-            ( optionizeObjects .code titanColorNameExtractor model.filteredTitanColor titanColors )
+            ( optionizeObjects .code .name filteredTitanColorData titanColorsData )
         ]
     , div [ class "form-field-inline" ]
         [ label [ for "stars" ] [ text model.translations.stars ]
@@ -126,11 +130,11 @@ allStarsOptions translations = ( Nothing :: ( List.range 1 12 |> List.map Just )
 viewWarsFilterForm : Model r -> List String -> Html Msg
 viewWarsFilterForm model members =
   let
-    defaultStatsFilter : StatsFilter
-    defaultStatsFilter = createDefaultStatsFilter model.translations
+    filteredWarBonusData : WarBonusData
+    filteredWarBonusData = getWarBonusData model.translations model.filteredWarBonus
 
-    warBonusNameExtractor : WarBonus -> String
-    warBonusNameExtractor bonus = bonus.nameGetter model.translations
+    warBonusesData : List WarBonusData
+    warBonusesData = Dict.values warBonusesByCode |> List.map ( getWarBonusData model.translations )
   in
     Html.form [ class "stat-filters" ]
       [ h2 [] [ text model.translations.filters ]
@@ -155,7 +159,7 @@ viewWarsFilterForm model members =
           [ label [ for "bonus" ] [ text model.translations.bonus ]
           , select
               [ id "bonus" , onInput bonusFilterGuesser ]
-              ( optionizeObjects .code warBonusNameExtractor model.filteredWarBonus warBonuses )
+              ( optionizeObjects .code .name filteredWarBonusData warBonusesData )
           ]
       ]
 

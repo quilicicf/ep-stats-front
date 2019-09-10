@@ -34,7 +34,7 @@ type StatsMsg
 type StatsFilterMsg
   = NewMemberSelected String
   | NewTitanPeriodSelected Int
-  | NewTitanColorSelected DetailedColor
+  | NewTitanColorSelected TitanColor
   | NewTitanStarsSelected  ( Maybe Int )
   | NewWarPeriodSelected Int
   | NewWarBonusSelected  ( WarBonus )

@@ -23,10 +23,15 @@ languageToString languageToStringify = List.filter (\(_, language) -> language =
   |> Tuple.first
 
 findLanguage : String -> Language
-findLanguage languageToParse = List.filter (\(languageAsString, _) -> String.startsWith languageAsString languageToParse) languages
- |> List.head
- |> Maybe.withDefault defaultLanguage
- |> Tuple.second
+findLanguage languageToParse =
+  let
+    logged = Debug.log "language" languageToParse
+  in
+
+    List.filter (\(languageAsString, _) -> String.startsWith languageAsString languageToParse) languages
+     |> List.head
+     |> Maybe.withDefault defaultLanguage
+     |> Tuple.second
 
 getTranslations : Language -> Translations
 getTranslations language =

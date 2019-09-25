@@ -24,11 +24,7 @@ roundWithPrecision : Int -> Float -> Float
 roundWithPrecision precision number =
   let
     coeff : Float
-    coeff = List.repeat precision "0"
-      |> String.join ""
-      |> (++) "1"
-      |> String.toFloat
-      |> Maybe.withDefault 1.0
+    coeff = List.repeat precision 10.0 |> List.foldl (*) 1.0
   in
     number * coeff
       |> round

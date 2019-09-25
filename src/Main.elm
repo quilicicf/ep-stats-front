@@ -279,6 +279,7 @@ update msg model =
                 BadStatus status ->
                   case status of
                     401 -> ( model, load ( makeAuthorizationUrl model.baseUrl ) )
+                    403 -> ( model, load ( makeAuthorizationUrl model.baseUrl ) )
                     _ -> ( model, Cmd.none )
 
                 _ -> ( model, Cmd.none )

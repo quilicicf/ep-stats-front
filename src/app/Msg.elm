@@ -20,8 +20,6 @@ type Msg
 type AppConfigMsg
   = NewTeamName String
   | NewSheetId String
-  | NewAdminKey ( Maybe String )
-  | NewSheetKey String
   | NewAppKey String
   | CreateAppConfig
   | CopiedAppKeys String

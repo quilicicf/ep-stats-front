@@ -37,8 +37,7 @@ type alias Model =
   -- AppConfig
   { teamName: String
   , sheetId: String
-  , adminKey: Maybe String
-  , sheetKey: String
+  , isAdmin: Bool
   , appKey: String
   , appKeyError: String
 
@@ -54,7 +53,6 @@ type alias Model =
   , filteredWarBonus : WarBonus
 
   -- Stats
-  , isAdmin: Bool
   , stats: Maybe Stats
   , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
@@ -74,7 +72,7 @@ createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> 
 createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl language translations =
   let
     appConfig : AppConfig
-    appConfig = withDefault (AppConfig "" "" Nothing "") maybeAppConfig
+    appConfig = withDefault (AppConfig "" "" False) maybeAppConfig
 
     baseUrl : Url
     baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
@@ -85,8 +83,7 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
   in
     { teamName = appConfig.teamName
     , sheetId = appConfig.sheetId
-    , adminKey = appConfig.adminKey
-    , sheetKey = appConfig.sheetKey
+    , isAdmin = appConfig.isAdmin
     , appKey = appKey
     , appKeyError = ""
 
@@ -102,7 +99,6 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
     , filteredWarBonus = defaultStatsFilter.filteredWarBonus
 
     -- Filters
-    , isAdmin = False
     , stats = Nothing
     , statsError = Nothing
     , allianceStats  = Nothing
@@ -214,13 +210,6 @@ initAuthenticatedUser maybeLoadingPage initialModel =
       ]
     )
 
-eraseAppKeyFromStorage : Model -> Cmd Msg
-eraseAppKeyFromStorage updatedModel = setStorage
-  { appKey = ""
-  , accessToken = updatedModel.accessToken
-  , selectedLanguage = ( languageToString updatedModel.language )
-  }
-
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -273,7 +262,7 @@ update msg model =
       case statsMsg of
         GotStats httpResult ->
           case httpResult of
-            Ok statsAsString -> updateStats statsAsString model eraseAppKeyFromStorage
+            Ok statsAsString -> updateStats statsAsString model
             Err error ->
               case error of
                 BadStatus status ->

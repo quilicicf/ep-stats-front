@@ -11,7 +11,6 @@ import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
 import Json.Decode.Pipeline as Pipeline exposing (..)
 
-import MaybeExtra exposing (maybeify)
 import Sneacret exposing (..)
 import Msg exposing (..)
 import Translations exposing (..)
@@ -25,16 +24,14 @@ type alias Model r = TranslationsExtender ( AppConfigExtender r )
 type alias AppConfig =
   { teamName: String
   , sheetId: String
-  , adminKey: Maybe String
-  , sheetKey: String
+  , isAdmin: Bool
   }
 
 type alias AppConfigExtender r =
   { r
   | teamName: String
   , sheetId: String
-  , adminKey: Maybe String
-  , sheetKey: String
+  , isAdmin: Bool
   , appKey: String
   , appKeyError: String
   }
@@ -56,17 +53,10 @@ encodeMaybe encoder maybe = case maybe of
 
 jsonifyAppConfig : AppConfigExtender r -> Bool -> Encode.Value
 jsonifyAppConfig appConfig isAdmin =
-  let
-    adminKeyEncoder : Maybe String -> Encode.Value
-    adminKeyEncoder adminKey = if isAdmin
-      then encodeMaybe Encode.string adminKey
-      else encodeMaybe Encode.string Nothing
-  in
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
       , ("sheetId", Encode.string appConfig.sheetId)
-      , ("adminKey", adminKeyEncoder appConfig.adminKey)
-      , ("sheetKey", Encode.string appConfig.sheetKey)
+      , ("isAdmin", Encode.bool isAdmin)
       ]
 
 encodeAppConfig : AppConfigExtender r -> Bool -> String
@@ -80,8 +70,7 @@ appConfigDecoder =
   Decode.succeed AppConfig
     |> Pipeline.required "teamName" Decode.string
     |> Pipeline.required "sheetId" Decode.string
-    |> Pipeline.required "adminKey" ( Decode.nullable Decode.string )
-    |> Pipeline.required "sheetKey" Decode.string
+    |> Pipeline.required "isAdmin" Decode.bool
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
@@ -120,24 +109,6 @@ viewAppConfig model =
     , div [ class "form-field-inline" ]
       [ label [ for "sheetId" ] [ text "Sheet id" ]
       , input [ type_ "text", id "sheetId", Attributes.value model.sheetId, onInput (AppConfigMsg << NewSheetId) ] []
-      ]
-    , div [ class "form-field-inline" ]
-      [ label [ for "adminKey" ] [ text "Admin key" ]
-      , input
-        [ type_ "text"
-        , id "adminKey"
-        , Attributes.value <| Maybe.withDefault "" model.adminKey
-        , onInput (AppConfigMsg << NewAdminKey << maybeify)
-        ] []
-      ]
-    , div [ class "form-field-inline" ]
-      [ label [ for "sheetKey" ] [ text "Sheet key" ]
-      , input
-        [ type_ "text"
-        , id "sheetKey"
-        , Attributes.value model.sheetKey
-        , onInput (AppConfigMsg << NewSheetKey)
-        ] []
       ]
     , div []
       [ button
@@ -222,12 +193,8 @@ updateAppConfig msg model =
             { model
             | teamName = result.teamName
             , sheetId = result.sheetId
-            , adminKey = result.adminKey
+            , isAdmin = result.isAdmin
             , appKeyError = ""
             }
           )
         |> Maybe.withDefault { model | appKeyError = model.translations.invalidAppKey }
-
-    NewAdminKey newAdminKey -> { model | adminKey = newAdminKey }
-
-    NewSheetKey newSheetKey -> { model | sheetKey = newSheetKey }

@@ -787,10 +787,10 @@ parseRawStats : RawStats -> Stats
 parseRawStats rawStats =
   let
     titanSheet : RawSheet
-    titanSheet = withDefault ( RawSheet [] ) ( getAt 1 rawStats.valueRanges )
+    titanSheet = withDefault ( RawSheet [] ) ( getAt 0 rawStats.valueRanges )
 
     warSheet : RawSheet
-    warSheet = withDefault ( RawSheet [] ) ( getAt 2 rawStats.valueRanges )
+    warSheet = withDefault ( RawSheet [] ) ( getAt 1 rawStats.valueRanges )
 
   in
     Stats
@@ -971,41 +971,14 @@ updateValidStats stats model =
     , filteredStats = Just filteredStats
     }
 
-isSheetKeyValid : RawSheet -> String -> Bool
-isSheetKeyValid rawSheet sheetKey =
-  let
-    expectedAdminKey : String
-    expectedAdminKey = getAt 0 rawSheet.values
-      |> Maybe.andThen ( getAt 0 )
-      |> Maybe.withDefault ""
-  in
-    expectedAdminKey == sheetKey
-
-isAdminKeyValid : RawSheet -> Maybe String -> Bool
-isAdminKeyValid rawSheet adminKey =
-  let
-    expectedAdminKey : Maybe String
-    expectedAdminKey = getAt 0 rawSheet.values |> Maybe.andThen ( getAt 1 )
-  in
-    expectedAdminKey == adminKey
-
-decodeAndUpdateStats : String -> Model r -> (Model r -> Cmd Msg) -> ( Model r, Cmd Msg )
-decodeAndUpdateStats statsAsString model eraseAppKeyFromStorage =
+decodeAndUpdateStats : String -> Model r -> ( Model r, Cmd Msg )
+decodeAndUpdateStats statsAsString model =
   let
     rawStats : RawStats
     rawStats = decodeStats statsAsString
 
     stats : Stats
     stats = parseRawStats rawStats
-
-    adminSheet : RawSheet
-    adminSheet = ( getAt 0 rawStats.valueRanges |> withDefault (RawSheet []) )
-
-    isKeyRevoked : Bool
-    isKeyRevoked = not <| isSheetKeyValid adminSheet model.sheetKey
-
-    isAdmin : Bool
-    isAdmin = isAdminKeyValid adminSheet model.adminKey
 
     areMembersListEqual : Bool
     areMembersListEqual = areListsEqual
@@ -1016,14 +989,12 @@ decodeAndUpdateStats statsAsString model eraseAppKeyFromStorage =
     maybeErrorMessage = if areMembersListEqual then Nothing else Just model.translations.membersListsDiffer
 
   in
-    if isKeyRevoked
-      then ( { model | statsError = Just model.translations.keyRevoked }, eraseAppKeyFromStorage model )
-      else case maybeErrorMessage of
-         Nothing -> ( updateValidStats stats { model | isAdmin = isAdmin }, Cmd.none )
-         Just _ -> ( { model | statsError = maybeErrorMessage }, Cmd.none )
+    case maybeErrorMessage of
+      Nothing -> ( updateValidStats stats model, Cmd.none )
+      Just _ -> ( { model | statsError = maybeErrorMessage }, Cmd.none )
 
-updateStats : String -> Model r -> (Model r -> Cmd Msg) -> ( Model r, Cmd Msg )
-updateStats statsAsString model eraseAppKeyFromStorage = decodeAndUpdateStats statsAsString model eraseAppKeyFromStorage
+updateStats : String -> Model r -> ( Model r, Cmd Msg )
+updateStats statsAsString model = decodeAndUpdateStats statsAsString model
 
 updateStatsWithFilter : Model r -> Model r
 updateStatsWithFilter model =

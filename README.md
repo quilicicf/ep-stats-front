@@ -6,7 +6,7 @@
 
 I am not linked to small giant games (game developer) in any way.
 
-This project is experimental and developed for the fun on my free time.
+This project is experimental and developed for the fun, on my free time.
 
 I did it fully in ELM to learn the language and polish my CSS skills. This serves as a learning tool first.
 
@@ -18,7 +18,7 @@ The only summary the games gives you is a message in the alliance chat.
 
 This project fetches the statistics retrieved by [ep-stats](https://github.com/quilicicf/ep-stats) and pushed to a Google spreadsheet and presents them nicely.
 
-You can either use [ep-stats](https://github.com/quilicicf/ep-stats) (linux-only) to read the screenshots and upload the stats to the spreadsheet or maintain them by hand.
+You can either use [ep-stats](https://github.com/quilicicf/ep-stats) to read the screenshots and upload the stats to the spreadsheet or maintain them by hand.
 
 The expected structure of the sheet is detailed on the [demo spreadsheet](https://docs.google.com/spreadsheets/d/10y4Y1UDsxU05lxI8KTaq1QVxtWtbYm5Kh7kMjbjNtAM/edit#gid=1902473722).
 
@@ -26,15 +26,9 @@ The expected structure of the sheet is detailed on the [demo spreadsheet](https:
 
 It is hosted on a free-tier account on [Netlify](https://netlify.com).
 
-You can try it at: [ep-stats.netlify.com](https://ep-stats.netlify.com).
+You can try it at: [ep-stats.netlify.com](https://ep-stats.netlify.app).
 
-Use the key to the [demo spreadsheet](https://docs.google.com/spreadsheets/d/10y4Y1UDsxU05lxI8KTaq1QVxtWtbYm5Kh7kMjbjNtAM/edit#gid=1902473722): `START_KEY|>‍﻿⁠⁠‌​‌﻿​‌‌​‌​‌‌‍⁠​‍⁠‌​‌‌‍⁠‌‌​⁠‌​‍﻿‌⁠‌​​‌‍‌‌﻿‌‌‍‌‌⁠⁠​﻿​​﻿‌‍‍‌﻿‍‌‌​‌⁠﻿⁠‌​‍﻿‍⁠‌​‌⁠﻿‌‌⁠‌‌​‌‌​‌﻿​​‌⁠‌​﻿⁠‌​‍﻿‌⁠‌​‍‌﻿‍‌⁠‍​​‍‍‍​﻿﻿‍‌﻿​﻿​​​⁠‌⁠﻿‌﻿﻿​﻿​‍‌⁠‍‍⁠‌‍‍‌﻿﻿​‌⁠‍⁠‌​‍​​⁠﻿‌​‌‌⁠‍‍‌﻿​⁠‌​﻿‌‌﻿﻿‌﻿​​﻿‍‌﻿​‌​‍​﻿﻿‌‍⁠‍‍⁠​‍​‌‌⁠‍⁠​‌‍‌​‍‍‌‍​‌​‍‌‍​​‍⁠‌﻿​​​​​‍‍⁠‌​‍﻿‍⁠‌​‌‌﻿‌⁠﻿​​​‌​﻿‌‍⁠‌‌﻿‌‍﻿⁠‌​‍﻿‌‌﻿​‌⁠⁠‌﻿‌‌‌​‍﻿﻿<|END_KEY`
-
-:warning:
-
-I am in the process of having Google acknowledge this application is not evil. Until it is validated, you'll have to trust me and go through the [unverified app screen](https://support.google.com/cloud/answer/7454865?hl=fr). 
-
-You can also wait for the process to complete.
+Use the key to the [demo spreadsheet](https://docs.google.com/spreadsheets/d/10y4Y1UDsxU05lxI8KTaq1QVxtWtbYm5Kh7kMjbjNtAM/edit#gid=1902473722): `START_KEY|>‍﻿⁠⁠‌​‌﻿​‌‌​‌​‌‌‍⁠​‍⁠‌​‌‌‍⁠‌‌​⁠‌​‍﻿‌⁠‌​​‌‍‌‌﻿‌‌‍‌‌⁠⁠​﻿​​﻿‌‍‍‌﻿‍‌‌​‌⁠﻿⁠‌​‍﻿‍⁠‌​‌⁠﻿‌‌⁠‌‌​‌‌​‌﻿​​‌⁠‌​﻿⁠‌​‍﻿‌⁠‌​‍‌﻿‍‌⁠‍​​‍‍‍​﻿﻿‍‌﻿​﻿​​​⁠‌⁠﻿‌﻿﻿​﻿​‍‌⁠‍‍⁠‌‍‍‌﻿﻿​‌⁠‍⁠‌​‍​​⁠﻿‌​‌‌⁠‍‍‌﻿​⁠‌​﻿‌‌﻿﻿‌﻿​​﻿‍‌﻿​‌​‍​﻿﻿‌‍⁠‍‍⁠​‍​‌‌⁠‍⁠​‌‍‌​‍‍‌‍​‌​‍‌‍​​‍⁠‌﻿​​​​​‍‍⁠‌​‍﻿‍⁠‌​‌‌﻿‌⁠﻿​​​‌​﻿‌‍⁠‌‌﻿‌‍﻿⁠‌​‍﻿‌‌‌‌‌​‌‌‍‍‌⁠﻿‌‌​‍﻿﻿<|END_KEY`
 
 ## Roadmap
 

@@ -69,7 +69,6 @@ decodeRawStats statsAsString =
 
 batchGetQueryString : List ( String, String )
 batchGetQueryString = [
-    ( "ranges", "Admin!A2:B2" ),
     ( "ranges", "Titans!A:AAZ" ),
     ( "ranges", "Wars!A:AAZ" ),
     ( "valueRenderOption", "UNFORMATTED_VALUE" )

@@ -125,7 +125,7 @@ viewAppKeyCopier model =
           [ text model.translations.copy ]
       ],
       button
-        [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKeys appKey)) ]
+        [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKey appKey)) ]
         [ text model.translations.iveStoredItAway ]
     ]
 
@@ -166,7 +166,7 @@ updateAppConfig msg model =
 
     CreateAppConfig -> model
 
-    CopiedAppKeys copiedAppKey -> { model | appKey = copiedAppKey }
+    CopiedAppKey copiedAppKey -> { model | appKey = copiedAppKey }
 
     InputAppKey ->
       decodeAppConfigFromAppKey model.appKey

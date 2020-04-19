@@ -242,7 +242,7 @@ update msg model =
         case appConfigMsg of
           CreateAppConfig -> ( newModel, pushPage model.navigationKey AppKeyCopierPage )
 
-          CopiedAppKeys appKey -> (
+          CopiedAppKey appKey -> (
             newModel,
             Cmd.batch [
               setStorage ( StorageAppState appKey model.accessToken (model.language |> languageToString) ),

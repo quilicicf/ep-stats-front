@@ -22,7 +22,7 @@ type AppConfigMsg
   | NewSheetId String
   | NewAppKey String
   | CreateAppConfig
-  | CopiedAppKeys String
+  | CopiedAppKey String
   | InputAppKey
 
 type StatsMsg

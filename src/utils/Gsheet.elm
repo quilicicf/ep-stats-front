@@ -116,28 +116,3 @@ computeSheetPermissionsUrl sheetId =
       Nothing -- Fragment
   in
     Url.toString url
-
---fetchAdminRights : String -> String -> Cmd Msg
---fetchAdminRights sheetId accessToken = Http.request
---  { method = "GET"
---  , headers = [ createBearerHeader accessToken ]
---  , url = computeSheetPermissionsUrl sheetId
---  , body = Http.emptyBody
---  , expect = Http.expectString (StatsMsg << GotRights)
---  , timeout = Nothing
---  , tracker = Nothing
---  }
---
---computeSheetPermissionsUrl : String -> String
---computeSheetPermissionsUrl sheetId =
---  let
---    url : Url
---    url = Url
---      Url.Https
---      "www.googleapis.com"
---      Nothing -- Port
---      ( String.join "/" [ "", "drive", "v3", "files", sheetId, "permissions" ] ) -- Path
---      Nothing -- Query
---      Nothing -- Fragment
---  in
---    Url.toString url

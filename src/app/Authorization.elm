@@ -13,7 +13,7 @@ makeAuthorization baseUrl = Authorization
   "1011659939807-9eit2lra1p046chbhuv1be6pttloctbm.apps.googleusercontent.com"
   ( Url Url.Https "accounts.google.com" Nothing "/o/oauth2/v2/auth" Nothing Nothing )
   { baseUrl | path = "/authorized" }
-  [ "https://www.googleapis.com/auth/spreadsheets.readonly" ]
+  [ "https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.metadata.readonly" ]
   ( Just "dodelidoo" ) -- TODO: Randomize?
 
 makeAuthorizationUrl : Url -> String

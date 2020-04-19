@@ -24,14 +24,12 @@ type alias Model r = TranslationsExtender ( AppConfigExtender r )
 type alias AppConfig =
   { teamName: String
   , sheetId: String
-  , isAdmin: Bool
   }
 
 type alias AppConfigExtender r =
   { r
   | teamName: String
   , sheetId: String
-  , isAdmin: Bool
   , appKey: String
   , appKeyError: String
   }
@@ -46,21 +44,15 @@ type alias StorageAppState =
 -- UTILS --
 -----------
 
-encodeMaybe : ( a -> Encode.Value ) -> Maybe a -> Encode.Value
-encodeMaybe encoder maybe = case maybe of
-  Just value -> encoder value
-  Nothing -> Encode.null
-
-jsonifyAppConfig : AppConfigExtender r -> Bool -> Encode.Value
-jsonifyAppConfig appConfig isAdmin =
+jsonifyAppConfig : AppConfigExtender r -> Encode.Value
+jsonifyAppConfig appConfig =
   Encode.object
       [ ("teamName", Encode.string appConfig.teamName)
       , ("sheetId", Encode.string appConfig.sheetId)
-      , ("isAdmin", Encode.bool isAdmin)
       ]
 
-encodeAppConfig : AppConfigExtender r -> Bool -> String
-encodeAppConfig appConfig isAdmin = jsonifyAppConfig appConfig isAdmin
+encodeAppConfig : AppConfigExtender r -> String
+encodeAppConfig appConfig = jsonifyAppConfig appConfig
   |> Encode.encode 0
   |> Sneacret.sneak "START_KEY|>" "<|END_KEY"
   |> Maybe.withDefault "FAILED MISERABLY"
@@ -70,7 +62,6 @@ appConfigDecoder =
   Decode.succeed AppConfig
     |> Pipeline.required "teamName" Decode.string
     |> Pipeline.required "sheetId" Decode.string
-    |> Pipeline.required "isAdmin" Decode.bool
 
 storageAppStateDecoder : Decoder StorageAppState
 storageAppStateDecoder =
@@ -120,32 +111,22 @@ viewAppConfig model =
 viewAppKeyCopier : Model r -> Html Msg
 viewAppKeyCopier model =
   let
-    adminAppKey : String
-    adminAppKey = encodeAppConfig model True
-
-    peonAppKey : String
-    peonAppKey = encodeAppConfig model False
+    appKey : String
+    appKey = encodeAppConfig model
 
   in
     div [ class "app-key-form" ] [
-      h2 [] [ text model.translations.copyTheKeysAndValidate ],
+      h2 [] [ text model.translations.copyTheKeyAndValidate ],
       div [ class "form-field" ] [
-        label [] [ text model.translations.adminKey ],
-        textarea [ id "admin-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text adminAppKey ],
+        label [] [ text model.translations.appKey ],
+        textarea [ id "admin-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text appKey ],
         button
           [ type_ "button", class "button", class "button-secondary", attribute "data-copy-to-clipboard" "#admin-key" ]
           [ text model.translations.copy ]
       ],
-      div [ class "form-field" ] [
-        label [] [ text model.translations.peonKey ],
-        textarea [ id "peon-key", class "app-key-container", readonly True, rows 5, cols 80 ] [ text peonAppKey ],
-        button
-          [ type_ "button", class "button", class "button-secondary", attribute "data-copy-to-clipboard" "#peon-key" ]
-          [ text model.translations.copy ]
-      ],
       button
-        [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKeys adminAppKey)) ]
-        [ text model.translations.iveStoredThemAway ]
+        [ class "button", class "button-primary", type_ "button", onClick (AppConfigMsg (CopiedAppKeys appKey)) ]
+        [ text model.translations.iveStoredItAway ]
     ]
 
 viewAppKeyInput : Model r -> Html Msg
@@ -193,7 +174,6 @@ updateAppConfig msg model =
             { model
             | teamName = result.teamName
             , sheetId = result.sheetId
-            , isAdmin = result.isAdmin
             , appKeyError = ""
             }
           )

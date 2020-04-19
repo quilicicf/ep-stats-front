@@ -17,6 +17,7 @@ import Svg
 import Svg.Attributes
 
 import Msg exposing (..)
+import Gsheet exposing (..)
 import Pagination exposing (..)
 import Wars exposing (..)
 import NavBar exposing (..)
@@ -37,7 +38,6 @@ type alias Model =
   -- AppConfig
   { teamName: String
   , sheetId: String
-  , isAdmin: Bool
   , appKey: String
   , appKeyError: String
 
@@ -53,6 +53,7 @@ type alias Model =
   , filteredWarBonus : WarBonus
 
   -- Stats
+  , isAdmin: Bool
   , stats: Maybe Stats
   , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
@@ -72,7 +73,7 @@ createInitialModel : Maybe AppConfig -> String -> Maybe String -> Key -> Url -> 
 createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl language translations =
   let
     appConfig : AppConfig
-    appConfig = withDefault (AppConfig "" "" False) maybeAppConfig
+    appConfig = withDefault (AppConfig "" "") maybeAppConfig
 
     baseUrl : Url
     baseUrl = { landingUrl | query = Nothing, fragment = Nothing, path = "" }
@@ -83,7 +84,6 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
   in
     { teamName = appConfig.teamName
     , sheetId = appConfig.sheetId
-    , isAdmin = appConfig.isAdmin
     , appKey = appKey
     , appKeyError = ""
 
@@ -91,6 +91,7 @@ createInitialModel maybeAppConfig appKey maybeAccessToken key landingUrl languag
     , accessToken = maybeAccessToken
 
     -- Stats
+    , isAdmin = False
     , filteredMember = defaultStatsFilter.filteredMember
     , filteredTitanPeriod = defaultStatsFilter.filteredTitanPeriod
     , filteredTitanColor = defaultStatsFilter.filteredTitanColor
@@ -262,7 +263,12 @@ update msg model =
       case statsMsg of
         GotStats httpResult ->
           case httpResult of
-            Ok statsAsString -> updateStats statsAsString model
+            Ok statsAsString ->
+              let
+                fetchRightsCmd : Cmd Msg
+                fetchRightsCmd = fetchAdminRights model.sheetId (withDefault "" model.accessToken)
+              in
+               updateStats statsAsString model fetchRightsCmd
             Err error ->
               case error of
                 BadStatus status ->
@@ -273,8 +279,16 @@ update msg model =
 
                 _ -> ( model, Cmd.none )
 
-        BackToAppKeyMsg -> ( model, pushPage model.navigationKey AppKeyPage )
+        GotRights httpResult -> case httpResult of
+          Ok rightsAsString ->
+            let
+              isAdmin : Bool -- Hacky but efficient...
+              isAdmin = String.contains "requestingUserCanEdit\": true" rightsAsString
+            in
+              ({ model | isAdmin = isAdmin }, Cmd.none)
+          Err _ -> (model, Cmd.none) -- Can't get the info? Ya not admin
 
+        BackToAppKeyMsg -> ( model, pushPage model.navigationKey AppKeyPage )
 
     StatsFilterMsg statsFilterMsg -> (
         updateStatsFilters statsFilterMsg model |> updateStatsWithFilter,

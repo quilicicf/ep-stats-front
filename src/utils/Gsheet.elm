@@ -1,14 +1,18 @@
 module Gsheet exposing (
   RawStats, RawSheet,
   fixedTitanIndexes, fixedWarIndexes,
-  computeSheetDataUrl, decodeRawStats
+  computeSheetDataUrl, decodeRawStats,
+  fetchAdminRights
   )
 
-import Json.Decode as Decode exposing(Value, Decoder, string)
-import Json.Decode.Pipeline exposing (..)
 import Url exposing (..)
+import Http exposing (..)
+import Json.Decode.Pipeline exposing (..)
+import Json.Decode as Decode exposing(Value, Decoder, string)
 
-import CreateQueryString exposing (..)
+import Msg exposing (..)
+import CreateBearerHeader exposing (createBearerHeader)
+import CreateQueryString exposing (createQueryString)
 
 ------------
 -- MODELS --
@@ -87,3 +91,53 @@ computeSheetDataUrl sheetId =
       Nothing -- Fragment
   in
     Url.toString url
+
+fetchAdminRights : String -> String -> Cmd Msg
+fetchAdminRights sheetId accessToken = Http.request
+  { method = "GET"
+  , headers = [ createBearerHeader accessToken ]
+  , url = computeSheetPermissionsUrl sheetId
+  , body = Http.emptyBody
+  , expect = Http.expectString (StatsMsg << GotRights)
+  , timeout = Nothing
+  , tracker = Nothing
+  }
+
+computeSheetPermissionsUrl : String -> String
+computeSheetPermissionsUrl sheetId =
+  let
+    url : Url
+    url = Url
+      Url.Https
+      "sheets.googleapis.com"
+      Nothing -- Port
+      ( String.join "/" [ "", "v4", "spreadsheets", sheetId ] ) -- Path
+      ( Just ( createQueryString ( [ ( "includeGridData", "false" ) ] ) ) )-- Query
+      Nothing -- Fragment
+  in
+    Url.toString url
+
+--fetchAdminRights : String -> String -> Cmd Msg
+--fetchAdminRights sheetId accessToken = Http.request
+--  { method = "GET"
+--  , headers = [ createBearerHeader accessToken ]
+--  , url = computeSheetPermissionsUrl sheetId
+--  , body = Http.emptyBody
+--  , expect = Http.expectString (StatsMsg << GotRights)
+--  , timeout = Nothing
+--  , tracker = Nothing
+--  }
+--
+--computeSheetPermissionsUrl : String -> String
+--computeSheetPermissionsUrl sheetId =
+--  let
+--    url : Url
+--    url = Url
+--      Url.Https
+--      "www.googleapis.com"
+--      Nothing -- Port
+--      ( String.join "/" [ "", "drive", "v3", "files", sheetId, "permissions" ] ) -- Path
+--      Nothing -- Query
+--      Nothing -- Fragment
+--  in
+--    Url.toString url

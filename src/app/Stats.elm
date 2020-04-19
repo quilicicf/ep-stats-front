@@ -971,8 +971,8 @@ updateValidStats stats model =
     , filteredStats = Just filteredStats
     }
 
-decodeAndUpdateStats : String -> Model r -> ( Model r, Cmd Msg )
-decodeAndUpdateStats statsAsString model =
+decodeAndUpdateStats : String -> Model r -> Cmd Msg -> ( Model r, Cmd Msg )
+decodeAndUpdateStats statsAsString model fetchRightsCmd =
   let
     rawStats : RawStats
     rawStats = decodeStats statsAsString
@@ -990,11 +990,11 @@ decodeAndUpdateStats statsAsString model =
 
   in
     case maybeErrorMessage of
-      Nothing -> ( updateValidStats stats model, Cmd.none )
+      Nothing -> ( updateValidStats stats model, fetchRightsCmd )
       Just _ -> ( { model | statsError = maybeErrorMessage }, Cmd.none )
 
-updateStats : String -> Model r -> ( Model r, Cmd Msg )
-updateStats statsAsString model = decodeAndUpdateStats statsAsString model
+updateStats : String -> Model r -> Cmd Msg -> ( Model r, Cmd Msg )
+updateStats statsAsString model fetchRightsCmd = decodeAndUpdateStats statsAsString model fetchRightsCmd
 
 updateStatsWithFilter : Model r -> Model r
 updateStatsWithFilter model =

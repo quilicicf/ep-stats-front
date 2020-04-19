@@ -27,6 +27,7 @@ type AppConfigMsg
 
 type StatsMsg
   = GotStats (Result Error String)
+  | GotRights (Result Error String)
   | BackToAppKeyMsg
 
 type StatsFilterMsg

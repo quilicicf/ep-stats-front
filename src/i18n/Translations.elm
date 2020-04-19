@@ -11,12 +11,10 @@ type alias Translations =
   , appKey: String
   , copy: String
   , configureYourAlliance: String
-  , copyTheKeysAndValidate: String
-  , iveStoredThemAway: String
+  , copyTheKeyAndValidate: String
+  , iveStoredItAway: String
   , invalidAppKey: String
   , pasteAppKey: String
-  , adminKey: String
-  , peonKey: String
   , see: String
   , create: String
 

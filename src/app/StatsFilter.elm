@@ -1,6 +1,7 @@
 module StatsFilter exposing (
     StatsFilter, StatsFilterExtender,
     createDefaultStatsFilter,
+    createAllianceStatsFilter,
     viewTitansFilterForm, viewWarsFilterForm,
     updateStatsFilters
   )
@@ -51,6 +52,19 @@ createDefaultStatsFilter translations =
   , filteredTitanColor = ALL
   , filteredTitanStars = Nothing
   , filteredWarPeriod = defaultFilterPeriod
+  , filteredWarBonus = AllBonus
+  }
+
+maximalFilterPeriod : Int
+maximalFilterPeriod = 1000000
+
+createAllianceStatsFilter : Translations -> StatsFilter
+createAllianceStatsFilter translations =
+  { filteredMember = translations.alliance
+  , filteredTitanPeriod = maximalFilterPeriod
+  , filteredTitanColor = ALL
+  , filteredTitanStars = Nothing
+  , filteredWarPeriod = maximalFilterPeriod
   , filteredWarBonus = AllBonus
   }
 

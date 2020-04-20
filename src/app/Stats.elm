@@ -6,6 +6,7 @@ module Stats exposing (
   )
 
 import AppConfig exposing (AppConfigExtender)
+import ComputeParticipation exposing (computeParticipation)
 import Dict exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -148,6 +149,7 @@ type alias FilteredMemberTitanScores =
   , progression : RegressionResult
   , preferredTitanColor : Maybe TitanColor
   , titanScores : List MemberTitanScore
+  , participation : Float
   }
 
 type alias FilteredMemberWarScores =
@@ -341,6 +343,7 @@ generifyAllianceTitanScores allianceName allianceTitanScores =
   , progression = allianceTitanScores.progression
   , preferredTitanColor = Just allianceTitanScores.preferredTitanColor
   , titanScores = List.map generifyAllianceTitanScore allianceTitanScores.titanScores
+  , participation = 100.0
   }
 
 generifyAllianceTitanScore : AllianceTitanScore -> MemberTitanScore
@@ -863,18 +866,18 @@ filterMemberTitanScores statsFilter memberTitanScores =
     preferredTitanColor : Maybe TitanColor
     preferredTitanColor = findPreferredEventType2 .titanColor ( .damage << .score ) filteredMemberScores
 
+    damages : List Int
+    damages = List.map .score filteredMemberScores |> List.map .damage
+
   in
     { pseudo = memberTitanScores.pseudo
     , averageScore = List.map .score filteredMemberScores |> computeAverageScore
-    , maxScore = List.map .score filteredMemberScores
-      |> List.map .damage
-      |> List.maximum
-    , progression = List.map .score filteredMemberScores
-      |> List.map .damage
-      |> List.indexedMap (\index damage -> [index, damage] )
+    , maxScore = List.maximum damages
+    , progression = List.indexedMap (\index damage -> [index, damage] ) damages
       |> computeLinearRegression 2
     , preferredTitanColor = preferredTitanColor
     , titanScores = filteredMemberScores
+    , participation = computeParticipation damages
     }
 
 filterMemberWarScores : StatsFilterExtender r -> MemberWarScores -> FilteredMemberWarScores
@@ -956,11 +959,11 @@ computeAllianceStats filteredStats =
 updateValidStats : Stats -> Model r -> Model r
 updateValidStats stats model =
   let
-    defaultStatsFilter : StatsFilter
-    defaultStatsFilter = createDefaultStatsFilter model.translations
+    allianceStatsFilter : StatsFilter
+    allianceStatsFilter = createAllianceStatsFilter model.translations
 
     filteredStats : FilteredStats
-    filteredStats = filterStatsForAlliancePage stats defaultStatsFilter
+    filteredStats = filterStatsForAlliancePage stats allianceStatsFilter
 
     allianceStats : AllianceStats
     allianceStats = computeAllianceStats filteredStats

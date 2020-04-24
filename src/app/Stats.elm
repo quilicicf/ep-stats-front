@@ -914,7 +914,7 @@ filterMemberWarScores statsFilter memberWarScores =
   let
     filteredMemberScores : List MemberWarScore
     filteredMemberScores = List.filter ( warBonusPredicate statsFilter ) memberWarScores.warScores
-      |> takeLast statsFilter.filteredTitanPeriod
+      |> takeLast statsFilter.filteredWarPeriod
 
     preferredWarBonus : Maybe WarBonus
     preferredWarBonus = findPreferredEventType2 .warBonus ( .damage << .score ) filteredMemberScores

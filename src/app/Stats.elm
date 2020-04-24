@@ -223,8 +223,8 @@ compareMembersStats stats1 stats2 =
   else if stats1.teamValue < stats2.teamValue then LT
   else compare stats1.pseudo stats2.pseudo
 
-computeTendencyStyle : Int -> List MemberScore -> Attribute msg
-computeTendencyStyle maxDamage scores =
+computeTendencyAttributes : Int -> List MemberScore -> List (Attribute msg)
+computeTendencyAttributes maxDamage scores =
   let
     predict : Int -> Float
     predict = List.map .damage scores
@@ -242,14 +242,22 @@ computeTendencyStyle maxDamage scores =
     slope : Float
     slope = computeSlope startRatio endRatio / (toFloat (List.length scores))
 
+    slopeClass : String
+    slopeClass = if slope == 0 then "tendency-neutral"
+      else if slope < 0 then "tendency-negative"
+      else "tendency-positive"
+
     offsetRatio : Float
     offsetRatio = computeOffsetRatio slope
   in
-    customStyle [
-        ("--start-percent-to-max", startRatio |> percentAsCss),
-        ("--end-percent-to-max", endRatio |> percentAsCss),
-        ("--offset-ratio", String.fromFloat offsetRatio)
-      ]
+    [
+      class ("line tendency " ++ slopeClass),
+      customStyle [
+              ("--start-percent-to-max", startRatio |> percentAsCss),
+              ("--end-percent-to-max", endRatio |> percentAsCss),
+              ("--offset-ratio", String.fromFloat offsetRatio)
+            ]
+    ]
 
 viewValidTitansStats : Model r -> FilteredStats -> Html Msg
 viewValidTitansStats model filteredStats =
@@ -273,6 +281,7 @@ viewValidTitansStats model filteredStats =
       div [ class "titan-stats" ] [
         div [ class "graphs-container" ] [
           h2 [ class "chart-title" ] [ text model.translations.titanScores ],
+          div [ class "progression" ] [ viewGradient genericTitanScores.progression.gradient ],
           div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
             div [ class "chart"] [
               div [ class "label max-label" ] [
@@ -283,7 +292,7 @@ viewValidTitansStats model filteredStats =
               ],
               div [ class "member-stats" ] (
                 viewGenericTitanScores model.translations genericTitanScores ++ [
-                  div [ class "line tendency", List.map .score genericTitanScores.titanScores |> computeTendencyStyle maxDamage  ] []
+                  div (List.map .score genericTitanScores.titanScores |> computeTendencyAttributes maxDamage) []
                 ]
               )
             ]
@@ -314,6 +323,7 @@ viewValidWarsStats model filteredStats =
       div [ class "war-stats" ] [
         div [ class "graphs-container" ] [
           h2 [ class "chart-title" ] [ text model.translations.warScores ],
+          div [ class "progression" ] [ viewGradient genericWarScores.progression.gradient ],
           div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
             div [ class "chart"] [
               div [ class "label max-label" ] [
@@ -324,13 +334,35 @@ viewValidWarsStats model filteredStats =
               ],
               div [ class "member-stats" ] (
                 viewGenericWarScores model.translations genericWarScores ++ [
-                  div [ class "line tendency", List.map .score genericWarScores.warScores |> computeTendencyStyle maxDamage  ] []
+                  div (List.map .score genericWarScores.warScores |> computeTendencyAttributes maxDamage) []
                 ]
               )
             ]
           ]
         ]
       ]
+    ]
+
+viewGradient : Float -> Html msg
+viewGradient gradient =
+  let
+    sign : String
+    sign = if  gradient == 0 then ""
+      else if gradient > 0 then "+"
+      else "-"
+
+    className : String
+    className = if gradient == 0 then "progression-neutral"
+      else if gradient < 0 then "progression-negative"
+      else "progression-positive"
+
+    value : String
+    value = round gradient |> abs |> String.fromInt
+  in
+    p [] [
+      span [ class "progression-label" ] [ text "Progression" ],
+      span [ class className ] [ text ( sign ++ value ) ],
+      span [ class className ] [ text "points/event" ]
     ]
 
 generifyAllianceTitanScores : String -> FilteredAllianceTitanScores -> FilteredMemberTitanScores

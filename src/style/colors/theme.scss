@@ -38,10 +38,6 @@ $black: grayscale($secondary-neutral-darkest);
 
 $light-gray: lighten($primary-neutral-light, 8);
 
-$neutral-gray: grayscale($primary-neutral);
-$primary-gray: mix($primary-color, $secondary-color, 30);
-$secondary-gray: mix($secondary-color, $primary-color, 63);
-
 // TODO: remove the mixin (more info: https://github.com/sasstools/sass-lint/issues/1161)
 @mixin css-var($prop: null, $value: null) {
   @if ($prop and $value) {
@@ -83,16 +79,19 @@ $secondary-gray: mix($secondary-color, $primary-color, 63);
 
   @include css-var(--light-gray, $light-gray);
 
-  @include css-var(--neutral-gray, $neutral-gray);
-  @include css-var(--primary-gray, $primary-gray);
-  @include css-var(--secondary-gray, $secondary-gray);
+  /**
+   * Generic stats colors
+   */
+  --green: #428D34;
+  --orange: #D17022;
+  --red: #AF3131;
 
   /**
   * EP colors
   */
-  --red: #C43E31;
-  --green: #42A22C;
-  --blue: #389EE6;
-  --holy: #F3D747;
-  --dark: #782c86;
+  --ep-fire: #C43E31;
+  --ep-nature: #42A22C;
+  --ep-ice: #389EE6;
+  --ep-holy: #F3D747;
+  --ep-dark: #782c86;
 }

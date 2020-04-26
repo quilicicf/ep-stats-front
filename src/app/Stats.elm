@@ -42,8 +42,11 @@ import Gsheet exposing (..)
 -- MODELS --
 ------------
 
+goodParticipation : Float
+goodParticipation = 0.9
+
 acceptableParticipation : Float
-acceptableParticipation = 0.9
+acceptableParticipation = 0.8
 
 ------------
 -- MODELS --
@@ -70,11 +73,9 @@ type alias Stats =
 type alias AllianceStats =
   { averageTitanScore : Float
   , maxTitanScore : Int
-  , titanParticipation : Float
   , preferredTitanColor : TitanColor
   , averageWarScore : Float
   , maxWarScore : Int
-  , warParticipation : Float
   , preferredWarBonus : WarBonus
   , memberStats : Dict String MemberStats
   }
@@ -140,7 +141,6 @@ type alias AnalyzedStats =
 type alias AnalyzedAllianceTitanScores =
   { averageTitanScore : Float
   , maxTitanScore : Int
-  , participation : Float
   , progression : RegressionResult
   , preferredTitanColor : TitanColor
   , titanScores : List AllianceTitanScore
@@ -149,7 +149,6 @@ type alias AnalyzedAllianceTitanScores =
 type alias AnalyzedAllianceWarScores =
   { averageWarScore : Float
   , maxWarScore : Int
-  , participation : Float
   , progression : RegressionResult
   , preferredWarBonus : WarBonus
   , warScores : List AllianceWarScore
@@ -415,9 +414,9 @@ viewParticipation participation =
     displayablePercentage = participation * 100 |> round |> String.fromInt
 
     className : String
-    className = if participation == acceptableParticipation then "neutral"
-      else if participation < acceptableParticipation then "negative"
-      else "positive"
+    className = if participation >= goodParticipation then "positive"
+      else if participation >= acceptableParticipation then "neutral"
+      else "negative"
   in
     span [ class className ] [ displayablePercentage ++ "%" |> text ]
 
@@ -426,7 +425,7 @@ generifyAllianceTitanScores allianceName allianceTitanScores =
   { pseudo = allianceName
   , averageScore = AverageMemberScore allianceTitanScores.averageTitanScore 0
   , maxScore = Just allianceTitanScores.maxTitanScore
-  , participation = allianceTitanScores.participation
+  , participation = 100 -- The alliance always participates
   , progression = allianceTitanScores.progression
   , preferredTitanColor = Just allianceTitanScores.preferredTitanColor
   , titanScores = List.map generifyAllianceTitanScore allianceTitanScores.titanScores
@@ -445,7 +444,7 @@ generifyAllianceWarScores allianceName allianceWarScores =
   { pseudo = allianceName
   , averageScore = AverageMemberScore allianceWarScores.averageWarScore 0
   , maxScore = Just allianceWarScores.maxWarScore
-  , participation = allianceWarScores.participation
+  , participation = 100 -- The alliance always participates
   , progression = allianceWarScores.progression
   , preferredWarBonus = Just allianceWarScores.preferredWarBonus
   , warScores = List.map generifyAllianceWarScore allianceWarScores.warScores
@@ -924,7 +923,6 @@ analyzeAllianceTitanScore allianceTitanScores =
   in
     { averageTitanScore = computeAverageDamage allianceTitanScores
     , maxTitanScore = List.map .damage allianceTitanScores |> List.maximum |> Maybe.withDefault 0
-    , participation = List.map .damage allianceTitanScores |> computeParticipation
     , progression = List.map .damage allianceTitanScores
         |> List.indexedMap (\index damage -> [index, damage])
         |> computeLinearRegression 2
@@ -961,7 +959,6 @@ analyzeAllianceWarScores allianceWarScores =
   in
     { averageWarScore = computeAverageDamage allianceWarScores
     , maxWarScore = List.map .damage allianceWarScores |> List.maximum |> Maybe.withDefault 0
-    , participation = List.map .damage allianceWarScores |> computeParticipation
     , progression = List.map .damage allianceWarScores
         |> List.indexedMap (\index damage -> [index, damage])
         |> computeLinearRegression 2
@@ -1084,11 +1081,9 @@ computeAllianceStats : AnalyzedStats -> AllianceStats
 computeAllianceStats analyzedStats =
   { averageTitanScore = analyzedStats.allianceTitanScores.averageTitanScore
   , maxTitanScore = analyzedStats.allianceTitanScores.maxTitanScore
-  , titanParticipation = analyzedStats.allianceTitanScores.participation
   , preferredTitanColor = analyzedStats.allianceTitanScores.preferredTitanColor
   , averageWarScore = analyzedStats.allianceWarScores.averageWarScore
   , maxWarScore = analyzedStats.allianceWarScores.maxWarScore
-  , warParticipation = analyzedStats.allianceWarScores.participation
   , preferredWarBonus = analyzedStats.allianceWarScores.preferredWarBonus
   , memberStats = List.indexedMap
       (\index titanScores -> ( titanScores.pseudo, titanScores, retrieveMemberWarScores index analyzedStats.membersWarScores ) ) analyzedStats.membersTitanScores

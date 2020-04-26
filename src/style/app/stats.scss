@@ -14,20 +14,33 @@
     margin: 0 5%;
   }
 
+  .progression {
+    margin-bottom: 1rem;
+  }
+
+  .participation {
+    margin-bottom: 1rem;
+  }
+
   .progression-label {
     font-weight: bold;
     padding-right: 1rem;
   }
 
-  .progression-positive {
+  .participation-label {
+    font-weight: bold;
+    padding-right: 1rem;
+  }
+
+  .positive {
     color: var(--green);
   }
 
-  .progression-neutral {
+  .neutral {
     color: var(--orange);
   }
 
-  .progression-negative {
+  .negative {
     color: var(--red);
   }
 

@@ -29,6 +29,9 @@ type alias Translations =
   , warScores: String
   , averageWarScore: String
   , preferredWarBonus: String
+  , progression : String
+  , pointsPerEvent : String
+  , participation : String
   , member: String
   , pseudo: String
   , period: String

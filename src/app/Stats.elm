@@ -42,6 +42,13 @@ import Gsheet exposing (..)
 -- MODELS --
 ------------
 
+acceptableParticipation : Float
+acceptableParticipation = 0.9
+
+------------
+-- MODELS --
+------------
+
 type alias Model r = AppConfigExtender (StatsFilterExtender (StatsExtender (TranslationsExtender r)))
 
 type alias StatsExtender r =
@@ -259,6 +266,17 @@ computeTendencyAttributes maxDamage scores =
             ]
     ]
 
+getParticipationPercentage : List MemberScore -> Float
+getParticipationPercentage memberScores =
+  let
+    allScoresNumber : Int
+    allScoresNumber = List.length memberScores
+
+    hittingScoresNumber : Int
+    hittingScoresNumber = List.filter (\memberScore -> memberScore.damage /= 0) memberScores |> List.length
+  in
+    (toFloat hittingScoresNumber) / (toFloat allScoresNumber)
+
 viewValidTitansStats : Model r -> FilteredStats -> Html Msg
 viewValidTitansStats model filteredStats =
   let
@@ -266,6 +284,9 @@ viewValidTitansStats model filteredStats =
     genericTitanScores = List.filter (\memberScores -> model.filteredMember == memberScores.pseudo) filteredStats.membersTitanScores
       |> List.head
       |> withDefault (generifyAllianceTitanScores model.translations.alliance filteredStats.allianceTitanScores)
+
+    participationPercentage : Float
+    participationPercentage = List.map .score genericTitanScores.titanScores |> getParticipationPercentage
 
     maxDamage : Int
     maxDamage = withDefault 0 genericTitanScores.maxScore
@@ -281,7 +302,8 @@ viewValidTitansStats model filteredStats =
       div [ class "titan-stats" ] [
         div [ class "graphs-container" ] [
           h2 [ class "chart-title" ] [ text model.translations.titanScores ],
-          div [ class "progression" ] [ viewGradient genericTitanScores.progression.gradient ],
+          div [ class "progression" ] [ viewGradient model.translations genericTitanScores.progression.gradient ],
+          div [ class "participation" ] [ viewParticipation model.translations participationPercentage ],
           div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
             div [ class "chart"] [
               div [ class "label max-label" ] [
@@ -309,6 +331,9 @@ viewValidWarsStats model filteredStats =
       |> List.head
       |> withDefault (generifyAllianceWarScores model.translations.alliance filteredStats.allianceWarScores)
 
+    participationPercentage : Float
+    participationPercentage = List.map .score genericWarScores.warScores |> getParticipationPercentage
+
     maxDamage : Int
     maxDamage = withDefault 0 genericWarScores.maxScore
 
@@ -323,7 +348,8 @@ viewValidWarsStats model filteredStats =
       div [ class "war-stats" ] [
         div [ class "graphs-container" ] [
           h2 [ class "chart-title" ] [ text model.translations.warScores ],
-          div [ class "progression" ] [ viewGradient genericWarScores.progression.gradient ],
+          div [ class "progression" ] [ viewGradient model.translations genericWarScores.progression.gradient ],
+          div [ class "participation" ] [ viewParticipation model.translations participationPercentage ],
           div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
             div [ class "chart"] [
               div [ class "label max-label" ] [
@@ -343,8 +369,8 @@ viewValidWarsStats model filteredStats =
       ]
     ]
 
-viewGradient : Float -> Html msg
-viewGradient gradient =
+viewGradient : Translations -> Float -> Html msg
+viewGradient translations gradient =
   let
     sign : String
     sign = if  gradient == 0 then ""
@@ -352,17 +378,34 @@ viewGradient gradient =
       else "-"
 
     className : String
-    className = if gradient == 0 then "progression-neutral"
-      else if gradient < 0 then "progression-negative"
-      else "progression-positive"
+    className = if gradient == 0 then "neutral"
+      else if gradient < 0 then "negative"
+      else "positive"
 
     value : String
     value = round gradient |> abs |> String.fromInt
   in
-    p [] [
-      span [ class "progression-label" ] [ text "Progression" ],
+    div [] [
+      span [ class "progression-label" ] [ text translations.progression ],
       span [ class className ] [ text ( sign ++ value ) ],
-      span [ class className ] [ text "points/event" ]
+      span [ class className ] [ text translations.pointsPerEvent ]
+    ]
+
+viewParticipation : Translations -> Float -> Html msg
+viewParticipation translations participation =
+  let
+    displayablePercentage : String
+    displayablePercentage = participation * 100 |> round |> String.fromInt
+
+    className : String
+    className = if participation == acceptableParticipation then "neutral"
+      else if participation < acceptableParticipation then "negative"
+      else "positive"
+  in
+    div [] [
+      span [ class "participation-label" ] [ text translations.participation ],
+      span [ class className ] [ text displayablePercentage ],
+      span [ class className ] [ text "%" ]
     ]
 
 generifyAllianceTitanScores : String -> FilteredAllianceTitanScores -> FilteredMemberTitanScores

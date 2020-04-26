@@ -105,3 +105,15 @@ body {
 .titan-color-dark {
   color: var(--ep-dark);
 }
+
+.positive {
+  color: var(--green);
+}
+
+.neutral {
+  color: var(--orange);
+}
+
+.negative {
+  color: var(--red);
+}

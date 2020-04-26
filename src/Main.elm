@@ -57,7 +57,7 @@ type alias Model =
   , stats: Maybe Stats
   , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
-  , filteredStats: Maybe FilteredStats
+  , filteredStats: Maybe AnalyzedStats
 
   -- Navigation
   , baseUrl: Url

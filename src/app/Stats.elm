@@ -1,5 +1,5 @@
 module Stats exposing (
-  Stats, AllianceStats, MemberStats, FilteredStats, StatsExtender,
+  Stats, AllianceStats, MemberStats, AnalyzedStats, StatsExtender,
   fetchAllStats,
   updateStats, updateStatsWithFilter,
   viewAllianceStats, viewTitansStats, viewWarsStats
@@ -57,7 +57,7 @@ type alias StatsExtender r =
   , stats: Maybe Stats
   , statsError : Maybe String
   , allianceStats: Maybe AllianceStats
-  , filteredStats: Maybe FilteredStats
+  , filteredStats: Maybe AnalyzedStats
   }
 
 type alias Stats =
@@ -70,9 +70,11 @@ type alias Stats =
 type alias AllianceStats =
   { averageTitanScore : Float
   , maxTitanScore : Int
+  , titanParticipation : Float
   , preferredTitanColor : TitanColor
   , averageWarScore : Float
   , maxWarScore : Int
+  , warParticipation : Float
   , preferredWarBonus : WarBonus
   , memberStats : Dict String MemberStats
   }
@@ -81,9 +83,12 @@ type alias MemberStats =
   { pseudo : String
   , averageTitanScore : AverageMemberScore
   , maxTitanScore : Maybe Int
+  , titanParticipation : Float
   , preferredTitanColor : Maybe TitanColor
   , averageWarScore : AverageMemberScore
+  , warParticipation : Float
   , preferredWarBonus : Maybe WarBonus
+  , participation : Float
   , titanTeamValue : Float
   , warTeamValue : Float
   , teamValue : Float
@@ -125,42 +130,46 @@ type alias MemberWarScore =
   , warBonus : WarBonus
   }
 
-type alias FilteredStats =
-  { allianceTitanScores : FilteredAllianceTitanScores
-  , allianceWarScores: FilteredAllianceWarScores
-  , membersTitanScores: List FilteredMemberTitanScores
-  , membersWarScores: List FilteredMemberWarScores
+type alias AnalyzedStats =
+  { allianceTitanScores : AnalyzedAllianceTitanScores
+  , allianceWarScores: AnalyzedAllianceWarScores
+  , membersTitanScores: List AnalyzedMemberTitanScores
+  , membersWarScores: List AnalyzedMemberWarScores
   }
 
-type alias FilteredAllianceTitanScores =
+type alias AnalyzedAllianceTitanScores =
   { averageTitanScore : Float
   , maxTitanScore : Int
+  , participation : Float
   , progression : RegressionResult
   , preferredTitanColor : TitanColor
   , titanScores : List AllianceTitanScore
   }
 
-type alias FilteredAllianceWarScores =
+type alias AnalyzedAllianceWarScores =
   { averageWarScore : Float
   , maxWarScore : Int
+  , participation : Float
   , progression : RegressionResult
   , preferredWarBonus : WarBonus
   , warScores : List AllianceWarScore
   }
 
-type alias FilteredMemberTitanScores =
+type alias AnalyzedMemberTitanScores =
   { pseudo : String
   , averageScore : AverageMemberScore
   , maxScore : Maybe Int
+  , participation : Float
   , progression : RegressionResult
   , preferredTitanColor : Maybe TitanColor
   , titanScores : List MemberTitanScore
   }
 
-type alias FilteredMemberWarScores =
+type alias AnalyzedMemberWarScores =
   { pseudo : String
   , averageScore : AverageMemberScore
   , maxScore : Maybe Int
+  , participation : Float
   , progression : RegressionResult
   , preferredWarBonus : Maybe WarBonus
   , warScores : List MemberWarScore
@@ -277,10 +286,10 @@ getParticipationPercentage memberScores =
   in
     (toFloat hittingScoresNumber) / (toFloat allScoresNumber)
 
-viewValidTitansStats : Model r -> FilteredStats -> Html Msg
+viewValidTitansStats : Model r -> AnalyzedStats -> Html Msg
 viewValidTitansStats model filteredStats =
   let
-    genericTitanScores : FilteredMemberTitanScores
+    genericTitanScores : AnalyzedMemberTitanScores
     genericTitanScores = List.filter (\memberScores -> model.filteredMember == memberScores.pseudo) filteredStats.membersTitanScores
       |> List.head
       |> withDefault (generifyAllianceTitanScores model.translations.alliance filteredStats.allianceTitanScores)
@@ -302,8 +311,14 @@ viewValidTitansStats model filteredStats =
       div [ class "titan-stats" ] [
         div [ class "graphs-container" ] [
           h2 [ class "chart-title" ] [ text model.translations.titanScores ],
-          div [ class "progression" ] [ viewGradient model.translations genericTitanScores.progression.gradient ],
-          div [ class "participation" ] [ viewParticipation model.translations participationPercentage ],
+          div [ class "progression" ] [
+            span [ class "progression-label" ] [ text model.translations.progression ],
+            viewGradient model.translations genericTitanScores.progression.gradient
+          ],
+          div [ class "participation" ] [
+            span [ class "participation-label" ] [ text model.translations.participation ],
+            viewParticipation participationPercentage
+          ],
           div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
             div [ class "chart"] [
               div [ class "label max-label" ] [
@@ -323,10 +338,10 @@ viewValidTitansStats model filteredStats =
       ]
     ]
 
-viewValidWarsStats : Model r -> FilteredStats -> Html Msg
+viewValidWarsStats : Model r -> AnalyzedStats -> Html Msg
 viewValidWarsStats model filteredStats =
   let
-    genericWarScores : FilteredMemberWarScores
+    genericWarScores : AnalyzedMemberWarScores
     genericWarScores = List.filter (\memberScores -> model.filteredMember == memberScores.pseudo) filteredStats.membersWarScores
       |> List.head
       |> withDefault (generifyAllianceWarScores model.translations.alliance filteredStats.allianceWarScores)
@@ -348,8 +363,14 @@ viewValidWarsStats model filteredStats =
       div [ class "war-stats" ] [
         div [ class "graphs-container" ] [
           h2 [ class "chart-title" ] [ text model.translations.warScores ],
-          div [ class "progression" ] [ viewGradient model.translations genericWarScores.progression.gradient ],
-          div [ class "participation" ] [ viewParticipation model.translations participationPercentage ],
+          div [ class "progression" ] [
+            span [ class "progression-label" ] [ text model.translations.progression ],
+            viewGradient model.translations genericWarScores.progression.gradient
+          ],
+          div [ class "participation" ] [
+            span [ class "participation-label" ] [ text model.translations.participation ],
+            viewParticipation participationPercentage
+          ],
           div [ class "graph-container", ariaHidden True, eventsNumberStyle ] [
             div [ class "chart"] [
               div [ class "label max-label" ] [
@@ -383,16 +404,12 @@ viewGradient translations gradient =
       else "positive"
 
     value : String
-    value = round gradient |> abs |> String.fromInt
+    value = round gradient |> abs |> presentNumber
   in
-    div [] [
-      span [ class "progression-label" ] [ text translations.progression ],
-      span [ class className ] [ text ( sign ++ value ) ],
-      span [ class className ] [ text translations.pointsPerEvent ]
-    ]
+    span [ class className ] [ sign ++ value ++ translations.pointsPerEvent |> text ]
 
-viewParticipation : Translations -> Float -> Html msg
-viewParticipation translations participation =
+viewParticipation : Float -> Html msg
+viewParticipation participation =
   let
     displayablePercentage : String
     displayablePercentage = participation * 100 |> round |> String.fromInt
@@ -402,17 +419,14 @@ viewParticipation translations participation =
       else if participation < acceptableParticipation then "negative"
       else "positive"
   in
-    div [] [
-      span [ class "participation-label" ] [ text translations.participation ],
-      span [ class className ] [ text displayablePercentage ],
-      span [ class className ] [ text "%" ]
-    ]
+    span [ class className ] [ displayablePercentage ++ "%" |> text ]
 
-generifyAllianceTitanScores : String -> FilteredAllianceTitanScores -> FilteredMemberTitanScores
+generifyAllianceTitanScores : String -> AnalyzedAllianceTitanScores -> AnalyzedMemberTitanScores
 generifyAllianceTitanScores allianceName allianceTitanScores =
   { pseudo = allianceName
   , averageScore = AverageMemberScore allianceTitanScores.averageTitanScore 0
   , maxScore = Just allianceTitanScores.maxTitanScore
+  , participation = allianceTitanScores.participation
   , progression = allianceTitanScores.progression
   , preferredTitanColor = Just allianceTitanScores.preferredTitanColor
   , titanScores = List.map generifyAllianceTitanScore allianceTitanScores.titanScores
@@ -426,11 +440,12 @@ generifyAllianceTitanScore allianceTitanScore =
   , titanStars = allianceTitanScore.titanStars
   }
 
-generifyAllianceWarScores : String -> FilteredAllianceWarScores -> FilteredMemberWarScores
+generifyAllianceWarScores : String -> AnalyzedAllianceWarScores -> AnalyzedMemberWarScores
 generifyAllianceWarScores allianceName allianceWarScores =
   { pseudo = allianceName
   , averageScore = AverageMemberScore allianceWarScores.averageWarScore 0
   , maxScore = Just allianceWarScores.maxWarScore
+  , participation = allianceWarScores.participation
   , progression = allianceWarScores.progression
   , preferredWarBonus = Just allianceWarScores.preferredWarBonus
   , warScores = List.map generifyAllianceWarScore allianceWarScores.warScores
@@ -443,7 +458,7 @@ generifyAllianceWarScore allianceWarScore =
   , warBonus = allianceWarScore.warBonus
   }
 
-viewGenericTitanScores : Translations -> FilteredMemberTitanScores -> List (Html Msg)
+viewGenericTitanScores : Translations -> AnalyzedMemberTitanScores -> List (Html Msg)
 viewGenericTitanScores translations scores = mapWithPreviousAndNext
   ( viewGenericTitanScore translations ( withDefault 0 scores.maxScore ) )
   scores.titanScores
@@ -639,7 +654,7 @@ viewGenericWarScore translations maxDamage (maybePreviousScore, currentScore, ma
       div [ class outgoingLineData.lineType, outgoingLineData.lineStyle ] []
     ]
 
-viewGenericWarScores : Translations -> FilteredMemberWarScores -> List (Html Msg)
+viewGenericWarScores : Translations -> AnalyzedMemberWarScores -> List (Html Msg)
 viewGenericWarScores translations scores = mapWithPreviousAndNext
   ( viewGenericWarScore translations ( withDefault 0 scores.maxScore ) )
   scores.warScores
@@ -675,7 +690,8 @@ viewValidAllianceStats { translations } allianceStats =
           th [] [ text translations.preferredTitanColor ],
           th [] [ text translations.averageWarScore ],
           th [] [ text translations.preferredWarBonus ],
-          th [] [ text translations.teamValue ]
+          th [] [ text translations.teamValue ],
+          th [] [ text translations.participation ]
         ],
         tbody [] (
           Dict.values allianceStats.memberStats
@@ -695,6 +711,14 @@ teamValuesTitle translations { titanTeamValue, warTeamValue } =
     translations.wars, ": ", presentNumber <| round warTeamValue
   ]
 
+participationsTitle : Translations -> { r | titanParticipation: Float, warParticipation: Float } -> String
+participationsTitle translations { titanParticipation, warParticipation } =
+  String.join "" [
+    translations.titans, ": ", titanParticipation * 100 |> round |> String.fromInt, "%",
+    "\n",
+    translations.wars, ": ", warParticipation * 100 |> round |> String.fromInt, "%"
+  ]
+
 viewMember : Translations -> MemberStats -> Html Msg
 viewMember translations memberStats =
   tr [ class "member-row" ] [
@@ -709,7 +733,8 @@ viewMember translations memberStats =
     td [ class "member-value" ] [ viewWarBonus <| ( getWarBonusData translations ) <| withDefault AllBonus memberStats.preferredWarBonus ],
     td [ class "member-value"
        , title ( teamValuesTitle translations memberStats )
-       ] [ text <| presentNumber <| round memberStats.teamValue ]
+       ] [ text <| presentNumber <| round memberStats.teamValue ],
+    td [ class "member-value", title (participationsTitle translations memberStats) ] [ viewParticipation memberStats.participation ]
   ]
 
 ------------
@@ -883,100 +908,141 @@ titanStarsPredicate { filteredTitanStars } { titanStars } =
     Nothing -> True
     Just stars -> titanStars == stars
 
-filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> FilteredAllianceTitanScores
+filterAllianceTitanScores : StatsFilterExtender r -> List AllianceTitanScore -> AnalyzedAllianceTitanScores
 filterAllianceTitanScores statsFilter allianceTitanScores =
-  let
-    filteredAllianceScores : List AllianceTitanScore
-    filteredAllianceScores = List.filter ( titanColorPredicate statsFilter ) allianceTitanScores
-      |> List.filter ( titanStarsPredicate statsFilter )
-      |> takeLast statsFilter.filteredTitanPeriod
+  List.filter ( titanColorPredicate statsFilter ) allianceTitanScores
+    |> List.filter ( titanStarsPredicate statsFilter )
+    |> takeLast statsFilter.filteredTitanPeriod
+    |> analyzeAllianceTitanScore
 
+analyzeAllianceTitanScore : List AllianceTitanScore -> AnalyzedAllianceTitanScores
+analyzeAllianceTitanScore allianceTitanScores =
+  let
     preferredTitanColor : TitanColor
-    preferredTitanColor = findPreferredEventType2 .titanColor .damage filteredAllianceScores |> withDefault ALL
+    preferredTitanColor = findPreferredEventType2 .titanColor .damage allianceTitanScores |> withDefault ALL
 
   in
-    { averageTitanScore = computeAverageDamage filteredAllianceScores
-    , maxTitanScore = List.map .damage filteredAllianceScores |> List.maximum |> Maybe.withDefault 0
-    , progression = List.map .damage filteredAllianceScores
+    { averageTitanScore = computeAverageDamage allianceTitanScores
+    , maxTitanScore = List.map .damage allianceTitanScores |> List.maximum |> Maybe.withDefault 0
+    , participation = List.map .damage allianceTitanScores |> computeParticipation
+    , progression = List.map .damage allianceTitanScores
         |> List.indexedMap (\index damage -> [index, damage])
         |> computeLinearRegression 2
     , preferredTitanColor = preferredTitanColor
-    , titanScores = filteredAllianceScores
+    , titanScores = allianceTitanScores
     }
+
+computeParticipation : List Int -> Float
+computeParticipation damages =
+  let
+    hitsNumber : Int
+    hitsNumber = List.filter (\damage -> damage /= 0) damages |> List.length
+
+    eventsNumber : Int
+    eventsNumber = List.length damages
+  in
+    (toFloat hitsNumber) / (toFloat eventsNumber)
 
 warBonusPredicate : StatsFilterExtender r -> { u | warBonus : WarBonus } -> Bool
 warBonusPredicate { filteredWarBonus } { warBonus } = filteredWarBonus == AllBonus || warBonus == filteredWarBonus
 
-filterAllianceWarScores : StatsFilterExtender r -> List AllianceWarScore -> FilteredAllianceWarScores
+filterAllianceWarScores : StatsFilterExtender r -> List AllianceWarScore -> AnalyzedAllianceWarScores
 filterAllianceWarScores statsFilter allianceWarScores =
-  let
-    filteredAllianceScores : List AllianceWarScore
-    filteredAllianceScores = List.filter ( warBonusPredicate statsFilter ) allianceWarScores
-      |> takeLast statsFilter.filteredWarPeriod
+  List.filter ( warBonusPredicate statsFilter ) allianceWarScores
+    |> takeLast statsFilter.filteredWarPeriod
+    |> analyzeAllianceWarScores
 
+analyzeAllianceWarScores : List AllianceWarScore -> AnalyzedAllianceWarScores
+analyzeAllianceWarScores allianceWarScores =
+  let
     preferredWarBonus : WarBonus
-    preferredWarBonus = findPreferredEventType2 .warBonus .damage filteredAllianceScores |> withDefault AllBonus
+    preferredWarBonus = findPreferredEventType2 .warBonus .damage allianceWarScores |> withDefault AllBonus
 
   in
-    { averageWarScore = computeAverageDamage filteredAllianceScores
-    , maxWarScore = List.map .damage filteredAllianceScores |> List.maximum |> Maybe.withDefault 0
-    , progression = List.map .damage filteredAllianceScores
+    { averageWarScore = computeAverageDamage allianceWarScores
+    , maxWarScore = List.map .damage allianceWarScores |> List.maximum |> Maybe.withDefault 0
+    , participation = List.map .damage allianceWarScores |> computeParticipation
+    , progression = List.map .damage allianceWarScores
         |> List.indexedMap (\index damage -> [index, damage])
         |> computeLinearRegression 2
     , preferredWarBonus = preferredWarBonus
-    , warScores = filteredAllianceScores
+    , warScores = allianceWarScores
     }
 
-filterMemberTitanScores : StatsFilterExtender r -> MemberTitanScores -> FilteredMemberTitanScores
+filterMemberTitanScores : StatsFilterExtender r -> MemberTitanScores -> AnalyzedMemberTitanScores
 filterMemberTitanScores statsFilter memberTitanScores =
-  let
-    filteredMemberScores : List MemberTitanScore
-    filteredMemberScores = List.filter ( titanColorPredicate statsFilter ) memberTitanScores.titanScores
+    List.filter ( titanColorPredicate statsFilter ) memberTitanScores.titanScores
       |> List.filter ( titanStarsPredicate statsFilter )
       |> takeLast statsFilter.filteredTitanPeriod
+      |> analyzeMemberTitanScoreList memberTitanScores.pseudo
 
+analyzeMemberTitanScores : MemberTitanScores -> AnalyzedMemberTitanScores
+analyzeMemberTitanScores memberTitanScores = analyzeMemberTitanScoreList memberTitanScores.pseudo memberTitanScores.titanScores
+
+analyzeMemberTitanScoreList : String -> List MemberTitanScore -> AnalyzedMemberTitanScores
+analyzeMemberTitanScoreList pseudo memberTitanScores =
+  let
     preferredTitanColor : Maybe TitanColor
-    preferredTitanColor = findPreferredEventType2 .titanColor ( .damage << .score ) filteredMemberScores
+    preferredTitanColor = findPreferredEventType2 .titanColor ( .damage << .score ) memberTitanScores
+
+    scores : List MemberScore
+    scores = List.map .score memberTitanScores
+
+    damages : List Int
+    damages = List.map .damage scores
 
   in
-    { pseudo = memberTitanScores.pseudo
-    , averageScore = List.map .score filteredMemberScores |> computeAverageScore
-    , maxScore = List.map .score filteredMemberScores
-      |> List.map .damage
-      |> List.maximum
-    , progression = List.map .score filteredMemberScores
-      |> List.map .damage
-      |> List.indexedMap (\index damage -> [index, damage] )
+    { pseudo = pseudo
+    , averageScore = computeAverageScore scores
+    , maxScore = List.maximum damages
+    , participation = computeParticipation damages
+    , progression = List.indexedMap (\index damage -> [index, damage] ) damages
       |> computeLinearRegression 2
     , preferredTitanColor = preferredTitanColor
-    , titanScores = filteredMemberScores
+    , titanScores = memberTitanScores
     }
 
-filterMemberWarScores : StatsFilterExtender r -> MemberWarScores -> FilteredMemberWarScores
+filterMemberWarScores : StatsFilterExtender r -> MemberWarScores -> AnalyzedMemberWarScores
 filterMemberWarScores statsFilter memberWarScores =
-  let
-    filteredMemberScores : List MemberWarScore
-    filteredMemberScores = List.filter ( warBonusPredicate statsFilter ) memberWarScores.warScores
+  List.filter ( warBonusPredicate statsFilter ) memberWarScores.warScores
       |> takeLast statsFilter.filteredWarPeriod
+      |> analyzeMemberWarScoreList memberWarScores.pseudo
 
+analyzeMemberWarScores : MemberWarScores -> AnalyzedMemberWarScores
+analyzeMemberWarScores memberWarScores = analyzeMemberWarScoreList memberWarScores.pseudo memberWarScores.warScores
+
+analyzeMemberWarScoreList : String -> List MemberWarScore -> AnalyzedMemberWarScores
+analyzeMemberWarScoreList pseudo memberWarScores =
+  let
     preferredWarBonus : Maybe WarBonus
-    preferredWarBonus = findPreferredEventType2 .warBonus ( .damage << .score ) filteredMemberScores
+    preferredWarBonus = findPreferredEventType2 .warBonus ( .damage << .score ) memberWarScores
+
+    scores : List MemberScore
+    scores = List.map .score memberWarScores
+
+    damages : List Int
+    damages = List.map .damage scores
 
   in
-    { pseudo = memberWarScores.pseudo
-    , averageScore = List.map .score filteredMemberScores |> computeAverageScore
-    , maxScore = List.map .score filteredMemberScores
-      |> List.map .damage
-      |> List.maximum
-    , progression = List.map .score filteredMemberScores
-      |> List.map .damage
-      |> List.indexedMap (\index damage -> [index, damage] )
+    { pseudo = pseudo
+    , averageScore = computeAverageScore scores
+    , maxScore = List.maximum damages
+    , participation = computeParticipation damages
+    , progression = List.indexedMap (\index damage -> [index, damage] ) damages
       |> computeLinearRegression 2
     , preferredWarBonus = preferredWarBonus
-    , warScores = filteredMemberScores
+    , warScores = memberWarScores
     }
 
-filterStats : StatsFilterExtender r -> Stats -> FilteredStats
+analyzeAllianceStats : Stats -> AnalyzedStats
+analyzeAllianceStats stats =
+  { allianceTitanScores = analyzeAllianceTitanScore stats.allianceTitanScores
+  , allianceWarScores = analyzeAllianceWarScores stats.allianceWarScores
+  , membersTitanScores = List.map analyzeMemberTitanScores stats.membersTitanScores
+  , membersWarScores = List.map analyzeMemberWarScores stats.membersWarScores
+  }
+
+filterStats : StatsFilterExtender r -> Stats -> AnalyzedStats
 filterStats statsFilter stats =
   { allianceTitanScores = filterAllianceTitanScores statsFilter stats.allianceTitanScores
   , allianceWarScores = filterAllianceWarScores statsFilter stats.allianceWarScores
@@ -984,46 +1050,48 @@ filterStats statsFilter stats =
   , membersWarScores = List.map ( filterMemberWarScores statsFilter ) stats.membersWarScores
   }
 
-filterStatsForAlliancePage : Stats -> StatsFilterExtender r -> FilteredStats
-filterStatsForAlliancePage stats defaultStatsFilter = filterStats defaultStatsFilter stats
-
 decodeStats : String -> RawStats
 decodeStats statsAsString = decodeRawStats statsAsString
 
-retrieveMemberWarScores : Int -> List ( FilteredMemberWarScores ) -> FilteredMemberWarScores
+retrieveMemberWarScores : Int -> List ( AnalyzedMemberWarScores ) -> AnalyzedMemberWarScores
 retrieveMemberWarScores index memberWarScoresList = Maybe.withDefault
-  ( FilteredMemberWarScores "" ( AverageMemberScore 0 0 ) Nothing (RegressionResult 0 0 (\_ -> 0)) Nothing [] ) -- Can't fail anyway, checked before that
+  ( AnalyzedMemberWarScores "" ( AverageMemberScore 0 0 ) Nothing 0.0 (RegressionResult 0 0 (\_ -> 0)) Nothing [] ) -- Can't fail anyway, checked before that
   ( getAt index memberWarScoresList )
 
 mergeTeamValues : AverageMemberScore -> AverageMemberScore -> Float
 mergeTeamValues titanAverageScore warAverageScore = ( titanAverageScore.teamValue + warAverageScore.teamValue ) / 2
 
-computeMemberStats : (String, FilteredMemberTitanScores, FilteredMemberWarScores) -> ( String, MemberStats )
+computeMemberStats : (String, AnalyzedMemberTitanScores, AnalyzedMemberWarScores) -> ( String, MemberStats )
 computeMemberStats ( pseudo, memberTitanScores, memberWarScores ) =
   (
     pseudo,
     { pseudo = pseudo
     , averageTitanScore = memberTitanScores.averageScore
     , maxTitanScore = memberTitanScores.maxScore
+    , titanParticipation = memberTitanScores.participation
     , preferredTitanColor = memberTitanScores.preferredTitanColor
     , averageWarScore = memberWarScores.averageScore
+    , warParticipation = memberWarScores.participation
     , preferredWarBonus = memberWarScores.preferredWarBonus
+    , participation = (memberTitanScores.participation + memberWarScores.participation) / 2
     , titanTeamValue = memberTitanScores.averageScore.teamValue
     , warTeamValue = memberWarScores.averageScore.teamValue
     , teamValue = mergeTeamValues memberTitanScores.averageScore memberWarScores.averageScore
     }
   )
 
-computeAllianceStats : FilteredStats -> AllianceStats
-computeAllianceStats filteredStats =
-  { averageTitanScore = filteredStats.allianceTitanScores.averageTitanScore
-  , maxTitanScore = filteredStats.allianceTitanScores.maxTitanScore
-  , preferredTitanColor = filteredStats.allianceTitanScores.preferredTitanColor
-  , averageWarScore = filteredStats.allianceWarScores.averageWarScore
-  , maxWarScore = filteredStats.allianceWarScores.maxWarScore
-  , preferredWarBonus = filteredStats.allianceWarScores.preferredWarBonus
+computeAllianceStats : AnalyzedStats -> AllianceStats
+computeAllianceStats analyzedStats =
+  { averageTitanScore = analyzedStats.allianceTitanScores.averageTitanScore
+  , maxTitanScore = analyzedStats.allianceTitanScores.maxTitanScore
+  , titanParticipation = analyzedStats.allianceTitanScores.participation
+  , preferredTitanColor = analyzedStats.allianceTitanScores.preferredTitanColor
+  , averageWarScore = analyzedStats.allianceWarScores.averageWarScore
+  , maxWarScore = analyzedStats.allianceWarScores.maxWarScore
+  , warParticipation = analyzedStats.allianceWarScores.participation
+  , preferredWarBonus = analyzedStats.allianceWarScores.preferredWarBonus
   , memberStats = List.indexedMap
-      (\index titanScores -> ( titanScores.pseudo, titanScores, retrieveMemberWarScores index filteredStats.membersWarScores ) ) filteredStats.membersTitanScores
+      (\index titanScores -> ( titanScores.pseudo, titanScores, retrieveMemberWarScores index analyzedStats.membersWarScores ) ) analyzedStats.membersTitanScores
       |> List.map computeMemberStats
       |> Dict.fromList
   }
@@ -1034,11 +1102,11 @@ updateValidStats stats model =
     defaultStatsFilter : StatsFilter
     defaultStatsFilter = createDefaultStatsFilter model.translations
 
-    filteredStats : FilteredStats
-    filteredStats = filterStatsForAlliancePage stats defaultStatsFilter
+    filteredStats : AnalyzedStats
+    filteredStats = filterStats defaultStatsFilter stats
 
     allianceStats : AllianceStats
-    allianceStats = computeAllianceStats filteredStats
+    allianceStats = computeAllianceStats <| analyzeAllianceStats stats
   in
     { model
     | stats = Just stats

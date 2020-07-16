@@ -39,7 +39,7 @@
     "eslint-plugin-jest": "23.8.2",
     "filesize": "6.1.0",
     "live-server": "1.2.1",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "node-elm-compiler": "5.0.4",
     "node-sass": "4.13.1",
     "postcss": "7.0.27",
